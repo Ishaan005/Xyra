@@ -1,5 +1,4 @@
 from typing import Any, List, Optional
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -173,7 +172,7 @@ def mark_invoice_as_paid(
     *,
     db: Session = Depends(deps.get_db),
     invoice_id: int,
-    payment_data: schemas.InvoicePayment,
+    payment_data: schemas.invoice.InvoicePayment,
     current_user: schemas.User = Depends(deps.get_current_superuser),
 ) -> Any:
     """

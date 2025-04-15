@@ -39,7 +39,7 @@ class AgentActivity(BaseModel):
     agent_id = Column(Integer, ForeignKey("agent.id"), nullable=False)
     activity_type = Column(String, nullable=False)  # api_call, query, completion, etc.
     timestamp = Column(DateTime, default=datetime.utcnow)
-    metadata = Column(JSON, nullable=True)  # Additional information about the activity
+    activity_metadata = Column(JSON, nullable=True)  # Additional information about the activity
     
     # Relationships
     agent = relationship("Agent", back_populates="activities")

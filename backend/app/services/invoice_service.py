@@ -94,7 +94,7 @@ def create_invoice(db: Session, invoice_in: InvoiceCreate) -> Invoice:
         total_amount=total_amount,
         currency=invoice_in.currency,
         notes=invoice_in.notes,
-        metadata=invoice_in.metadata,
+        invoice_metadata=invoice_in.invoice_metadata,
     )
     
     # Add invoice to database
@@ -113,7 +113,7 @@ def create_invoice(db: Session, invoice_in: InvoiceCreate) -> Invoice:
             item_type=item.item_type,
             reference_id=item.reference_id,
             reference_type=item.reference_type,
-            metadata=item.metadata,
+            item_metadata=item.item_metadata,
         )
         db.add(line_item)
     
@@ -273,7 +273,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                         item_type="subscription",
                         reference_id=agent.id,
                         reference_type="Agent",
-                        metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                        item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
                     )
                 )
                 total_amount += item_amount
@@ -306,7 +306,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                         item_type="usage",
                         reference_id=agent.id,
                         reference_type="Agent",
-                        metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                        item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
                     )
                 )
                 total_amount += item_amount
@@ -339,7 +339,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                         item_type="outcome",
                         reference_id=agent.id,
                         reference_type="Agent",
-                        metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                        item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
                     )
                 )
                 total_amount += item_amount
@@ -382,7 +382,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                             item_type="subscription",
                             reference_id=agent.id,
                             reference_type="Agent",
-                            metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                            item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
                         )
                     )
                     total_amount += item_amount
@@ -415,7 +415,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                             item_type="usage",
                             reference_id=agent.id,
                             reference_type="Agent",
-                            metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                            item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
                         )
                     )
                     total_amount += item_amount

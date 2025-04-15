@@ -12,7 +12,7 @@ class InvoiceLineItemBase(BaseModel):
     item_type: str  # subscription, usage, outcome
     reference_id: Optional[int] = None
     reference_type: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    item_metadata: Optional[Dict[str, Any]] = None
 
 
 class InvoiceLineItemCreate(InvoiceLineItemBase):
@@ -46,7 +46,7 @@ class InvoiceBase(BaseModel):
     currency: str = "USD"
     status: str = "pending"
     notes: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    invoice_metadata: Optional[Dict[str, Any]] = None
 
 
 class InvoiceCreate(BaseModel):
@@ -55,7 +55,7 @@ class InvoiceCreate(BaseModel):
     due_date: datetime
     items: List[InvoiceLineItemCreate]
     notes: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    invoice_metadata: Optional[Dict[str, Any]] = None
     
     # Optional fields that can be auto-generated
     invoice_number: Optional[str] = None
@@ -68,7 +68,13 @@ class InvoiceUpdate(BaseModel):
     payment_method: Optional[str] = None
     payment_date: Optional[datetime] = None
     notes: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    invoice_metadata: Optional[Dict[str, Any]] = None
+
+
+class InvoicePayment(BaseModel):
+    """Schema for invoice payment data"""
+    payment_method: str
+    payment_date: Optional[datetime] = None
 
 
 class InvoiceInDB(InvoiceBase):

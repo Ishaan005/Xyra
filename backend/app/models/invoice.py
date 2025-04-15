@@ -29,7 +29,7 @@ class Invoice(BaseModel):
     
     # Additional metadata
     notes = Column(String, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    invoice_metadata = Column(JSON, nullable=True)
     
     # Relationships
     organization = relationship("Organization", back_populates="invoices")
@@ -57,7 +57,7 @@ class InvoiceLineItem(BaseModel):
     reference_type = Column(String, nullable=True)  # Type of referenced entity (Agent, AgentActivity, etc.)
     
     # Metadata for reporting
-    metadata = Column(JSON, nullable=True)
+    item_metadata = Column(JSON, nullable=True)
     
     # Relationships
     invoice = relationship("Invoice", back_populates="line_items")

@@ -137,7 +137,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
         agent_id=activity_in.agent_id,
         activity_type=activity_in.activity_type,
         timestamp=datetime.utcnow(),
-        metadata=activity_in.metadata,
+        activity_metadata=activity_in.activity_metadata,
     )
     
     # Add activity to database

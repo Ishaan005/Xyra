@@ -56,7 +56,7 @@ class AgentWithStats(Agent):
 class AgentActivityBase(BaseModel):
     """Base agent activity schema"""
     activity_type: str
-    metadata: Optional[Dict[str, Any]] = None
+    activity_metadata: Optional[Dict[str, Any]] = None
 
 
 class AgentActivityCreate(AgentActivityBase):

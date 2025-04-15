@@ -6,7 +6,8 @@ from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app import models, schemas
+from app import schemas
+from app.models.user import User
 from app.core.config import settings
 from app.core.security import verify_password
 from app.db.session import SessionLocal
@@ -31,7 +32,7 @@ def get_db() -> Generator:
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
-) -> models.User:
+) -> User:
     """
     Dependency function to get the current user based on the JWT token.
     """
@@ -49,7 +50,7 @@ def get_current_user(
         )
     
     # Get user from database
-    user = db.query(models.User).filter(models.User.id == token_data.sub).first()
+    user = db.query(User).filter(User.id == token_data.sub).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -61,8 +62,8 @@ def get_current_user(
 
 
 def get_current_active_user(
-    current_user: models.User = Depends(get_current_user),
-) -> models.User:
+    current_user: User = Depends(get_current_user),
+) -> User:
     """
     Dependency function to get the current active user.
     Ensures the user is active.
@@ -76,8 +77,8 @@ def get_current_active_user(
 
 
 def get_current_superuser(
-    current_user: models.User = Depends(get_current_active_user),
-) -> models.User:
+    current_user: User = Depends(get_current_active_user),
+) -> User:
     """
     Dependency function to get the current superuser.
     Ensures the user is a superuser.
@@ -91,8 +92,8 @@ def get_current_superuser(
 
 
 def get_current_admin_or_superuser(
-    current_user: models.User = Depends(get_current_active_user),
-) -> models.User:
+    current_user: User = Depends(get_current_active_user),
+) -> User:
     """
     Dependency function to get the current admin or superuser.
     Ensures the user is either an admin or a superuser.
@@ -107,12 +108,12 @@ def get_current_admin_or_superuser(
 
 def authenticate_user(
     db: Session, username: str, password: str
-) -> Optional[models.User]:
+) -> Optional[User]:
     """
     Authenticate a user by username and password.
     """
     # Try to find user with the given username
-    user = db.query(models.User).filter(models.User.username == username).first()
+    user = db.query(User).filter(User.username == username).first()
     
     # If user exists, verify password
     if user and verify_password(password, user.hashed_password):
