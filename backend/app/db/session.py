@@ -20,6 +20,10 @@ engine = create_engine(
     max_overflow=20,     # Max number of connections above pool_size
     pool_timeout=30,     # Seconds to wait before timing out on getting a connection
     pool_recycle=1800,   # Recycle connections after 30 minutes to avoid stale connections
+    connect_args={
+        # Azure PostgreSQL requires SSL connections
+        "sslmode": "require",
+    }
 )
 
 # Create session factory with optimized settings

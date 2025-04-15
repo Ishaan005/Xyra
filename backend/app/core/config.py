@@ -1,6 +1,7 @@
 import os
 import secrets
 from typing import List, Optional, Dict, Any, Union
+import urllib.parse
 
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator, ValidationInfo
 from pydantic_settings import BaseSettings
@@ -35,6 +36,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = os.getenv("POSTGRES_USER")
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
     POSTGRES_DB: str = os.getenv("POSTGRES_DB")
+    POSTGRES_OPTIONS: str = os.getenv("POSTGRES_OPTIONS", "?sslmode=require")
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
@@ -42,14 +44,25 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
         values = info.data
-        return PostgresDsn.build(
-            scheme="postgresql",
-            username=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            port=int("5432"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
-        ).__str__()
+        
+        # For Azure PostgreSQL, use proper URL encoding for credentials
+        user = values.get("POSTGRES_USER")
+        password = values.get("POSTGRES_PASSWORD")
+        host = values.get("POSTGRES_SERVER")
+        db = values.get("POSTGRES_DB", "")
+        options = values.get("POSTGRES_OPTIONS", "?sslmode=require")
+        
+        # Ensure all components are present
+        if not all([user, password, host]):
+            raise ValueError("Missing required database connection parameters")
+        
+        # Properly URL encode each credential component separately
+        user_encoded = urllib.parse.quote_plus(user)
+        password_encoded = urllib.parse.quote_plus(password)
+        
+        # Build connection string with properly encoded components
+        conn_str = f"postgresql://{user_encoded}:{password_encoded}@{host}:5432/{db}{options}"
+        return conn_str
     
     # Stripe API key
     STRIPE_API_KEY: str = os.getenv("STRIPE_API_KEY", "")
