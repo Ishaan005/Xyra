@@ -37,7 +37,7 @@ def get_current_user(
     Dependency function to get the current user based on the JWT token.
     """
     try:
-        # Decode JWT token
+        # Decode JWT token using settings.ALGORITHM
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )

@@ -49,6 +49,18 @@ def login_access_token(
     }
 
 
+# Add an alias route for Swagger UI compatibility
+@router.post("/login", response_model=schemas.Token)
+def login_alias(
+    db: Session = Depends(deps.get_db),
+    form_data: OAuth2PasswordRequestForm = Depends()
+) -> Any:
+    """
+    Alias for login_access_token to support Swagger UI OAuth flow
+    """
+    return login_access_token(db=db, form_data=form_data)
+
+
 @router.get("/me", response_model=schemas.User)
 def read_users_me(
     current_user: schemas.User = Depends(deps.get_current_active_user)

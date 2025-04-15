@@ -17,12 +17,13 @@ class Settings(BaseSettings):
     # Secret key for token generation
     SECRET_KEY: str = secrets.token_urlsafe(32)
     
-    # Token expiration time in minutes
+    # JWT settings
+    ALGORITHM: str = "HS256"  # Standard algorithm for JWT tokens
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
     # CORS Origins
     CORS_ORIGINS: List[AnyHttpUrl] = []
-    
+
     @field_validator("CORS_ORIGINS", mode="before")
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):

@@ -16,9 +16,6 @@ logger = logging.getLogger(__name__)
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT token settings
-ALGORITHM = "HS256"
-
 # Create Azure Key Vault client if configured
 key_vault_client = None
 if settings.AZURE_KEY_VAULT_URL:
@@ -112,5 +109,5 @@ def create_access_token(
         )
     
     to_encode = {"exp": expire, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, get_secret_key(), algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, get_secret_key(), algorithm=settings.ALGORITHM)
     return encoded_jwt
