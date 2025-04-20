@@ -4,12 +4,11 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.models.agent import Agent, AgentActivity, AgentCost, AgentOutcome
+from app.models.agent import Agent, AgentActivity as AgentActivityModel, AgentCost as AgentCostModel, AgentOutcome as AgentOutcomeModel
 from app.models.organization import Organization
 from app.schemas.agent import (
     AgentCreate, AgentUpdate, 
-    AgentActivityCreate, AgentCostCreate, AgentOutcomeCreate,
-    AgentActivity  # Added missing import for AgentActivity schema
+    AgentActivityCreate, AgentCostCreate, AgentOutcomeCreate
 )
 
 # Configure logging
@@ -123,7 +122,7 @@ def delete_agent(db: Session, agent_id: int) -> Optional[Agent]:
     return agent
 
 
-def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> AgentActivity:
+def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> AgentActivityModel:
     """
     Record an activity for an agent
     """
@@ -133,7 +132,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
         raise ValueError(f"Agent with ID {activity_in.agent_id} not found")
     
     # Create activity
-    activity = AgentActivity(
+    activity = AgentActivityModel(
         agent_id=activity_in.agent_id,
         activity_type=activity_in.activity_type,
         timestamp=datetime.utcnow(),
@@ -153,7 +152,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
     return activity
 
 
-def record_agent_cost(db: Session, cost_in: AgentCostCreate) -> AgentCost:
+def record_agent_cost(db: Session, cost_in: AgentCostCreate) -> AgentCostModel:
     """
     Record a cost for an agent
     """
@@ -163,7 +162,7 @@ def record_agent_cost(db: Session, cost_in: AgentCostCreate) -> AgentCost:
         raise ValueError(f"Agent with ID {cost_in.agent_id} not found")
     
     # Create cost
-    cost = AgentCost(
+    cost = AgentCostModel(
         agent_id=cost_in.agent_id,
         cost_type=cost_in.cost_type,
         amount=cost_in.amount,
@@ -181,7 +180,7 @@ def record_agent_cost(db: Session, cost_in: AgentCostCreate) -> AgentCost:
     return cost
 
 
-def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOutcome:
+def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOutcomeModel:
     """
     Record an outcome for an agent
     """
@@ -191,7 +190,7 @@ def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOu
         raise ValueError(f"Agent with ID {outcome_in.agent_id} not found")
     
     # Create outcome
-    outcome = AgentOutcome(
+    outcome = AgentOutcomeModel(
         agent_id=outcome_in.agent_id,
         outcome_type=outcome_in.outcome_type,
         value=outcome_in.value,
@@ -220,18 +219,18 @@ def get_agent_stats(db: Session, agent_id: int) -> Dict[str, Any]:
         raise ValueError(f"Agent with ID {agent_id} not found")
     
     # Count activities
-    activity_count = db.query(func.count(AgentActivity.id)).filter(
-        AgentActivity.agent_id == agent_id
+    activity_count = db.query(func.count(AgentActivityModel.id)).filter(
+        AgentActivityModel.agent_id == agent_id
     ).scalar() or 0
     
     # Sum costs
-    total_cost = db.query(func.sum(AgentCost.amount)).filter(
-        AgentCost.agent_id == agent_id
+    total_cost = db.query(func.sum(AgentCostModel.amount)).filter(
+        AgentCostModel.agent_id == agent_id
     ).scalar() or 0.0
     
     # Sum outcomes
-    total_outcomes_value = db.query(func.sum(AgentOutcome.value)).filter(
-        AgentOutcome.agent_id == agent_id
+    total_outcomes_value = db.query(func.sum(AgentOutcomeModel.value)).filter(
+        AgentOutcomeModel.agent_id == agent_id
     ).scalar() or 0.0
     
     # Calculate margin

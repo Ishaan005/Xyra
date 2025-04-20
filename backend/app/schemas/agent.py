@@ -71,7 +71,8 @@ class AgentActivityInDB(AgentActivityBase):
     timestamp: datetime
     
     class Config:
-        from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility
+        from_attributes = True  # allow reading SQLAlchemy model attributes
+        orm_mode = True        # enable ORM mode for Pydantic v1 compatibility
 
 
 class AgentActivity(AgentActivityInDB):
@@ -99,7 +100,8 @@ class AgentCostInDB(AgentCostBase):
     timestamp: datetime
     
     class Config:
-        from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility
+        from_attributes = True
+        orm_mode = True
 
 
 class AgentCost(AgentCostInDB):
@@ -128,7 +130,8 @@ class AgentOutcomeInDB(AgentOutcomeBase):
     timestamp: datetime
     
     class Config:
-        from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility
+        from_attributes = True
+        orm_mode = True
 
 
 class AgentOutcome(AgentOutcomeInDB):
