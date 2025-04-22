@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[schemas.BillingModel])
 def read_billing_models(
-    org_id: int = Query(..., description="Organization ID to filter billing models"),
+    org_id: Optional[int] = Query(None, description="Organization ID to filter billing models"),
     db: Session = Depends(deps.get_db),
     skip: int = 0,
     limit: int = 100,
@@ -23,6 +23,9 @@ def read_billing_models(
     
     Users can only access billing models for their own organization unless they are superusers.
     """
+    # Determine target org_id: use query param or default to user's org
+    if org_id is None:
+        org_id = current_user.organization_id
     # Check permissions
     if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != org_id):
         raise HTTPException(

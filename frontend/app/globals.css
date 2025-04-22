@@ -1,0 +1,383 @@
+@import "tailwindcss";
+
+@theme {
+  /* Base colors and variables */
+  --font-display: "Rockwell", "Arial Black", sans-serif;
+  --font-body: Cambria, serif;
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* Brand colors */
+  --color-gold: #ffb500;
+  --color-gold-dark: #af6d04;
+  --color-gold-light: #ffd980;
+  --color-gold-80: #bf8a36;
+  --color-gold-60: #cfa768;
+  --color-gold-40: #dfc59b;
+  --color-gold-20: #efe2cd;
+
+  --color-purple: #85458a;
+  --color-purple-80: #9d6aa1;
+  --color-purple-60: #b68fb9;
+  --color-purple-40: #ceb5d0;
+  --color-purple-20: #e7dae8;
+
+  --color-blue: #1c5687;
+  --color-blue-80: #49789f;
+  --color-blue-60: #779ab7;
+  --color-blue-40: #a4bbcf;
+  --color-blue-20: #c9dde7;
+
+  --color-teal: #4c7d7a;
+  --color-teal-80: #709795;
+  --color-teal-60: #94b1af;
+  --color-teal-40: #b7cbca;
+  --color-teal-20: #dbe5e4;
+
+  --color-gray: #b2b4ae;
+  --color-gray-dark: #545857;
+  --color-gray-80: #767979;
+  --color-gray-60: #989b9a;
+  --color-gray-40: #bbbcbc;
+  --color-gray-20: #dddedd;
+
+  /* UI colors - Light mode */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 42 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 24 96% 35%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 24 4% 71%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 24 96% 35%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 79% 44%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 125 43% 40%;
+  --success-foreground: 0 0% 100%;
+  --border: 24 4% 71%;
+  --input: 24 4% 71%;
+  --ring: 42 100% 50%;
+  --radius: 0.5rem;
+
+  /* Sidebar colors - Light mode */
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary: 240 5.9% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 4.8% 95.9%;
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
+
+  /* Animation */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-linear: linear;
+}
+
+@layer base {
+  * {
+    border: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+  }
+}
+
+.font-heading {
+  font-family: var(--font-display);
+}
+.font-body {
+  font-family: var(--font-body);
+}
+.font-bold {
+  font-family: "Cambria Bold", "Arial Black", sans-serif;
+  font-weight: 700;
+}
+
+/* Custom utility classes for our brand colors */
+.bg-gold {
+  background-color: var(--color-gold);
+}
+.bg-gold-dark {
+  background-color: var(--color-gold-dark);
+}
+.bg-gold-light {
+  background-color: var(--color-gold-light);
+}
+.bg-gold-80 {
+  background-color: var(--color-gold-80);
+}
+.bg-gold-60 {
+  background-color: var(--color-gold-60);
+}
+.bg-gold-40 {
+  background-color: var(--color-gold-40);
+}
+.bg-gold-20 {
+  background-color: var(--color-gold-20);
+}
+
+.text-gold {
+  color: var(--color-gold);
+}
+.text-gold-dark {
+  color: var(--color-gold-dark);
+}
+.text-gold-light {
+  color: var(--color-gold-light);
+}
+.text-gold-80 {
+  color: var(--color-gold-80);
+}
+.text-gold-60 {
+  color: var(--color-gold-60);
+}
+.text-gold-40 {
+  color: var(--color-gold-40);
+}
+.text-gold-20 {
+  color: var(--color-gold-20);
+}
+
+.border-gold {
+  border-color: var(--color-gold);
+}
+.border-gold-dark {
+  border-color: var(--color-gold-dark);
+}
+.border-gold-light {
+  border-color: var(--color-gold-light);
+}
+.border-gold-80 {
+  border-color: var(--color-gold-80);
+}
+.border-gold-60 {
+  border-color: var(--color-gold-60);
+}
+.border-gold-40 {
+  border-color: var(--color-gold-40);
+}
+.border-gold-20 {
+  border-color: var(--color-gold-20);
+}
+
+/* Repeat for other brand colors (purple, blue, teal, gray) */
+.bg-purple {
+  background-color: var(--color-purple);
+}
+.bg-purple-80 {
+  background-color: var(--color-purple-80);
+}
+.bg-purple-60 {
+  background-color: var(--color-purple-60);
+}
+.bg-purple-40 {
+  background-color: var(--color-purple-40);
+}
+.bg-purple-20 {
+  background-color: var(--color-purple-20);
+}
+
+.text-purple {
+  color: var(--color-purple);
+}
+.text-purple-80 {
+  color: var(--color-purple-80);
+}
+.text-purple-60 {
+  color: var(--color-purple-60);
+}
+.text-purple-40 {
+  color: var(--color-purple-40);
+}
+.text-purple-20 {
+  color: var(--color-purple-20);
+}
+
+.border-purple {
+  border-color: var(--color-purple);
+}
+.border-purple-80 {
+  border-color: var(--color-purple-80);
+}
+.border-purple-60 {
+  border-color: var(--color-purple-60);
+}
+.border-purple-40 {
+  border-color: var(--color-purple-40);
+}
+.border-purple-20 {
+  border-color: var(--color-purple-20);
+}
+
+.bg-blue {
+  background-color: var(--color-blue);
+}
+.bg-blue-80 {
+  background-color: var(--color-blue-80);
+}
+.bg-blue-60 {
+  background-color: var(--color-blue-60);
+}
+.bg-blue-40 {
+  background-color: var(--color-blue-40);
+}
+.bg-blue-20 {
+  background-color: var(--color-blue-20);
+}
+
+.text-blue {
+  color: var(--color-blue);
+}
+.text-blue-80 {
+  color: var(--color-blue-80);
+}
+.text-blue-60 {
+  color: var(--color-blue-60);
+}
+.text-blue-40 {
+  color: var(--color-blue-40);
+}
+.text-blue-20 {
+  color: var(--color-blue-20);
+}
+
+.border-blue {
+  border-color: var(--color-blue);
+}
+.border-blue-80 {
+  border-color: var(--color-blue-80);
+}
+.border-blue-60 {
+  border-color: var(--color-blue-60);
+}
+.border-blue-40 {
+  border-color: var(--color-blue-40);
+}
+.border-blue-20 {
+  border-color: var(--color-blue-20);
+}
+
+.bg-teal {
+  background-color: var(--color-teal);
+}
+.bg-teal-80 {
+  background-color: var(--color-teal-80);
+}
+.bg-teal-60 {
+  background-color: var(--color-teal-60);
+}
+.bg-teal-40 {
+  background-color: var(--color-teal-40);
+}
+.bg-teal-20 {
+  background-color: var(--color-teal-20);
+}
+
+.text-teal {
+  color: var(--color-teal);
+}
+.text-teal-80 {
+  color: var(--color-teal-80);
+}
+.text-teal-60 {
+  color: var(--color-teal-60);
+}
+.text-teal-40 {
+  color: var(--color-teal-40);
+}
+.text-teal-20 {
+  color: var(--color-teal-20);
+}
+
+.border-teal {
+  border-color: var(--color-teal);
+}
+.border-teal-80 {
+  border-color: var(--color-teal-80);
+}
+.border-teal-60 {
+  border-color: var(--color-teal-60);
+}
+.border-teal-40 {
+  border-color: var(--color-teal-40);
+}
+.border-teal-20 {
+  border-color: var(--color-teal-20);
+}
+
+.bg-gray {
+  background-color: var(--color-gray);
+}
+.bg-gray-dark {
+  background-color: var(--color-gray-dark);
+}
+.bg-gray-80 {
+  background-color: var(--color-gray-80);
+}
+.bg-gray-60 {
+  background-color: var(--color-gray-60);
+}
+.bg-gray-40 {
+  background-color: var(--color-gray-40);
+}
+.bg-gray-20 {
+  background-color: var(--color-gray-20);
+}
+
+.text-gray-dark {
+  color: var(--color-gray-dark);
+}
+.text-gray-80 {
+  color: var(--color-gray-80);
+}
+.text-gray-60 {
+  color: var(--color-gray-60);
+}
+.text-gray-40 {
+  color: var(--color-gray-40);
+}
+.text-gray-20 {
+  color: var(--color-gray-20);
+}
+
+.border-gray {
+  border-color: var(--color-gray);
+}
+.border-gray-dark {
+  border-color: var(--color-gray-dark);
+}
+.border-gray-80 {
+  border-color: var(--color-gray-80);
+}
+.border-gray-60 {
+  border-color: var(--color-gray-60);
+}
+.border-gray-40 {
+  border-color: var(--color-gray-40);
+}
+.border-gray-20 {
+  border-color: var(--color-gray-20);
+}

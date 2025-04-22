@@ -1,9 +1,9 @@
 import os
 import secrets
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Any, Union
 import urllib.parse
 
-from pydantic import AnyHttpUrl, PostgresDsn, field_validator, ValidationInfo
+from pydantic import AnyHttpUrl, field_validator, ValidationInfo
 from pydantic_settings import BaseSettings
 
 from dotenv import load_dotenv
@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"  # Standard algorithm for JWT tokens
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
-    # CORS Origins
-    CORS_ORIGINS: List[AnyHttpUrl] = []
+    # CORS Origins (allow local dev frontend)
+    CORS_ORIGINS: List[AnyHttpUrl] = ["http://localhost:3000"]
 
     @field_validator("CORS_ORIGINS", mode="before")
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
