@@ -4,7 +4,7 @@ import Image from "next/image"
 export function PrototypeSection() {
   return (
     <section className="bg-gradient-to-b from-white to-gold-20 py-20">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="mx-auto max-w-[800px] text-center">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Live Prototype & Screenshots</h2>
           <p className="mt-4 text-lg text-gray-dark">

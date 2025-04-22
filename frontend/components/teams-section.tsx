@@ -3,7 +3,7 @@ import { Users, TrendingUp, BarChart4, Code } from "lucide-react"
 export function TeamsSection() {
   return (
     <section className="bg-white py-20">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="mx-auto max-w-[800px] text-center">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Built for AI SaaS Teams</h2>
           <p className="mt-4 text-lg text-gray-dark">
