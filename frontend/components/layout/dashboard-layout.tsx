@@ -21,13 +21,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="flex flex-1">
-          <div className="hidden md:block">
-            <SidebarNav />
-          </div>
-          <main className="flex-1 md:pl-64">{children}</main>
+      <div className="flex min-h-screen">
+        <div className="hidden md:block w-64">
+          <SidebarNav />
+        </div>
+        <div className="flex flex-col flex-1">
+          <Header />
+          <main className="px-4 md:px-8">{children}</main>
         </div>
       </div>
     </SidebarProvider>
