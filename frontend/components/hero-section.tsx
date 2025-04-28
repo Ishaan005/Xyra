@@ -20,7 +20,7 @@ export function HeroSection() {
               <Button size="lg" className="font-bold bg-gold shadow-[0_0_15px_rgba(252,211,77,0.7)] animate-pulse">
                 Book a Demo
               </Button>
-              <Button size="lg" variant="outline" className="font-bold bg-teal-60">
+              <Button size="lg" variant="outline" className="font-bold bg-gray-20">
                 View Docs
               </Button>
               <Button size="lg" variant="secondary" className="font-bold bg-blue text-white">

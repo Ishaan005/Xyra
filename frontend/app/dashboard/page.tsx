@@ -25,7 +25,7 @@ export default function DashboardPage() {
 
     Promise.all([
       api.get(`/analytics/organization/${orgId}/summary`),
-      api.get(`/analytics/organization/${orgId}/top-agents?limit=5`),
+      api.get(`/analytics/organization/${orgId}/top-agents?limit=5`), //TODO: add limit filter
     ])
       .then(([sumRes, topRes]) => {
         setSummary(sumRes.data)
@@ -116,7 +116,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto">
+    <div className="p-4 md:p-8 space-y-8 max-w-[1400px]">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Organization Dashboard</h1>

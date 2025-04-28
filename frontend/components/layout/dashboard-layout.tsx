@@ -27,7 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="hidden md:block">
             <SidebarNav />
           </div>
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 md:pl-64">{children}</main>
         </div>
       </div>
     </SidebarProvider>

@@ -65,12 +65,12 @@ export function SidebarNav() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b py-4">
+      <SidebarHeader>
         <Link href="/" className="flex items-center gap-2 px-4">
           <div className="rounded-md bg-gold p-1">
             <Zap className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-bold">Business Engine</span>
+          <span className="text-xl font-bold">Xyra</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -78,7 +78,14 @@ export function SidebarNav() {
           {routes.map((route) => (
             <SidebarMenuItem key={route.href}>
               <SidebarMenuButton asChild isActive={pathname === route.href} tooltip={route.title}>
-                <Link href={route.href}>
+                <Link
+                  href={route.href}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors ${
+                    pathname === route.href
+                      ? 'bg-gold-light'
+                      : 'hover:bg-gold-20 hover:text-foreground'
+                  }`}
+                >
                   <route.icon className="h-5 w-5" />
                   <span>{route.title}</span>
                 </Link>

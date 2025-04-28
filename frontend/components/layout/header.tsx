@@ -27,27 +27,27 @@ export function Header() {
     return null
   }
 
-  const getPageTitle = () => {
-    switch (pathname) {
-      case "/dashboard":
-        return "Dashboard"
-      case "/pricing":
-        return "Pricing Models"
-      case "/agents":
-        return "Agents"
-      case "/customers":
-        return "Customers"
-      case "/reports":
-        return "Reports"
-      case "/settings":
-        return "Settings"
-      default:
-        return "Business Engine"
-    }
-  }
+  // const getPageTitle = () => {
+  //   switch (pathname) {
+  //     case "/dashboard":
+  //       return "Dashboard"
+  //     case "/pricing":
+  //       return "Pricing Models"
+  //     case "/agents":
+  //       return "Agents"
+  //     case "/customers":
+  //       return "Customers"
+  //     case "/reports":
+  //       return "Reports"
+  //     case "/settings":
+  //       return "Settings"
+  //     default:
+  //       return "Business Engine"
+  //   }
+  // }
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 md:ml-64">
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="md:hidden">
@@ -65,12 +65,12 @@ export function Header() {
           <div className="rounded-md bg-gold p-1">
             <Zap className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-bold">Business Engine</span>
+          <span className="text-xl font-bold">Xyra</span>
         </Link>
       </div>
 
       <div className="flex-1 md:ml-2">
-        <h1 className="text-xl font-bold">{getPageTitle()}</h1>
+        {/* <h1 className="text-xl font-bold">{getPageTitle()}</h1> */}
       </div>
 
       <div className="flex items-center gap-4">

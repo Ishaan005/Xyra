@@ -14,17 +14,17 @@ export function CTASection() {
           </p>
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button size="lg" className="gap-2 font-bold">
+            <Button size="lg" variant="outline" className="gap-2 font-bold bg-gold shadow-[0_0_15px_rgba(252,211,77,0.7)] animate-pulse">
+              <FileText className="h-5 w-5 " />
+              Get Early Access
+            </Button>
+            <Button size="lg" className="gap-2 font-bold bg-blue-40">
               <Search className="h-5 w-5" />
               Explore the Docs
             </Button>
-            <Button size="lg" variant="secondary" className="gap-2 font-bold">
+            <Button size="lg" variant="secondary" className="gap-2 font-bold bg-blue text-white">
               <Phone className="h-5 w-5" />
               Book a Demo
-            </Button>
-            <Button size="lg" variant="outline" className="gap-2 font-bold">
-              <FileText className="h-5 w-5" />
-              Get Early Access
             </Button>
           </div>
         </div>

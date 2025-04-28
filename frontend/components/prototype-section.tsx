@@ -88,7 +88,7 @@ export function PrototypeSection() {
 
         <div className="mt-12 text-center">
           <p className="text-lg font-bold mb-4">💬 Test it live in the sandbox with your own agent data.</p>
-          <Button size="lg" className="font-bold">
+          <Button size="lg" className="font-bold bg-gold">
             Try Prototype
           </Button>
         </div>

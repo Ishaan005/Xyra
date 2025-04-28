@@ -13,9 +13,9 @@ export function IntegrationSection() {
         </div>
 
         <div className="mt-16 grid gap-8 md:grid-cols-2">
-          <div className="rounded-xl border border-border bg-gray-dark p-6 shadow-sm">
+          <div className="rounded-xl border border-border bg-black p-6 shadow-sm">
             <pre className="font-mono text-sm text-white overflow-x-auto">
-              <code>{`from paid_engine import BusinessEngine
+              <code className = "text-blue-20">{`from paid_engine import BusinessEngine
 
 engine.ingest(logs=Logs.objects.filter(date=today))
 engine.define_pricing(model="hybrid", rules={
@@ -45,7 +45,7 @@ engine.define_pricing(model="hybrid", rules={
               <span className="font-bold">Works with Postgres, Snowflake, and more</span>
             </div>
 
-            <Button size="lg" className="mt-4 font-bold">
+            <Button size="lg" className="mt-4 font-bold bg-gold">
               Read the Integration Guide
             </Button>
           </div>

@@ -47,7 +47,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gold-20 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Business Engine</h1>
+          <h1 className="text-3xl font-bold">Xyra</h1>
           <p className="text-gray-dark mt-2">Sign in to your account</p>
         </div>
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-dark" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-blue" />
                   <Input
                     id="email"
                     type="email"
@@ -89,7 +89,7 @@ export default function LoginPage() {
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-dark" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-blue" />
                   <Input
                     id="password"
                     type="password"
@@ -102,7 +102,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-gold" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
