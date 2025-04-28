@@ -262,11 +262,11 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{summary.agents.total}</div>
             <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 <Badge variant="outline" className="text-[10px] py-0 h-4 bg-success/10 text-success border-success/20">
                   {summary.agents.active} active
                 </Badge>
-              </p>
+              </div>
               <Badge
                 variant="outline"
                 className="text-[10px] py-0 h-4 bg-destructive/10 text-destructive border-destructive/20"

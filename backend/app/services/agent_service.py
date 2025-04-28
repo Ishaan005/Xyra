@@ -113,12 +113,16 @@ def delete_agent(db: Session, agent_id: int) -> Optional[Agent]:
     if not agent:
         logger.warning(f"Agent deletion failed: Agent not found with ID {agent_id}")
         return None
-    
-    # Delete agent from database
+
+    # Manually delete related records to avoid FK constraint violations
+    from app.models.agent import AgentActivity, AgentCost, AgentOutcome
+    db.query(AgentActivity).filter(AgentActivity.agent_id == agent_id).delete(synchronize_session=False)
+    db.query(AgentCost).filter(AgentCost.agent_id == agent_id).delete(synchronize_session=False)
+    db.query(AgentOutcome).filter(AgentOutcome.agent_id == agent_id).delete(synchronize_session=False)
+    # Delete agent
     db.delete(agent)
     db.commit()
-    
-    logger.info(f"Deleted agent: {agent.name}")
+    logger.info(f"Deleted agent and related records: {agent.name}")
     return agent
 
 
