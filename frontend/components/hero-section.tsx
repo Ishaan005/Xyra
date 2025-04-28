@@ -4,12 +4,12 @@ import { BarChart3, Zap } from "lucide-react"
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-gold-20 py-20 md:py-32">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
           <div className="flex flex-col justify-center space-y-4">
             <div className="space-y-2">
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-                <span className="inline-block text-primary">💡</span> Monetize Your AI Platform Smarter. Automatically.
+                 Monetize Your AI Platform Smarter. Automatically.
               </h1>
               <p className="max-w-[700px] text-lg text-gray-dark md:text-xl">
                 Business Engine is the plug-and-play monetization layer for AI SaaS. Drop it into your backend to unlock
@@ -17,13 +17,13 @@ export function HeroSection() {
               </p>
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
-              <Button size="lg" className="font-bold">
+              <Button size="lg" className="font-bold bg-gold shadow-[0_0_15px_rgba(252,211,77,0.7)] animate-pulse">
                 Book a Demo
               </Button>
-              <Button size="lg" variant="outline" className="font-bold">
+              <Button size="lg" variant="outline" className="font-bold bg-teal-60">
                 View Docs
               </Button>
-              <Button size="lg" variant="secondary" className="font-bold">
+              <Button size="lg" variant="secondary" className="font-bold bg-blue text-white">
                 Try Prototype
               </Button>
             </div>

@@ -3,7 +3,7 @@ import { AlertTriangle, TrendingDown, Eye, FileQuestion } from "lucide-react"
 export function ProblemSection() {
   return (
     <section className="bg-white py-20">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="mx-auto max-w-[800px] text-center">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
             Your AI platform is powerful—but are you pricing it intelligently?
@@ -12,7 +12,7 @@ export function ProblemSection() {
         <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-white p-6 text-center shadow-sm">
             <div className="rounded-full bg-destructive/10 p-3">
-              <TrendingDown className="h-6 w-6 text-destructive" />
+              <TrendingDown className="h-6 w-6 text-destructive text-gold" />
             </div>
             <h3 className="text-xl font-bold">Static pricing limits revenue</h3>
             <p className="text-gray-dark">
@@ -21,7 +21,7 @@ export function ProblemSection() {
           </div>
           <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-white p-6 text-center shadow-sm">
             <div className="rounded-full bg-destructive/10 p-3">
-              <Eye className="h-6 w-6 text-destructive" />
+              <Eye className="h-6 w-6 text-destructive text-blue" />
             </div>
             <h3 className="text-xl font-bold">You're flying blind on margins</h3>
             <p className="text-gray-dark">
@@ -30,7 +30,7 @@ export function ProblemSection() {
           </div>
           <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-white p-6 text-center shadow-sm">
             <div className="rounded-full bg-destructive/10 p-3">
-              <FileQuestion className="h-6 w-6 text-destructive" />
+              <FileQuestion className="h-6 w-6 text-destructive text-purple" />
             </div>
             <h3 className="text-xl font-bold">ROI reporting is manual</h3>
             <p className="text-gray-dark">
@@ -39,7 +39,7 @@ export function ProblemSection() {
           </div>
           <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-white p-6 text-center shadow-sm">
             <div className="rounded-full bg-destructive/10 p-3">
-              <AlertTriangle className="h-6 w-6 text-destructive" />
+              <AlertTriangle className="h-6 w-6 text-destructive text-teal" />
             </div>
             <h3 className="text-xl font-bold">Customers want transparency</h3>
             <p className="text-gray-dark">

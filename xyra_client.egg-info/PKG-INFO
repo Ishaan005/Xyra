@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: xyra-client
+Version: 0.1.0
+Summary: Python SDK for the Xyra API
+Requires-Python: >=3.8
+License-File: LICENSE
+Requires-Dist: httpx>=0.23.0
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

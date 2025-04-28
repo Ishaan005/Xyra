@@ -1,0 +1,20 @@
+{
+    "dbcode.connections": [
+        {
+            "connectionId": "tITC_QzG2-D0eOV61mPcU",
+            "name": "xyra_db",
+            "driver": "postgres",
+            "color": "#FFC54F",
+            "connectionType": "host",
+            "host": "xyrasql.postgres.database.azure.com",
+            "port": 5432,
+            "ssl": false,
+            "username": "xyraadmin",
+            "password": "",
+            "savePassword": "secretStorage",
+            "database": "xyra_db",
+            "readOnly": false,
+            "connectionTimeout": 30
+        }
+    ]
+}

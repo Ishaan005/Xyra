@@ -3,7 +3,7 @@ import { DollarSign, BarChart2, PieChart, Plug } from "lucide-react"
 export function SolutionSection() {
   return (
     <section className="bg-gradient-to-b from-gold-20 to-white py-20">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="mx-auto max-w-[800px] text-center">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Business Engine gives you...</h2>
         </div>
@@ -13,7 +13,7 @@ export function SolutionSection() {
               <DollarSign className="h-6 w-6 text-gold-dark" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">💸 Hybrid Pricing</h3>
+              <h3 className="text-xl font-bold"> Hybrid Pricing</h3>
               <p className="mt-2 text-gray-dark">
                 Combine usage-based, seat-based, and outcome-based pricing models to maximize revenue while keeping
                 customers happy.
@@ -25,7 +25,7 @@ export function SolutionSection() {
               <BarChart2 className="h-6 w-6 text-blue" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">📊 Live Margin Tracking</h3>
+              <h3 className="text-xl font-bold">Live Margin Tracking</h3>
               <p className="mt-2 text-gray-dark">
                 Know your profit per customer, feature, or agent in real-time. Identify opportunities to optimize
                 pricing and reduce costs.
@@ -37,7 +37,7 @@ export function SolutionSection() {
               <PieChart className="h-6 w-6 text-purple" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">🧠 ROI Dashboards</h3>
+              <h3 className="text-xl font-bold">ROI Dashboards</h3>
               <p className="mt-2 text-gray-dark">
                 Auto-generated reports that show customers the value they're getting. Make renewal conversations about
                 value, not cost.
@@ -49,7 +49,7 @@ export function SolutionSection() {
               <Plug className="h-6 w-6 text-teal" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">🔌 Plug & Play API</h3>
+              <h3 className="text-xl font-bold">Plug & Play API</h3>
               <p className="mt-2 text-gray-dark">
                 Works with your current stack, no major rewrites. Compatible with Python, Node.js, FastAPI, Stripe,
                 Postgres, Snowflake, and more.
