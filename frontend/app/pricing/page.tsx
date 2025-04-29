@@ -40,7 +40,20 @@ export default function PricingPage() {
     name: "",
     description: "",
     model_type: "usage",
-    config: "{}",
+    // Usage/Activity
+    price_per_action: "",
+    action_type: "",
+    // Seat
+    price_per_seat: "",
+    billing_frequency: "monthly",
+    // Outcome
+    outcome_type: "",
+    percentage: "",
+    // Hybrid
+    base_fee: "",
+    include_seat: false,
+    include_activity: false,
+    include_outcome: false,
   })
 
   useEffect(() => {
@@ -65,33 +78,77 @@ export default function PricingPage() {
 
   const handleCreateModel = async () => {
     if (!orgId || !newModel.name || !newModel.model_type) return
+    // build config object
+    let config: any = {}
+    switch (newModel.model_type) {
+      case "usage":
+        config = {
+          price_per_action: parseFloat(newModel.price_per_action) || 0,
+          action_type: newModel.action_type,
+        }
+        break
+      case "seat":
+        config = {
+          price_per_seat: parseFloat(newModel.price_per_seat) || 0,
+          billing_frequency: newModel.billing_frequency,
+        }
+        break
+      case "outcome":
+        config = {
+          outcome_type: newModel.outcome_type,
+          percentage: parseFloat(newModel.percentage) || 0,
+        }
+        break
+      case "hybrid":
+        config.base_fee = parseFloat(newModel.base_fee) || 0
+        if (newModel.include_seat) {
+          config.seat_config = {
+            price_per_seat: parseFloat(newModel.price_per_seat) || 0,
+            billing_frequency: newModel.billing_frequency,
+          }
+        }
+        if (newModel.include_activity) {
+          config.activity_config = [{
+            action_type: newModel.action_type,
+            price_per_action: parseFloat(newModel.price_per_action) || 0,
+          }]
+        }
+        if (newModel.include_outcome) {
+          config.outcome_config = [{
+            outcome_type: newModel.outcome_type,
+            percentage: parseFloat(newModel.percentage) || 0,
+          }]
+        }
+        break
+    }
+    const payload = {
+      name: newModel.name,
+      description: newModel.description,
+      model_type: newModel.model_type,
+      config,
+      is_active: true,
+      organization_id: orgId,
+    }
 
     try {
-      let config = {}
-      try {
-        config = JSON.parse(newModel.config)
-      } catch (e) {
-        setError("Invalid JSON in config")
-        return
-      }
-
-      const payload = {
-        name: newModel.name,
-        description: newModel.description,
-        model_type: newModel.model_type,
-        config,
-        is_active: true,
-        organization_id: orgId,
-      }
-
       const res = await api.post("/billing-models", payload)
       setModels((prev) => [...prev, res.data])
       setShowCreateForm(false)
+      // reset form
       setNewModel({
         name: "",
         description: "",
         model_type: "usage",
-        config: "{}",
+        price_per_action: "",
+        action_type: "",
+        price_per_seat: "",
+        billing_frequency: "monthly",
+        outcome_type: "",
+        percentage: "",
+        base_fee: "",
+        include_seat: false,
+        include_activity: false,
+        include_outcome: false,
       })
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message)
@@ -113,6 +170,18 @@ export default function PricingPage() {
       setModels((prev) => [...prev, res.data])
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message)
+    }
+  }
+
+  // Delete billing model
+  const handleDeleteModel = async (modelId: number) => {
+    if (!orgId) return;
+    if (!confirm("Are you sure you want to delete this pricing model?")) return;
+    try {
+      await api.delete(`/billing-models/${modelId}`);
+      setModels(prev => prev.filter(m => m.id !== modelId));
+    } catch (err: any) {
+      setError(err.response?.data?.detail || err.message);
     }
   }
 
@@ -266,20 +335,95 @@ export default function PricingPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="model-config" className="text-sm font-medium flex items-center gap-2">
-                  <FileJson className="h-4 w-4" />
-                  Configuration (JSON)
-                </label>
-                <div className="relative">
-                  <textarea
-                    id="model-config"
-                    className="flex min-h-[200px] w-full rounded-md border border-input bg-card px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder='{"tier1": {"price": 10}, "tier2": {"price": 20}}'
-                    value={newModel.config}
-                    onChange={(e) => setNewModel({ ...newModel, config: e.target.value })}
-                  />
-                  <Code className="absolute right-3 bottom-3 h-4 w-4 text-muted-foreground" />
-                </div>
+                {/* Render config fields by model_type */}
+                {newModel.model_type === "usage" && (
+                  <>  {/* Usage/Activity-based */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Price per action</label>
+                      <Input type="number" value={newModel.price_per_action} onChange={e => setNewModel({ ...newModel, price_per_action: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Action type</label>
+                      <Input placeholder="api_call, query…" value={newModel.action_type} onChange={e => setNewModel({ ...newModel, action_type: e.target.value })} />
+                    </div>
+                  </>
+                )}
+                {newModel.model_type === "seat" && (
+                  <>  {/* Seat-based */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Price per seat</label>
+                      <Input type="number" value={newModel.price_per_seat} onChange={e => setNewModel({ ...newModel, price_per_seat: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Billing frequency</label>
+                      <select className="w-full" value={newModel.billing_frequency} onChange={e => setNewModel({ ...newModel, billing_frequency: e.target.value })}>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+                {newModel.model_type === "outcome" && (
+                  <>  {/* Outcome-based */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Outcome type</label>
+                      <Input placeholder="revenue_uplift…" value={newModel.outcome_type} onChange={e => setNewModel({ ...newModel, outcome_type: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Percentage</label>
+                      <Input type="number" value={newModel.percentage} onChange={e => setNewModel({ ...newModel, percentage: e.target.value })} />
+                    </div>
+                  </>
+                )}
+                {newModel.model_type === "hybrid" && (
+                  <>  {/* Hybrid */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Base fee</label>
+                      <Input type="number" value={newModel.base_fee} onChange={e => setNewModel({ ...newModel, base_fee: e.target.value })} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={newModel.include_seat} onChange={e => setNewModel({ ...newModel, include_seat: e.target.checked })} />
+                      <label className="text-sm">Include seat configuration</label>
+                    </div>
+                    {newModel.include_seat && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Seat price per seat</label>
+                        <Input type="number" value={newModel.price_per_seat} onChange={e => setNewModel({ ...newModel, price_per_seat: e.target.value })} />
+                        <label className="text-sm font-medium">Billing frequency</label>
+                        <select className="w-full" value={newModel.billing_frequency} onChange={e => setNewModel({ ...newModel, billing_frequency: e.target.value })}>
+                          <option value="monthly">Monthly</option>
+                          <option value="quarterly">Quarterly</option>
+                          <option value="yearly">Yearly</option>
+                        </select>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={newModel.include_activity} onChange={e => setNewModel({ ...newModel, include_activity: e.target.checked })} />
+                      <label className="text-sm">Include activity configuration</label>
+                    </div>
+                    {newModel.include_activity && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Action type</label>
+                        <Input placeholder="api_call…" value={newModel.action_type} onChange={e => setNewModel({ ...newModel, action_type: e.target.value })} />
+                        <label className="text-sm font-medium">Price per action</label>
+                        <Input type="number" value={newModel.price_per_action} onChange={e => setNewModel({ ...newModel, price_per_action: e.target.value })} />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={newModel.include_outcome} onChange={e => setNewModel({ ...newModel, include_outcome: e.target.checked })} />
+                      <label className="text-sm">Include outcome configuration</label>
+                    </div>
+                    {newModel.include_outcome && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Outcome type</label>
+                        <Input placeholder="revenue_uplift…" value={newModel.outcome_type} onChange={e => setNewModel({ ...newModel, outcome_type: e.target.value })} />
+                        <label className="text-sm font-medium">Percentage</label>
+                        <Input type="number" value={newModel.percentage} onChange={e => setNewModel({ ...newModel, percentage: e.target.value })} />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
@@ -358,6 +502,7 @@ export default function PricingPage() {
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive hover:border-destructive"
                       variant="ghost"
+                      onClick={() => handleDeleteModel(model.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

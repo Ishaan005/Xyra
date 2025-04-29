@@ -10,6 +10,7 @@ from app.schemas.agent import (
     AgentCreate, AgentUpdate, 
     AgentActivityCreate, AgentCostCreate, AgentOutcomeCreate
 )
+from app.services.billing_model_service import calculate_cost
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -147,12 +148,28 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
     db.add(activity)
     db.commit()
     db.refresh(activity)
-    
     # Update agent's last active timestamp
     agent.last_active = datetime.utcnow()
     db.commit()
-    
+
     logger.info(f"Recorded activity {activity.activity_type} for agent: {agent.name}")
+    # Auto-record cost for activity based on billing model
+    bm = agent.billing_model
+    if bm and bm.model_type in ("activity", "hybrid"):
+        # build usage_data for this single action
+        usage_data = bm.model_type == "activity" and {"actions": 1} or {"activities": {activity.activity_type: 1}}
+        cost_amt = calculate_cost(bm, usage_data)
+        cost_entry = AgentCostModel(
+            agent_id=agent.id,
+            cost_type="activity",
+            amount=cost_amt,
+            currency="USD",
+            timestamp=datetime.utcnow(),
+            details={"activity_id": activity.id}
+        )
+        db.add(cost_entry)
+        db.commit()
+        logger.info(f"Auto-recorded activity cost {cost_amt} USD for agent: {agent.name}")
     return activity
 
 
@@ -165,11 +182,21 @@ def record_agent_cost(db: Session, cost_in: AgentCostCreate) -> AgentCostModel:
     if not agent:
         raise ValueError(f"Agent with ID {cost_in.agent_id} not found")
     
-    # Create cost
+    # Create cost, calculating via billing model for activity/outcome or fallback to provided amount
+    bm = agent.billing_model
+    if bm:
+        # calculate based on billing model config
+        try:
+            computed = calculate_cost(bm, cost_in.details or {})
+            amount = computed
+        except Exception:
+            amount = cost_in.amount
+    else:
+        amount = cost_in.amount
     cost = AgentCostModel(
         agent_id=cost_in.agent_id,
         cost_type=cost_in.cost_type,
-        amount=cost_in.amount,
+        amount=amount,
         currency=cost_in.currency,
         timestamp=datetime.utcnow(),
         details=cost_in.details,
@@ -208,8 +235,24 @@ def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOu
     db.add(outcome)
     db.commit()
     db.refresh(outcome)
-    
+
     logger.info(f"Recorded outcome {outcome.value} {outcome.currency} for agent: {agent.name}")
+    # Auto-record cost for outcome based on billing model
+    bm = agent.billing_model
+    if bm and bm.model_type in ("outcome", "hybrid"):
+        # calculate cost using percentage vs business value
+        cost_amt = calculate_cost(bm, {"outcome_value": outcome.value})
+        cost_entry = AgentCostModel(
+            agent_id=agent.id,
+            cost_type="outcome",
+            amount=cost_amt,
+            currency=outcome.currency,
+            timestamp=datetime.utcnow(),
+            details={"outcome_id": outcome.id}
+        )
+        db.add(cost_entry)
+        db.commit()
+        logger.info(f"Auto-recorded outcome cost {cost_amt} USD for agent: {agent.name}")
     return outcome
 
 
