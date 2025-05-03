@@ -22,7 +22,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
-        <div className="hidden md:block w-64">
+        <div className="hidden md:block w-64 sticky top-0 h-screen">
           <SidebarNav />
         </div>
         <div className="flex flex-col flex-1">

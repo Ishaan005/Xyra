@@ -47,16 +47,6 @@ export function SidebarNav() {
       title: "Agents",
     },
     {
-      href: "/customers",
-      icon: Users,
-      title: "Customers",
-    },
-    {
-      href: "/reports",
-      icon: FileText,
-      title: "Reports",
-    },
-    {
       href: "/settings",
       icon: Settings,
       title: "Settings",
