@@ -274,7 +274,7 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
     if billing_model.model_type == "seat":
         # Expect one SeatBasedConfig row
         if billing_model.seat_config:
-            cfg = billing_model.seat_config[0]
+            cfg = billing_model.seat_config
             seats = usage_data.get("seats", 0)
             total_cost = cfg.price_per_seat * seats
     elif billing_model.model_type == "activity":
@@ -295,7 +295,7 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
         # Seat
         if hasattr(billing_model, "seat_config") and billing_model.seat_config:
             seats = usage_data.get("seats", 0)
-            cfg = billing_model.seat_config[0]
+            cfg = billing_model.seat_config
             total_cost += cfg.price_per_seat * seats
         # Activity
         activities = usage_data.get("actions", 0)

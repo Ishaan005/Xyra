@@ -75,26 +75,22 @@ class XyraClient:
         # Return single or list based on number of configs
         return results[0] if len(results) == 1 else results
 
-    async def record_cost(self, usage_data: Dict[str, Any], currency: str = 'USD') -> Any:
+    async def record_cost(self, amount: float, cost_type: str , currency: str) -> Dict[str, Any]:
         """
-        Record cost for the agent automatically based on billing model config.
-        The usage_data dict is passed as 'details' to the server, which will compute the amount.
+        Record a cost for the agent.
+
+        Args:
+            amount: Numeric cost amount.
+            cost_type: Type of cost (default "token").
+            currency: Currency code (default "USD").
         """
-        # Fetch agent and billing model
-        agent = await self._get(f"/api/v1/agents/{self.agent_id}")
-        bm_id = agent.get("billing_model_id")
-        if not bm_id:
-            raise ValueError("Agent has no billing model assigned")
-        # use model_type as cost_type
-        bm = await self._get(f"/api/v1/billing-models/{bm_id}")
-        cost_type = bm.get('model_type')
         path = f"/api/v1/agents/{self.agent_id}/costs"
         payload = {
             'agent_id': self.agent_id,
             'cost_type': cost_type,
-            'amount': 0,  # server will ignore and compute from details
+            'amount': amount,
             'currency': currency,
-            'details': usage_data or {}
+            'details': {}
         }
         return await self._post(path, payload)
 
