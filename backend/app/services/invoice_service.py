@@ -1,6 +1,6 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import uuid
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -47,7 +47,7 @@ def generate_invoice_number() -> str:
     Generate a unique invoice number with format: INV-YYYYMMDD-XXXX
     where XXXX is a unique identifier
     """
-    today = datetime.utcnow().strftime("%Y%m%d")
+    today = datetime.now(timezone.utc).strftime("%Y%m%d")
     unique_id = str(uuid.uuid4())[-4:].upper()
     return f"INV-{today}-{unique_id}"
 
@@ -86,7 +86,7 @@ def create_invoice(db: Session, invoice_in: InvoiceCreate) -> Invoice:
     invoice = Invoice(
         organization_id=invoice_in.organization_id,
         invoice_number=invoice_number,
-        issue_date=datetime.utcnow(),
+        issue_date=datetime.now(timezone.utc),
         due_date=invoice_in.due_date,
         status="pending",
         amount=amount,
@@ -194,7 +194,7 @@ def mark_invoice_as_paid(db: Session, invoice_id: int, payment_method: str, paym
     # Update invoice
     invoice.status = "paid"
     invoice.payment_method = payment_method
-    invoice.payment_date = payment_date or datetime.utcnow()
+    invoice.payment_date = payment_date or datetime.now(timezone.utc)
     
     # Commit changes to database
     db.commit()
@@ -231,7 +231,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
         end_date = datetime(year, month + 1, 1) - timedelta(days=1)
     
     # Set due date to 15 days from invoice generation
-    due_date = datetime.utcnow() + timedelta(days=15)
+    due_date = datetime.now(timezone.utc) + timedelta(days=15)
     
     # Generate invoice number
     invoice_number = generate_invoice_number()

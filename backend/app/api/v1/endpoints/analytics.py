@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -44,9 +44,9 @@ def get_organization_summary(
     
     # Set default date range if not provided
     if not start_date:
-        start_date = datetime.utcnow() - timedelta(days=30)
+        start_date = datetime.now(timezone.utc) - timedelta(days=30)
     if not end_date:
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
     
     # Get all agents for this organization
     agents = agent_service.get_agents_by_organization(db, org_id=org_id)
@@ -157,9 +157,9 @@ def get_top_agents(
     
     # Set default date range if not provided
     if not start_date:
-        start_date = datetime.utcnow() - timedelta(days=30)
+        start_date = datetime.now(timezone.utc) - timedelta(days=30)
     if not end_date:
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
     
     # Get all agents for this organization
     agents = agent_service.get_agents_by_organization(db, org_id=org_id)
@@ -258,7 +258,7 @@ def get_agent_daily_metrics(
         )
     
     # Calculate date range
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=days)
     
     # Generate list of days
@@ -341,9 +341,9 @@ def get_activity_breakdown(
     
     # Set default date range if not provided
     if not start_date:
-        start_date = datetime.utcnow() - timedelta(days=30)
+        start_date = datetime.now(timezone.utc) - timedelta(days=30)
     if not end_date:
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
     
     # Get all agents for this organization
     agents = agent_service.get_agents_by_organization(db, org_id=org_id)

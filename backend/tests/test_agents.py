@@ -1,5 +1,4 @@
 import pytest
-from datetime import datetime
 
 AGENT_DATA = {
     "name": "Agent One",

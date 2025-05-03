@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -65,7 +65,7 @@ def create_agent(db: Session, agent_in: AgentCreate) -> Agent:
         config=agent_in.config,
         is_active=agent_in.is_active,
         external_id=agent_in.external_id,
-        last_active=datetime.utcnow(),
+        last_active=datetime.now(timezone.utc),
     )
     
     # Add agent to database
@@ -96,7 +96,7 @@ def update_agent(db: Session, agent_id: int, agent_in: AgentUpdate) -> Optional[
     
     # Update last active timestamp if the agent is active
     if agent.is_active:
-        agent.last_active = datetime.utcnow()
+        agent.last_active = datetime.now(timezone.utc)
     
     # Commit changes to database
     db.commit()
@@ -140,7 +140,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
     activity = AgentActivityModel(
         agent_id=activity_in.agent_id,
         activity_type=activity_in.activity_type,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         activity_metadata=activity_in.activity_metadata,
     )
     
@@ -149,7 +149,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
     db.commit()
     db.refresh(activity)
     # Update agent's last active timestamp
-    agent.last_active = datetime.utcnow()
+    agent.last_active = datetime.now(timezone.utc)
     db.commit()
 
     logger.info(f"Recorded activity {activity.activity_type} for agent: {agent.name}")
@@ -164,7 +164,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
             cost_type="activity",
             amount=cost_amt,
             currency="USD",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             details={"activity_id": activity.id}
         )
         db.add(cost_entry)
@@ -198,7 +198,7 @@ def record_agent_cost(db: Session, cost_in: AgentCostCreate) -> AgentCostModel:
         cost_type=cost_in.cost_type,
         amount=amount,
         currency=cost_in.currency,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         details=cost_in.details,
     )
     
@@ -226,7 +226,7 @@ def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOu
         outcome_type=outcome_in.outcome_type,
         value=outcome_in.value,
         currency=outcome_in.currency,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         details=outcome_in.details,
         verified=outcome_in.verified,
     )
@@ -247,7 +247,7 @@ def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOu
             cost_type="outcome",
             amount=cost_amt,
             currency=outcome.currency,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             details={"outcome_id": outcome.id}
         )
         db.add(cost_entry)

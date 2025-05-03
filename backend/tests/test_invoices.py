@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 @pytest.fixture()
 def setup_org(client, token):
@@ -41,7 +41,7 @@ def test_read_invoices_empty(client, token, setup_org):
 
 def test_create_invoice(client, token, setup_org, invoice_items):
     headers = {"Authorization": f"Bearer {token}"}
-    due_date = (datetime.utcnow() + timedelta(days=7)).isoformat()
+    due_date = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     data = {
         "organization_id": setup_org,
         "due_date": due_date,
@@ -90,13 +90,13 @@ def test_cancel_invoice(client, token):
 def test_pay_invoice(client, token, setup_org, invoice_items):
     # Create new invoice for payment
     headers = {"Authorization": f"Bearer {token}"}
-    due_date = (datetime.utcnow() + timedelta(days=7)).isoformat()
+    due_date = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     data = {"organization_id": setup_org, "due_date": due_date, "items": invoice_items}
     res = client.post("/api/v1/invoices/", json=data, headers=headers)
     new_inv = res.json()
     inv_id = new_inv["id"]
 
-    payment_data = {"payment_method": "card", "payment_date": datetime.utcnow().isoformat()}
+    payment_data = {"payment_method": "card", "payment_date": datetime.now(timezone.utc).isoformat()}
     response = client.post(
         f"/api/v1/invoices/{inv_id}/pay",
         json=payment_data,
