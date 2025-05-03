@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Any, Union, List
+from __future__ import annotations
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -31,6 +32,10 @@ class BillingModelInDBBase(BillingModelBase):
     organization_id: int
     created_at: datetime
     updated_at: datetime
+    # Nested config from dedicated tables
+    seat_config: Optional["SeatBasedConfigSchema"] = None
+    activity_config: Optional[List["ActivityBasedConfigSchema"]] = None
+    outcome_config: Optional[List["OutcomeBasedConfigSchema"]] = None
     
     class Config:
         from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility

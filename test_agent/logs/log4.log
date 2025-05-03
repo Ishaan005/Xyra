@@ -4,6 +4,3 @@
 [2025-02-21 13:13:15] ERROR  ResourceManager: Resource creation failed due to missing dependencies.
 [2025-02-21 13:14:02] WARNING  ResourceManager: Retrying resource creation...
 [2025-02-21 13:15:30] ERROR  ResourceManager: Retry failed - dependency resolution unsuccessful.
-[2025-04-28 09:19:18] ALERT  DevopsAssistant: Resource deployment failure detected in 'ResourceX'. Redeploying resource.
-[2025-04-28 09:19:18] INFO   DeploymentManager: Redeployment request submitted.
-[2025-04-28 09:19:18] INFO   DeploymentManager: Service successfully redeployed, resource 'ResourceX' created successfully.

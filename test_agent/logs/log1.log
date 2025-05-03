@@ -4,7 +4,3 @@
 [2025-02-21 10:16:02] WARNING  ServiceX: Retrying connection...
 [2025-02-21 10:16:30] ERROR  ServiceX: Connection retry failed.
 [2025-02-21 10:18:14] ERROR  ServiceX: Critical failure - unable to connect to DatabaseY.
-
-[2025-04-28 09:15:52] ALERT  DevopsAssistant: Multiple failures detected in ServiceX. Restarting service.
-[2025-04-28 09:15:52] INFO  ServiceX: Restart initiated.
-[2025-04-28 09:15:52] INFO  ServiceX: Service restarted successfully.

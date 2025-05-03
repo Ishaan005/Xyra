@@ -23,6 +23,26 @@ class BillingModel(BaseModel):
     # Relationships
     organization = relationship("Organization", back_populates="billing_models")
     agents = relationship("Agent", back_populates="billing_model")
+    # Dedicated config relationships
+    seat_config = relationship(
+        "SeatBasedConfig",
+        uselist=False,
+        back_populates="billing_model",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True
+    )
+    activity_config = relationship(
+        "ActivityBasedConfig",
+        back_populates="billing_model",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True
+    )
+    outcome_config = relationship(
+        "OutcomeBasedConfig",
+        back_populates="billing_model",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True
+    )
     
     def __str__(self) -> str:
         return f"BillingModel(name={self.name}, type={self.model_type})"
@@ -31,31 +51,31 @@ class SeatBasedConfig(BaseModel):
     """
     Configuration for seat-based billing
     """
-    billing_model_id = Column(Integer, ForeignKey("billingmodel.id"), nullable=False)
+    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
     price_per_seat = Column(Float, nullable=False)
     billing_frequency = Column(String, nullable=False, default="monthly")  # monthly, quarterly, yearly
     
     # Relationship
-    billing_model = relationship("BillingModel", backref="seat_config")
+    billing_model = relationship("BillingModel", back_populates="seat_config")
 
 class ActivityBasedConfig(BaseModel):
     """
     Configuration for activity-based billing
     """
-    billing_model_id = Column(Integer, ForeignKey("billingmodel.id"), nullable=False)
+    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
     price_per_action = Column(Float, nullable=False)
     action_type = Column(String, nullable=False)  # api_call, query, task, etc.
     
     # Relationship
-    billing_model = relationship("BillingModel", backref="activity_config")
+    billing_model = relationship("BillingModel", back_populates="activity_config")
 
 class OutcomeBasedConfig(BaseModel):
     """
     Configuration for outcome-based billing
     """
-    billing_model_id = Column(Integer, ForeignKey("billingmodel.id"), nullable=False)
+    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
     outcome_type = Column(String, nullable=False)  # revenue_uplift, cost_savings, etc.
     percentage = Column(Float, nullable=False)  # e.g., 5% of revenue uplift
     
     # Relationship
-    billing_model = relationship("BillingModel", backref="outcome_config")
+    billing_model = relationship("BillingModel", back_populates="outcome_config")

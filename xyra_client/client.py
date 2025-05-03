@@ -37,66 +37,90 @@ class XyraClient:
             response.raise_for_status()
             return response.json()
 
-    async def record_activity(self, activity_type: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def _get(self, path: str) -> Dict[str, Any]:
         """
-        Record an activity for the agent.
+        Internal helper to send GET requests to the Xyra API.
+        """
+        url = f"{self.base_url}{path}"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
 
-        Args:
-            activity_type: Type of the activity (e.g. "file_processed").
-            metadata: Arbitrary metadata about the activity.
+    async def record_activity(self, metadata: Optional[Dict[str, Any]] = None) -> Any:
         """
-        path = f"/api/v1/agents/{self.agent_id}/activities"
-        payload = {
-            'agent_id': self.agent_id,
-            'activity_type': activity_type,
-            'activity_metadata': metadata or {}
-        }
-        return await self._post(path, payload)
+        Record configured activities for the agent automatically.
+        Fetches the agent's billing model, retrieves its ActivityBasedConfig entries,
+        and posts an activity event for each configured action_type.
+        """
+        # Fetch agent to get billing_model_id
+        agent = await self._get(f"/api/v1/agents/{self.agent_id}")
+        bm_id = agent.get("billing_model_id")
+        if not bm_id:
+            raise ValueError("Agent has no billing_model_id assigned")
+        # Fetch billing model to get activity_config list
+        bm = await self._get(f"/api/v1/billing-models/{bm_id}")
+        configs = bm.get("activity_config") or []
+        if not configs:
+            raise ValueError("No activity-based config found for billing model")
+        results = []
+        for cfg in configs:
+            activity_type = cfg.get("action_type")
+            payload = {
+                'agent_id': self.agent_id,
+                'activity_type': activity_type,
+                'activity_metadata': metadata or {}
+            }
+            results.append(await self._post(f"/api/v1/agents/{self.agent_id}/activities", payload))
+        # Return single or list based on number of configs
+        return results[0] if len(results) == 1 else results
 
-    async def record_cost(self, amount: float, cost_type: str , currency: str) -> Dict[str, Any]:
+    async def record_cost(self, usage_data: Dict[str, Any], currency: str = 'USD') -> Any:
         """
-        Record a cost for the agent.
-
-        Args:
-            amount: Numeric cost amount.
-            cost_type: Type of cost (default "token").
-            currency: Currency code (default "USD").
+        Record cost for the agent automatically based on billing model config.
+        The usage_data dict is passed as 'details' to the server, which will compute the amount.
         """
+        # Fetch agent and billing model
+        agent = await self._get(f"/api/v1/agents/{self.agent_id}")
+        bm_id = agent.get("billing_model_id")
+        if not bm_id:
+            raise ValueError("Agent has no billing model assigned")
+        # use model_type as cost_type
+        bm = await self._get(f"/api/v1/billing-models/{bm_id}")
+        cost_type = bm.get('model_type')
         path = f"/api/v1/agents/{self.agent_id}/costs"
         payload = {
             'agent_id': self.agent_id,
             'cost_type': cost_type,
-            'amount': amount,
+            'amount': 0,  # server will ignore and compute from details
             'currency': currency,
-            'details': {}
+            'details': usage_data or {}
         }
         return await self._post(path, payload)
 
-    async def record_outcome(
-        self,
-        outcome_type: str,
-        value: float,
-        currency: str,  
-        details: Optional[Dict[str, Any]] = None,
-        verified: bool = True
-    ) -> Dict[str, Any]:
+    async def record_outcome(self, value: float, currency: str = 'USD', details: Optional[Dict[str, Any]] = None, verified: bool = True) -> Any:
         """
-        Record an outcome for the agent.
-
-        Args:
-            outcome_type: Type classification of the outcome.
-            value: Numeric value of the outcome.
-            currency: Currency code (default "USD").
-            details: Additional details (default empty dict).
-            verified: Whether the outcome is verified (default True).
+        Record outcome for the agent automatically based on billing model config.
+        The server will compute cost and store outcome entries for each configured outcome_type.
         """
-        path = f"/api/v1/agents/{self.agent_id}/outcomes"
-        payload = {
-            'agent_id': self.agent_id,
-            'outcome_type': outcome_type,
-            'value': value,
-            'currency': currency,
-            'details': details or {},
-            'verified': verified
-        }
-        return await self._post(path, payload)
+        # Fetch agent and billing model
+        agent = await self._get(f"/api/v1/agents/{self.agent_id}")
+        bm_id = agent.get("billing_model_id")
+        if not bm_id:
+            raise ValueError("Agent has no billing model assigned")
+        bm = await self._get(f"/api/v1/billing-models/{bm_id}")
+        configs = bm.get('outcome_config') or []
+        if not configs:
+            raise ValueError("No outcome config found for billing model")
+        results = []
+        for cfg in configs:
+            payload = {
+                'agent_id': self.agent_id,
+                'outcome_type': cfg.get('outcome_type'),
+                'value': value,
+                'currency': currency,
+                'details': details or {},
+                'verified': verified
+            }
+            results.append(await self._post(f"/api/v1/agents/{self.agent_id}/outcomes", payload))
+        return results[0] if len(results) == 1 else results
