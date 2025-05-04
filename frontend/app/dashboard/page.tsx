@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { setAuthToken } from "../../utils/api"
 import api from "../../utils/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,9 +30,9 @@ export default function DashboardPage() {
   const orgId = 1 // TODO: obtain dynamically
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (status === 'unauthenticated') return router.push('/login')
-    if (status === 'authenticated' && session?.user?.accessToken) setAuthToken(session.user.accessToken)
+    if (status === "loading") return
+    if (status === "unauthenticated") return router.push("/login")
+    if (status === "authenticated" && session?.user?.accessToken) setAuthToken(session.user.accessToken)
   }, [status, session, router])
 
   const [summary, setSummary] = useState<any>(null)

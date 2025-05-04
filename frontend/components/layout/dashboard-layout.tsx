@@ -28,7 +28,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <SidebarNav />
           </div>
           <main className="w-full">
-            <div className="mx-auto px-4 md:px-6 w-full">{children}</div>
+            <div className="container mx-auto px-4 md:px-6 w-full">{children}</div>
           </main>
         </div>
       </div>

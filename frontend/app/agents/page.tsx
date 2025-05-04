@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, Fragment } from "react"
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import api, { setAuthToken } from "@/utils/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -87,17 +87,18 @@ export default function AgentsPage() {
   }
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (status === 'unauthenticated') {
-      router.push('/login')
+    if (status === "loading") return
+    if (status === "unauthenticated") {
+      router.push("/login")
       return
     }
     if (session?.user?.accessToken) {
       setAuthToken(session.user.accessToken)
       fetchAgents()
       // fetch billing models for dropdown
-      api.get<{ id: number; name: string }[]>('/billing-models', { params: { org_id: 1 } })
-        .then(res => setBillingModels(res.data))
+      api
+        .get<{ id: number; name: string }[]>("/billing-models", { params: { org_id: 1 } })
+        .then((res) => setBillingModels(res.data))
         .catch(() => {})
     }
   }, [status, session, router])
@@ -185,9 +186,10 @@ export default function AgentsPage() {
   })
 
   return (
-    <div className="p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto">
+    <div className="container mx-auto p-8 m-0 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-12 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
+        <div className="flex items-center gap-3">
           <div className="rounded-full bg-gold/10 p-2">
             <Zap className="h-6 w-6 text-gold" />
           </div>
@@ -196,7 +198,6 @@ export default function AgentsPage() {
             <p className="text-muted-foreground">Manage your AI agents and their billing models</p>
           </div>
         </div>
-
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
