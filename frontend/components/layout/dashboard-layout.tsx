@@ -20,18 +20,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen flex-col">
+      <div className="flex flex-col">
         <Header />
         <div className="flex flex-1 w-full">
-          <div className="hidden md:block">
-            <SidebarNav />
-          </div>
-          <main className="w-full">
-            <div className="container mx-auto px-4 md:px-6 w-full">{children}</div>
+          <SidebarProvider>
+              <SidebarNav />
+          </SidebarProvider>
+          <main>
+            <div className="px-4 md:px-6">{children}</div>
           </main>
         </div>
       </div>
-    </SidebarProvider>
+
   )
 }
