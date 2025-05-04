@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, Fragment } from "react"
-import { useRouter } from "next/navigation"
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import api, { setAuthToken } from "@/utils/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +47,8 @@ interface AgentStats {
 }
 
 export default function AgentsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [agents, setAgents] = useState<Agent[]>([])
   const [agentStats, setAgentStats] = useState<Record<number, AgentStats>>({})
   const [loading, setLoading] = useState(true)
@@ -59,7 +62,6 @@ export default function AgentsPage() {
     billing_model_id: "",
   })
   const [billingModels, setBillingModels] = useState<{ id: number; name: string }[]>([])
-  const router = useRouter()
 
   const [editAgentId, setEditAgentId] = useState<number | null>(null)
   const [editData, setEditData] = useState({
@@ -73,8 +75,6 @@ export default function AgentsPage() {
   const fetchAgents = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem("token")
-      if (token) setAuthToken(token)
       const res = await api.get<Agent[]>("/agents", {
         params: { org_id: 1 },
       })
@@ -87,13 +87,20 @@ export default function AgentsPage() {
   }
 
   useEffect(() => {
-    fetchAgents()
-    // fetch billing models for dropdown
-    api
-      .get<{ id: number; name: string }[]>("/billing-models", { params: { org_id: 1 } })
-      .then((res) => setBillingModels(res.data))
-      .catch(() => {})
-  }, [])
+    if (status === 'loading') return
+    if (status === 'unauthenticated') {
+      router.push('/login')
+      return
+    }
+    if (session?.user?.accessToken) {
+      setAuthToken(session.user.accessToken)
+      fetchAgents()
+      // fetch billing models for dropdown
+      api.get<{ id: number; name: string }[]>('/billing-models', { params: { org_id: 1 } })
+        .then(res => setBillingModels(res.data))
+        .catch(() => {})
+    }
+  }, [status, session, router])
 
   // fetch stats for each agent when list changes
   useEffect(() => {
@@ -180,8 +187,7 @@ export default function AgentsPage() {
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">        <div className="flex items-center gap-3">
           <div className="rounded-full bg-gold/10 p-2">
             <Zap className="h-6 w-6 text-gold" />
           </div>
@@ -218,7 +224,7 @@ export default function AgentsPage() {
       )}
 
       {/* Create New Agent Card */}
-      <Card className="border-border/50 shadow-sm overflow-hidden">
+      <Card className="border-border/50 shadow-gray w-full">
         <CardHeader className="bg-gradient-to-r from-gold/5 to-transparent">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

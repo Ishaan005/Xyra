@@ -10,6 +10,7 @@ from app.api import deps
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.services import user_service
+from app.schemas.user import UserCreate
 
 # Create router
 router = APIRouter()
@@ -69,3 +70,22 @@ def read_users_me(
     Get current user information
     """
     return current_user
+
+
+# Signup endpoint: create user and return JWT
+@router.post("/signup", response_model=schemas.Token)
+def signup(
+    user_in: UserCreate,
+    db: Session = Depends(deps.get_db)
+) -> Any:
+    """
+    Register a new user and return an access token
+    """
+    try:
+        user = user_service.create_user(db, user_in)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    # Create JWT for newly registered user
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(user.id, expires_delta=access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer"}

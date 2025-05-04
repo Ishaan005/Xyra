@@ -15,19 +15,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
 
   // Don't show dashboard layout on landing page and login page
-  if (pathname === "/" || pathname === "/login") {
+  if (pathname === "/" || pathname === "/login" || pathname === "/signup") {
     return <>{children}</>
   }
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
-        <div className="hidden md:block w-64 sticky top-0 h-screen">
-          <SidebarNav />
-        </div>
-        <div className="flex flex-col flex-1">
-          <Header />
-          <main className="px-4 md:px-8">{children}</main>
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <div className="flex flex-1 w-full">
+          <div className="hidden md:block">
+            <SidebarNav />
+          </div>
+          <main className="w-full">
+            <div className="mx-auto px-4 md:px-6 w-full">{children}</div>
+          </main>
         </div>
       </div>
     </SidebarProvider>

@@ -3,7 +3,8 @@
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import api, { setAuthToken } from "../../utils/api"
+import { signIn } from 'next-auth/react'
+import toast from 'react-hot-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,23 +24,20 @@ export default function LoginPage() {
     setError(null)
     setIsLoading(true)
 
-    try {
-      const params = new URLSearchParams()
-      params.append("username", email)
-      params.append("password", password)
-
-      const res = await api.post("/auth/login", params, {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      })
-
-      const token = res.data.access_token
-      localStorage.setItem("token", token)
-      setAuthToken(token)
-      router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message)
-    } finally {
+    // use NextAuth signIn
+    const result = await signIn('credentials', {
+      redirect: false,
+      username: email,
+      password,
+      callbackUrl: '/dashboard'
+    })
+    if (result?.error) {
+      setError(result.error)
+      toast.error(result.error)
       setIsLoading(false)
+    } else {
+      toast.success('Signed in successfully')
+      router.push('/dashboard')
     }
   }
 
@@ -54,7 +52,7 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold">Business Engine</h1>
+          <h1 className="text-3xl font-bold">Xyra</h1>
           <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
 

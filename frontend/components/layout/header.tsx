@@ -4,8 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, Zap, Bell } from "lucide-react"
+import { useSession, signOut, signIn } from 'next-auth/react'
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -19,35 +19,42 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { SidebarNav } from "@/components/layout/sidebar-nav"
 
 export function Header() {
+  const { data: session, status } = useSession()
+
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // Skip header on landing page and login page
-  if (pathname === "/" || pathname === "/login") {
-    return null
+  // Skip header on landing page
+  if (pathname === "/") return null
+
+  // While loading session, don't render header
+  if (status === 'loading') return null
+
+  // If unauthenticated, show sign in/up buttons
+  if (!session) {
+    return (
+      <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background bg-white">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="rounded-md bg-gold p-1">
+            <Zap className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-xl font-bold">Xyra</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link href = "/login">
+            <Button variant="outline" size="sm">Sign In</Button>
+          </Link>
+          <Link href="/signup">
+            <Button size="sm">Sign Up</Button>
+          </Link>
+        </div>
+      </header>
+    )
   }
 
-  // const getPageTitle = () => {
-  //   switch (pathname) {
-  //     case "/dashboard":
-  //       return "Dashboard"
-  //     case "/pricing":
-  //       return "Pricing Models"
-  //     case "/agents":
-  //       return "Agents"
-  //     case "/customers":
-  //       return "Customers"
-  //     case "/reports":
-  //       return "Reports"
-  //     case "/settings":
-  //       return "Settings"
-  //     default:
-  //       return "Business Engine"
-  //   }
-  // }
-
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 bg-white">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background bg-white">
+      <div className="container mx-auto flex items-center justify-between">
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="md:hidden">
@@ -105,11 +112,12 @@ export function Header() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <span>Log out</span>
+              <span onClick={() => signOut({ callbackUrl: '/login' })}>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+    </div>
     </header>
   )
 }

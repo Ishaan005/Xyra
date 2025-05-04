@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { setAuthToken } from "../../utils/api"
 import api from "../../utils/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,18 +25,24 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 
 export default function DashboardPage() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const orgId = 1 // TODO: obtain dynamically
+
+  useEffect(() => {
+    if (status === 'loading') return
+    if (status === 'unauthenticated') return router.push('/login')
+    if (status === 'authenticated' && session?.user?.accessToken) setAuthToken(session.user.accessToken)
+  }, [status, session, router])
+
   const [summary, setSummary] = useState<any>(null)
   const [topAgents, setTopAgents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState("month")
 
+  // fetch summary and top agents
   useEffect(() => {
-    // Load token from localStorage if present
-    const token = localStorage.getItem("token")
-    if (token) setAuthToken(token)
-
     Promise.all([
       api.get(`/analytics/organization/${orgId}/summary`),
       api.get(`/analytics/organization/${orgId}/top-agents?limit=5`),
@@ -151,7 +159,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto">
+    <div className="p-4 md:p-8 space-y-8 mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
         <div>

@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from 'next-auth/react'
 import api, { setAuthToken } from "../../utils/api"
+import toast from 'react-hot-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -56,16 +58,17 @@ export default function PricingPage() {
     include_outcome: false,
   })
 
+  const { data: session, status } = useSession()
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) {
-      router.push("/login")
+    if (status === 'loading') return
+    if (status === 'unauthenticated') {
+      router.push('/login')
       return
     }
-    setAuthToken(token)
-    // fetch current user to get organization_id
+    // authenticated
+    setAuthToken(session?.user?.accessToken ?? "")
     api
-      .get("/auth/me")
+      .get('/auth/me')
       .then((res) => {
         const oid = res.data.organization_id
         setOrgId(oid)
@@ -74,7 +77,7 @@ export default function PricingPage() {
       .then((res) => setModels(res.data))
       .catch((err) => setError(err.response?.data?.detail || err.message))
       .finally(() => setLoading(false))
-  }, [router])
+  }, [status, session, router])
 
   const handleCreateModel = async () => {
     if (!orgId || !newModel.name || !newModel.model_type) return
@@ -150,8 +153,11 @@ export default function PricingPage() {
         include_activity: false,
         include_outcome: false,
       })
+      toast.success('Pricing model created successfully')
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message)
+      const msg = err.response?.data?.detail || err.message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -168,8 +174,11 @@ export default function PricingPage() {
 
       const res = await api.post("/billing-models", payload)
       setModels((prev) => [...prev, res.data])
+      toast.success('Pricing model duplicated')
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message)
+      const msg = err.response?.data?.detail || err.message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -180,8 +189,11 @@ export default function PricingPage() {
     try {
       await api.delete(`/billing-models/${modelId}`);
       setModels(prev => prev.filter(m => m.id !== modelId));
+      toast.success('Pricing model deleted')
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message);
+      const msg = err.response?.data?.detail || err.message
+      setError(msg)
+      toast.error(msg)
     }
   }
 

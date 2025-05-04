@@ -16,5 +16,10 @@
             "readOnly": false,
             "connectionTimeout": 30
         }
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
