@@ -55,14 +55,6 @@ export function SidebarNav() {
 
   return (
     <Sidebar>
-      <SidebarHeader>
-        <Link href="/" className="flex items-center gap-2 px-4 py-4">
-          <div className="rounded-md bg-gold p-1">
-            <Zap className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold">Xyra</span>
-        </Link>
-      </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
           {routes.map((route) => (

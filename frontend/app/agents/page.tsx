@@ -186,7 +186,7 @@ export default function AgentsPage() {
   })
 
   return (
-    <div className="container mx-auto p-8 m-0 space-y-8">
+    <div className="p-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-12 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
         <div className="flex items-center gap-3">
@@ -198,8 +198,8 @@ export default function AgentsPage() {
             <p className="text-muted-foreground">Manage your AI agents and their billing models</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
+        <div className="flex items-center gap-3 md:w-auto">
+          <div className="relative md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search agents..."
@@ -225,7 +225,7 @@ export default function AgentsPage() {
       )}
 
       {/* Create New Agent Card */}
-      <Card className="border-border/50 shadow-gray w-full">
+      <Card className="border-border/50 shadow-gray">
         <CardHeader className="bg-gradient-to-r from-gold/5 to-transparent">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

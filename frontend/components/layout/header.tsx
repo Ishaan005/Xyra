@@ -53,8 +53,8 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background bg-white">
-      <div className="container mx-auto flex items-center justify-between">
+    <header className="flex h-16 border-b bg-white">
+      <div className="container mx-auto flex items-center">
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="md:hidden">
@@ -77,7 +77,12 @@ export function Header() {
       </div>
 
       <div className="flex-1 md:ml-2">
-        {/* <h1 className="text-xl font-bold">{getPageTitle()}</h1> */}
+        <Link href="/" className="flex items-center gap-2 px-4 py-4">
+            <div className="rounded-md bg-gold p-1">
+              <Zap className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-bold">Xyra</span>
+        </Link>
       </div>
 
       <div className="flex items-center gap-4">

@@ -159,9 +159,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-8 mx-auto">
+    <div className="p-8 md:p-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between md:items-center bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
         <div>
           <h1 className="text-3xl font-bold">Organization Dashboard</h1>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground">

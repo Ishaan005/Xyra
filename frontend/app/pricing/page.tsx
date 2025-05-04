@@ -235,7 +235,7 @@ export default function PricingPage() {
   })
 
   return (
-    <div className="container mx-auto p-8 m-0 space-y-8">
+    <div className="p-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
         <div className="flex items-center gap-3">
