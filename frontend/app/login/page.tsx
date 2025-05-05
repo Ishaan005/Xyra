@@ -24,21 +24,12 @@ export default function LoginPage() {
     setError(null)
     setIsLoading(true)
 
-    // use NextAuth signIn
-    const result = await signIn('credentials', {
-      redirect: false,
+    // use NextAuth signIn with redirect to set cookie
+    await signIn('credentials', {
       username: email,
       password,
       callbackUrl: '/dashboard'
     })
-    if (result?.error) {
-      setError(result.error)
-      toast.error(result.error)
-      setIsLoading(false)
-    } else {
-      toast.success('Signed in successfully')
-      router.push('/dashboard')
-    }
   }
 
   return (

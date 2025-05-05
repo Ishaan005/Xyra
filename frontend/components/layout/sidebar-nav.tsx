@@ -6,15 +6,12 @@ import { BarChart3, CreditCard, Settings, Users, LogOut, HelpCircle, FileText, Z
 
 import {
   Sidebar,
+  SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-  SidebarSeparator,
-} from "@/components/ui/sidebar"
+  SidebarNav as Nav,
+  SidebarNavItem,
+} from "@/components/ui/custom-sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Separator } from "@/components/ui/separator"
 
 export function SidebarNav() {
   const pathname = usePathname()
@@ -33,52 +31,48 @@ export function SidebarNav() {
   const routes = [
     {
       href: "/dashboard",
-      icon: BarChart3,
+      icon: <BarChart3 className="h-5 w-5" />,
       title: "Dashboard",
     },
     {
       href: "/pricing",
-      icon: CreditCard,
+      icon: <CreditCard className="h-5 w-5" />,
       title: "Pricing Models",
     },
     {
       href: "/agents",
-      icon: Zap,
+      icon: <Zap className="h-5 w-5" />,
       title: "Agents",
     },
     {
       href: "/settings",
-      icon: Settings,
+      icon: <Settings className="h-5 w-5" />,
       title: "Settings",
     },
   ]
 
   return (
     <Sidebar>
+      <SidebarHeader>
+        <Link href="/" className="flex items-center gap-2">
+          <div className="rounded-md bg-gold p-1">
+            <Zap className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-xl font-bold">Xyra</span>
+        </Link>
+      </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
+        <Nav>
           {routes.map((route) => (
-            <SidebarMenuItem key={route.href}>
-              <SidebarMenuButton asChild isActive={pathname === route.href} tooltip={route.title}>
-                <Link
-                  href={route.href}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors ${
-                    pathname === route.href
-                      ? 'bg-gold-light'
-                      : 'hover:bg-gold-20 hover:text-foreground'
-                  }`}
-                >
-                  <route.icon className="h-5 w-5" />
-                  <span>{route.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <Link href={route.href} key={route.href} className="block">
+              <SidebarNavItem icon={route.icon} title={route.title} isActive={pathname === route.href} />
+            </Link>
           ))}
-        </SidebarMenu>
+        </Nav>
       </SidebarContent>
-      <SidebarSeparator />
-      <SidebarFooter className="p-4">
-        <div className="flex items-center justify-between">
+      <Separator className="mx-2" />
+      <SidebarFooter>
+        <div className="flex items-center justify-between bg-white">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 rounded-full">
@@ -106,14 +100,13 @@ export function SidebarNav() {
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
+                <span onClick={() => (window.location.href = "/login")}>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <ThemeToggle />
         </div>
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   )
 }

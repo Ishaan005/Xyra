@@ -47,8 +47,13 @@ interface AgentStats {
 }
 
 export default function AgentsPage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      router.push('/login')
+    }
+  })
   const [agents, setAgents] = useState<Agent[]>([])
   const [agentStats, setAgentStats] = useState<Record<number, AgentStats>>({})
   const [loading, setLoading] = useState(true)
@@ -87,20 +92,14 @@ export default function AgentsPage() {
   }
 
   useEffect(() => {
-    if (status === "loading") return
-    if (status === "unauthenticated") {
-      router.push("/login")
-      return
-    }
-    if (session?.user?.accessToken) {
-      setAuthToken(session.user.accessToken)
-      fetchAgents()
-      // fetch billing models for dropdown
-      api
-        .get<{ id: number; name: string }[]>("/billing-models", { params: { org_id: 1 } })
-        .then((res) => setBillingModels(res.data))
-        .catch(() => {})
-    }
+    if (status !== 'authenticated') return
+    // authenticated: set token and fetch data
+    const token = session.user.accessToken ?? ""
+    setAuthToken(token)
+    fetchAgents()
+    api.get<{ id: number; name: string }[]>('/billing-models', { params: { org_id: 1 } })
+      .then(res => setBillingModels(res.data))
+      .catch(() => {})
   }, [status, session, router])
 
   // fetch stats for each agent when list changes

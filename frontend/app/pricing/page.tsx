@@ -29,6 +29,12 @@ import {
 
 export default function PricingPage() {
   const router = useRouter()
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      router.push('/login')
+    }
+  })
   const [models, setModels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,26 +62,21 @@ export default function PricingPage() {
     include_outcome: false,
   })
 
-  const { data: session, status } = useSession()
   useEffect(() => {
-    if (status === "loading") return
-    if (status === "unauthenticated") {
-      router.push("/login")
-      return
-    }
-    // authenticated
-    setAuthToken(session?.user?.accessToken ?? "")
-    api
-      .get("/auth/me")
-      .then((res) => {
+    if (status !== 'authenticated') return
+    const token = session.user.accessToken ?? ""
+    setAuthToken(token)
+    // fetch organization and models
+    api.get('/auth/me')
+      .then(res => {
         const oid = res.data.organization_id
         setOrgId(oid)
         return api.get(`/billing-models?org_id=${oid}`)
       })
-      .then((res) => setModels(res.data))
-      .catch((err) => setError(err.response?.data?.detail || err.message))
+      .then(res => setModels(res.data))
+      .catch(err => setError(err.response?.data?.detail || err.message))
       .finally(() => setLoading(false))
-  }, [status, session, router])
+  }, [status, session])
 
   const handleCreateModel = async () => {
     if (!orgId || !newModel.name || !newModel.model_type) return

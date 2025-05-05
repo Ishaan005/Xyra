@@ -41,8 +41,12 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState("month")
 
-  // fetch summary and top agents
+  // Fetch analytics after authentication
   useEffect(() => {
+    if (status !== 'authenticated') return
+    const token = session.user.accessToken ?? ""
+    setAuthToken(token)
+    setLoading(true)
     Promise.all([
       api.get(`/analytics/organization/${orgId}/summary`),
       api.get(`/analytics/organization/${orgId}/top-agents?limit=5`),
@@ -53,7 +57,7 @@ export default function DashboardPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [status, session])
 
   if (loading) {
     return (

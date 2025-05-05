@@ -1,11 +1,11 @@
 "use client"
 
 import type React from "react"
+import { usePathname } from "next/navigation"
 
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProvider, MainContent, SidebarTrigger } from "@/components/ui/custom-sidebar"
 import { SidebarNav } from "@/components/layout/sidebar-nav"
 import { Header } from "@/components/layout/header"
-import { usePathname } from "next/navigation"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -20,17 +20,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-      <div className="flex flex-col">
-        <Header />
-        <div className="flex flex-1 w-full">
-          <SidebarProvider>
-              <SidebarNav />
-          </SidebarProvider>
-          <main>
-            <div className="px-4 md:px-6">{children}</div>
-          </main>
+    <SidebarProvider>
+      <SidebarNav />
+      <MainContent>
+        <div className="flex min-h-screen flex-col">
+          <Header>
+            <SidebarTrigger className="md:hidden" />
+          </Header>
+          <div className="flex-1 p-4 md:p-6">
+            <div className="max-w-[1400px] mx-auto w-full">{children}</div>
+          </div>
         </div>
-      </div>
-
+      </MainContent>
+    </SidebarProvider>
   )
 }
