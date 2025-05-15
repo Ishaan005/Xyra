@@ -5,10 +5,12 @@ from sqlalchemy.orm import Session
 
 from app import schemas
 from app.api import deps
-from app.services import invoice_service, organization_service
+from app.services import invoice_service, organization_service, stripe_service, pdf_service
+from app.api.v1 import stripe_webhook
 
 router = APIRouter()
 
+router.include_router(stripe_webhook.router, prefix="")
 
 @router.get("/", response_model=List[schemas.Invoice])
 def read_invoices(
@@ -67,7 +69,40 @@ def create_invoice(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    
+
+    # Generate Stripe payment link
+    try:
+        stripe_result = stripe_service.create_checkout_session(
+            amount=invoice.total_amount,
+            currency=invoice.currency,
+            invoice_number=invoice.invoice_number,
+            description=invoice.notes or f"Invoice {invoice.invoice_number}",
+            success_url="https://yourapp.com/success",  # TODO: Make configurable
+            cancel_url="https://yourapp.com/cancel",   # TODO: Make configurable
+        )
+        if stripe_result:
+            invoice = invoice_service.update_invoice(
+                db,
+                invoice_id=invoice.id,
+                invoice_in=schemas.InvoiceUpdate(),
+                extra_fields={
+                    "stripe_checkout_session_id": stripe_result["session_id"],
+                    "stripe_payment_link": stripe_result["payment_link"]
+                }
+            )
+    except Exception:
+        pass  # Optionally log Stripe errors
+
+    # Generate PDF invoice automatically
+    import tempfile
+    pdf_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
+            pdf_service.generate_invoice_pdf(invoice, db.query(organization_service.Organization).filter_by(id=invoice.organization_id).first(), invoice.line_items, tmpfile.name)
+            pdf_path = tmpfile.name
+            # TODO: store the path or upload to cloud storage here
+    except Exception:
+        pass  # TODO: Handle PDF generation errors
     return invoice
 
 
@@ -245,3 +280,24 @@ def generate_monthly_invoice(
         )
     
     return invoice
+
+
+@router.get("/{invoice_id}/pdf")
+def download_invoice_pdf(
+    invoice_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: schemas.User = Depends(deps.get_current_active_user),
+):
+    """
+    Download a PDF version of the invoice.
+    """
+    invoice = invoice_service.get_invoice_with_items(db, invoice_id=invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != invoice.organization_id):
+        raise HTTPException(status_code=403, detail="Not enough permissions to access this invoice")
+    organization = db.query(organization_service.Organization).filter_by(id=invoice.organization_id).first()
+    output_path = f"/tmp/invoice_{invoice.invoice_number}.pdf"
+    pdf_service.generate_invoice_pdf(invoice, organization, invoice.line_items, output_path)
+    from fastapi.responses import FileResponse
+    return FileResponse(output_path, filename=f"invoice_{invoice.invoice_number}.pdf", media_type="application/pdf")

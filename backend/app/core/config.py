@@ -66,7 +66,8 @@ class Settings(BaseSettings):
         return conn_str
     
     # Stripe API key
-    STRIPE_API_KEY: str = os.getenv("STRIPE_API_KEY", "")
+    STRIPE_API_KEY: str = os.getenv("STRIPE_API_KEY")
+    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET")
     
     # Authentication settings for Azure
     AZURE_TENANT_ID: Optional[str] = os.getenv("AZURE_TENANT_ID")

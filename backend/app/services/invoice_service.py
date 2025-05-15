@@ -28,6 +28,13 @@ def get_invoice_by_number(db: Session, invoice_number: str) -> Optional[Invoice]
     return db.query(Invoice).filter(Invoice.invoice_number == invoice_number).first()
 
 
+def get_invoice_by_stripe_session_id(db: Session, session_id: str) -> Optional[Invoice]:
+    """
+    Get invoice by Stripe Checkout Session ID
+    """
+    return db.query(Invoice).filter(Invoice.stripe_checkout_session_id == session_id).first()
+
+
 def get_invoices_by_organization(
     db: Session, org_id: int, skip: int = 0, limit: int = 100, status: Optional[str] = None
 ) -> List[Invoice]:
@@ -124,7 +131,7 @@ def create_invoice(db: Session, invoice_in: InvoiceCreate) -> Invoice:
     return invoice
 
 
-def update_invoice(db: Session, invoice_id: int, invoice_in: InvoiceUpdate) -> Optional[Invoice]:
+def update_invoice(db: Session, invoice_id: int, invoice_in: InvoiceUpdate, extra_fields: dict = None) -> Optional[Invoice]:
     """
     Update an invoice
     """
@@ -139,6 +146,8 @@ def update_invoice(db: Session, invoice_id: int, invoice_in: InvoiceUpdate) -> O
     
     # Update invoice properties - Using model_dump instead of dict for Pydantic v2
     update_data = invoice_in.model_dump(exclude_unset=True)
+    if extra_fields:
+        update_data.update(extra_fields)
     
     # Update invoice attributes
     for field, value in update_data.items():

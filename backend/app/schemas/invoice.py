@@ -84,6 +84,8 @@ class InvoiceInDB(InvoiceBase):
     issue_date: datetime
     payment_method: Optional[str] = None
     stripe_invoice_id: Optional[str] = None
+    stripe_checkout_session_id: Optional[str] = None
+    stripe_payment_link: Optional[str] = None
     payment_date: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
