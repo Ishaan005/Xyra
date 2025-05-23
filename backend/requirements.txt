@@ -13,3 +13,6 @@ python-dotenv
 azure-identity
 azure-keyvault-secrets
 alembic
+bandit
+dkimpy
+safety

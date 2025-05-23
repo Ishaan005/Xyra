@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, CreditCard, Settings, Users, LogOut, HelpCircle, FileText, Zap, User } from "lucide-react"
+import { BarChart3, CreditCard, Settings, Users, LogOut, HelpCircle, FileText, Zap, User, Receipt } from "lucide-react"
 
 import {
   Sidebar,
@@ -33,6 +33,11 @@ export function SidebarNav() {
       href: "/dashboard",
       icon: <BarChart3 className="h-5 w-5" />,
       title: "Dashboard",
+    },
+    {
+      href: "/dashboard/invoices",
+      icon: <Receipt className="h-5 w-5" />,
+      title: "Invoices",
     },
     {
       href: "/pricing",

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { setAuthToken } from "../../utils/api"
 import api from "../../utils/api"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, LineChart } from "@/components/ui/chart"
 import {
@@ -19,10 +19,15 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
+  Receipt,
+  ExternalLink
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
+import { Invoice } from "../../types/invoice"
+import { RecentInvoices } from "@/components/dashboard/recent-invoices"
+import { InvoiceStatistics } from "@/components/dashboard/invoice-statistics"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -34,12 +39,13 @@ export default function DashboardPage() {
     if (status === "unauthenticated") return router.push("/login")
     if (status === "authenticated" && session?.user?.accessToken) setAuthToken(session.user.accessToken)
   }, [status, session, router])
-
   const [summary, setSummary] = useState<any>(null)
   const [topAgents, setTopAgents] = useState<any[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [loadingInvoices, setLoadingInvoices] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [period, setPeriod] = useState("month")
+  const [period, setPeriod] = useState<"week" | "month" | "quarter" | "year">("month")
 
   // Fetch analytics after authentication
   useEffect(() => {
@@ -47,6 +53,8 @@ export default function DashboardPage() {
     const token = session.user.accessToken ?? ""
     setAuthToken(token)
     setLoading(true)
+    
+    // Fetch analytics data
     Promise.all([
       api.get(`/analytics/organization/${orgId}/summary`),
       api.get(`/analytics/organization/${orgId}/top-agents?limit=5`),
@@ -57,6 +65,19 @@ export default function DashboardPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
+    
+    // Fetch recent invoices
+    setLoadingInvoices(true)
+    api.get(`/invoices/?org_id=${orgId}&limit=5`)
+      .then((res) => {
+        setInvoices(res.data)
+      })
+      .catch((err) => {
+        console.error("Error fetching invoices:", err)
+      })
+      .finally(() => {
+        setLoadingInvoices(false)
+      })
   }, [status, session])
 
   if (loading) {
@@ -179,7 +200,7 @@ export default function DashboardPage() {
         <Tabs
           defaultValue="month"
           value={period}
-          onValueChange={setPeriod}
+          onValueChange={(value) => setPeriod(value as "week" | "month" | "quarter" | "year")}
           className="w-full md:w-auto bg-background/80 backdrop-blur-sm rounded-lg p-1 border border-border/50 shadow-sm"
         >
           <TabsList className="grid grid-cols-3 w-full md:w-[300px]">
@@ -308,6 +329,85 @@ export default function DashboardPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Invoice Summary Card */}
+        <Card className="col-span-1 border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-50/30 to-transparent">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Recent Invoices</CardTitle>
+                <CardDescription>Track and manage your recent invoices</CardDescription>
+              </div>
+              <Badge variant="outline" className="bg-blue-100/20 text-blue-700 border-blue-200/30">
+                <Receipt className="h-4 w-4 mr-1" /> Billing
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingInvoices ? (
+              <div className="space-y-2 py-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : invoices.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <div className="rounded-full bg-muted p-3 mb-3">
+                  <Receipt className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-base font-medium mb-1">No Invoices Yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You haven't created any invoices yet.
+                </p>
+                <Button size="sm" variant="outline" onClick={() => router.push('/dashboard/invoices')}>
+                  Create Invoice
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {invoices.slice(0, 4).map((invoice) => (
+                  <div key={invoice.id} className="flex items-center justify-between border-b border-border/40 pb-3">
+                    <div>
+                      <div className="font-medium">Invoice #{invoice.invoice_number}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(invoice.issue_date).toLocaleDateString()} · {invoice.currency} {invoice.total_amount.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {invoice.status === "pending" ? (
+                        <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200">
+                          Pending
+                        </Badge>
+                      ) : invoice.status === "paid" ? (
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-200">
+                          Paid
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">{invoice.status}</Badge>
+                      )}
+                      <Button variant="ghost" size="icon" onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}>
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="bg-muted/20 border-t border-border/30 flex justify-between">
+            <div className="text-sm text-muted-foreground">
+              {invoices.length > 0 ? `Showing ${Math.min(4, invoices.length)} of ${invoices.length} invoices` : "No invoices"}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => router.push('/dashboard/invoices')}
+              className="text-sm"
+            >
+              View All
+            </Button>
+          </CardFooter>
+        </Card>
+
         <Card className="col-span-1 border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-gold/5 to-transparent">
             <div className="flex items-center justify-between">
@@ -459,6 +559,49 @@ export default function DashboardPage() {
               }}
               className="aspect-[4/3]"
             />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Invoice Statistics */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Invoice Overview</h2>
+        <InvoiceStatistics orgId={orgId} period={period} />
+      </div>
+
+      {/* Recent Invoices */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RecentInvoices orgId={orgId} />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Invoice Actions</CardTitle>
+            <CardDescription>Quick actions for invoice management</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Button 
+              onClick={() => router.push('/dashboard/invoices')} 
+              className="w-full justify-between"
+            >
+              View All Invoices 
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/dashboard/invoices/create')} 
+              className="w-full justify-between"
+            >
+              Create New Invoice
+              <Receipt className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/dashboard/invoices?status=pending')} 
+              className="w-full justify-between"
+            >
+              View Pending Invoices
+              <Calendar className="h-4 w-4" />
+            </Button>
           </CardContent>
         </Card>
       </div>
