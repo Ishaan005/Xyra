@@ -184,9 +184,19 @@ def cancel_invoice(db: Session, invoice_id: int) -> Optional[Invoice]:
     return invoice
 
 
-def mark_invoice_as_paid(db: Session, invoice_id: int, payment_method: str, payment_date: Optional[datetime] = None) -> Optional[Invoice]:
+def mark_invoice_as_paid(db: Session, invoice_id: int, payment_method: str, payment_date: Optional[datetime] = None, payment_details: dict = None) -> Optional[Invoice]:
     """
     Mark an invoice as paid
+    
+    Args:
+        db: Database session
+        invoice_id: ID of the invoice to mark as paid
+        payment_method: Payment method used (e.g. 'stripe', 'bank_transfer')
+        payment_date: Date of payment (defaults to now if not provided)
+        payment_details: Additional payment details (optional)
+    
+    Returns:
+        Updated invoice object or None if invoice not found
     """
     invoice = get_invoice(db, invoice_id=invoice_id)
     if not invoice:
@@ -198,18 +208,25 @@ def mark_invoice_as_paid(db: Session, invoice_id: int, payment_method: str, paym
         raise ValueError("Cannot mark a cancelled invoice as paid")
     
     if invoice.status == "paid":
-        raise ValueError("Invoice is already marked as paid")
+        logger.info(f"Invoice {invoice.invoice_number} is already marked as paid")
+        return invoice
     
     # Update invoice
     invoice.status = "paid"
     invoice.payment_method = payment_method
     invoice.payment_date = payment_date or datetime.now(timezone.utc)
     
+    # Update additional payment details if provided
+    if payment_details:
+        for field, value in payment_details.items():
+            if hasattr(invoice, field):
+                setattr(invoice, field, value)
+    
     # Commit changes to database
     db.commit()
     db.refresh(invoice)
     
-    logger.info(f"Marked invoice {invoice.invoice_number} as paid")
+    logger.info(f"Marked invoice {invoice.invoice_number} as paid via {payment_method}")
     return invoice
 
 

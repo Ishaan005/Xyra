@@ -69,12 +69,18 @@ class InvoiceUpdate(BaseModel):
     payment_date: Optional[datetime] = None
     notes: Optional[str] = None
     invoice_metadata: Optional[Dict[str, Any]] = None
+    stripe_invoice_id: Optional[str] = None
+    stripe_checkout_session_id: Optional[str] = None
+    stripe_payment_link: Optional[str] = None
 
 
 class InvoicePayment(BaseModel):
-    """Schema for invoice payment data"""
+    """Schema for recording invoice payment"""
     payment_method: str
     payment_date: Optional[datetime] = None
+    payment_amount: float
+    payment_reference: Optional[str] = None
+    payment_metadata: Optional[Dict[str, Any]] = None
 
 
 class InvoiceInDB(InvoiceBase):
@@ -102,3 +108,31 @@ class Invoice(InvoiceInDB):
 class InvoiceWithItems(Invoice):
     """Invoice schema with line items"""
     line_items: List[InvoiceLineItem] = []
+
+
+class InvoiceEmailRequest(BaseModel):
+    """Schema for sending an invoice via email"""
+    invoice_id: Optional[int] = None
+    invoice_number: Optional[str] = None
+    recipient_email: str
+    include_pdf: bool = True
+    message: Optional[str] = None
+    payment_link: Optional[str] = None
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None
+    reply_to: Optional[str] = None
+
+
+class BulkInvoiceEmailRequest(BaseModel):
+    """Schema for sending an invoice to multiple recipients via email"""
+    invoice_id: Optional[int] = None
+    invoice_number: Optional[str] = None
+    recipient_emails: List[str]
+    include_pdf: bool = True
+    message: Optional[str] = None
+    payment_link: Optional[str] = None
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None
+    reply_to: Optional[str] = None
+    personalize_content: bool = False
+    recipient_variables: Optional[Dict[str, Dict[str, Any]]] = None

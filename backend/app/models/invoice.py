@@ -25,6 +25,8 @@ class Invoice(BaseModel):
     # Payment details
     payment_method = Column(String, nullable=True)
     stripe_invoice_id = Column(String, nullable=True)
+    stripe_checkout_session_id = Column(String, nullable=True)
+    stripe_payment_link = Column(String, nullable=True)
     payment_date = Column(DateTime, nullable=True)
     
     # Additional metadata

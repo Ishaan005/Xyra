@@ -68,6 +68,28 @@ class Settings(BaseSettings):
     # Stripe API key
     STRIPE_API_KEY: str = os.getenv("STRIPE_API_KEY")
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET")
+      # Frontend URL for callbacks
+    FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
+    
+    # Email settings
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_TLS: bool = os.getenv("SMTP_TLS", "True").lower() in ("true", "1", "t")
+    EMAILS_FROM_EMAIL: str = os.getenv("EMAILS_FROM_EMAIL", "noreply@example.com")
+    EMAILS_FROM_NAME: str = os.getenv("EMAILS_FROM_NAME", "Xyra")
+    
+    # Enhanced email settings for enterprise features
+    DKIM_PRIVATE_KEY: Optional[str] = os.getenv("DKIM_PRIVATE_KEY")
+    DKIM_SELECTOR: Optional[str] = os.getenv("DKIM_SELECTOR", "default")
+    EMAIL_QUEUE_MAX_WORKERS: int = int(os.getenv("EMAIL_QUEUE_MAX_WORKERS", "2"))
+    EMAIL_BATCH_SIZE: int = int(os.getenv("EMAIL_BATCH_SIZE", "20"))
+    EMAIL_MAX_RETRIES: int = int(os.getenv("EMAIL_MAX_RETRIES", "3"))
+    EMAIL_RETRY_DELAY: int = int(os.getenv("EMAIL_RETRY_DELAY", "1"))
+    EMAIL_STATUS_RETENTION_DAYS: int = int(os.getenv("EMAIL_STATUS_RETENTION_DAYS", "30"))
+    EMAIL_TRACKING_ENABLED: bool = os.getenv("EMAIL_TRACKING_ENABLED", "True").lower() in ("true", "1", "t")
+    EMAIL_RATE_LIMIT: int = int(os.getenv("EMAIL_RATE_LIMIT", "100"))  # Emails per hour
     
     # Authentication settings for Azure
     AZURE_TENANT_ID: Optional[str] = os.getenv("AZURE_TENANT_ID")
