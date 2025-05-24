@@ -13,7 +13,6 @@ import {
   CreditCard,
   DollarSign,
   Users,
-  TrendingUp,
   TrendingDown,
   Percent,
   ArrowUpRight,
@@ -27,7 +26,7 @@ import { Badge } from "@/components/ui/badge"
 export default function DashboardPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  const orgId = 1 // TODO: obtain dynamically
+  const orgId = 1 //TODO: obtain dynamically
 
   useEffect(() => {
     if (status === "loading") return
@@ -36,10 +35,44 @@ export default function DashboardPage() {
   }, [status, session, router])
 
   const [summary, setSummary] = useState<any>(null)
+  const [previousSummary, setPreviousSummary] = useState<any>(null)
   const [topAgents, setTopAgents] = useState<any[]>([])
+  const [previousTopAgents, setPreviousTopAgents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState("month")
+
+  // Calculate date ranges for current and previous periods
+  const getDateRanges = (period: string) => {
+    const now = new Date()
+    let currentStart: Date, currentEnd: Date, previousStart: Date, previousEnd: Date
+
+    switch (period) {
+      case "week":
+        currentEnd = now
+        currentStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        previousEnd = new Date(currentStart.getTime() - 1000) // 1ms before current start
+        previousStart = new Date(previousEnd.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case "quarter":
+        currentEnd = now
+        currentStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+        previousEnd = new Date(currentStart.getTime() - 1000)
+        previousStart = new Date(previousEnd.getTime() - 90 * 24 * 60 * 60 * 1000)
+        break
+      default: // month
+        currentEnd = now
+        currentStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        previousEnd = new Date(currentStart.getTime() - 1000)
+        previousStart = new Date(previousEnd.getTime() - 30 * 24 * 60 * 60 * 1000)
+        break
+    }
+
+    return {
+      current: { start: currentStart, end: currentEnd },
+      previous: { start: previousStart, end: previousEnd }
+    }
+  }
 
   // Fetch analytics after authentication
   useEffect(() => {
@@ -47,17 +80,44 @@ export default function DashboardPage() {
     const token = session.user.accessToken ?? ""
     setAuthToken(token)
     setLoading(true)
+    
+    const dateRanges = getDateRanges(period)
+    
     Promise.all([
-      api.get(`/analytics/organization/${orgId}/summary`),
-      api.get(`/analytics/organization/${orgId}/top-agents?limit=5`),
+      api.get(`/analytics/organization/${orgId}/summary`, {
+        params: {
+          start_date: dateRanges.current.start.toISOString(),
+          end_date: dateRanges.current.end.toISOString()
+        }
+      }),
+      api.get(`/analytics/organization/${orgId}/summary`, {
+        params: {
+          start_date: dateRanges.previous.start.toISOString(),
+          end_date: dateRanges.previous.end.toISOString()
+        }
+      }),
+      api.get(`/analytics/organization/${orgId}/top-agents?limit=5`, {
+        params: {
+          start_date: dateRanges.current.start.toISOString(),
+          end_date: dateRanges.current.end.toISOString()
+        }
+      }),
+      api.get(`/analytics/organization/${orgId}/top-agents?limit=5`, {
+        params: {
+          start_date: dateRanges.previous.start.toISOString(),
+          end_date: dateRanges.previous.end.toISOString()
+        }
+      }),
     ])
-      .then(([sumRes, topRes]) => {
+      .then(([sumRes, prevSumRes, topRes, prevTopRes]) => {
         setSummary(sumRes.data)
+        setPreviousSummary(prevSumRes.data)
         setTopAgents(topRes.data)
+        setPreviousTopAgents(prevTopRes.data)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [status, session])
+  }, [status, session, period])
 
   if (loading) {
     return (
@@ -76,7 +136,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (error) {
+  if (error || !summary) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-[50vh] text-center">
         <div className="rounded-full bg-destructive/10 p-4 mb-4">
@@ -144,18 +204,56 @@ export default function DashboardPage() {
     })
   }
 
+  const calculatePercentageChange = (current: number, previous: number): number => {
+    if (previous === 0) return current > 0 ? 100 : 0
+    return ((current - previous) / previous) * 100
+  }
+
+  const getPreviousAgentData = (agentId: number, metric: string) => {
+    const previousAgent = previousTopAgents.find(agent => agent.agent_id === agentId)
+    if (!previousAgent) return null
+    
+    switch (metric) {
+      case 'revenue':
+        return previousAgent.metrics.total_revenue
+      case 'cost':
+        return previousAgent.metrics.total_cost
+      case 'margin':
+        return previousAgent.metrics.margin
+      case 'activity':
+        return previousAgent.metrics.activity_count
+      default:
+        return null
+    }
+  }
+
+  const getAgentChangeIndicator = (agentId: number, currentValue: number, metric: string) => {
+    const previousValue = getPreviousAgentData(agentId, metric)
+    if (previousValue === null) {
+      return <div className="text-xs text-muted-foreground">No prev. data</div>
+    }
+    
+    const change = calculatePercentageChange(currentValue, previousValue)
+    if (change > 0) {
+      return <div className="text-xs text-success">+{change.toFixed(1)}%</div>
+    } else if (change < 0) {
+      return <div className="text-xs text-destructive">{change.toFixed(1)}%</div>
+    }
+    return <div className="text-xs text-muted-foreground">0%</div>
+  }
+
   const getChangeIndicator = (change: number) => {
     if (change > 0) {
       return (
         <div className="flex items-center text-success text-xs font-medium">
-          <ArrowUpRight className="h-3 w-3 mr-1" />+{change}%
+          <ArrowUpRight className="h-3 w-3 mr-1" />+{change.toFixed(1)}%
         </div>
       )
     } else if (change < 0) {
       return (
         <div className="flex items-center text-destructive text-xs font-medium">
           <ArrowDownRight className="h-3 w-3 mr-1" />
-          {change}%
+          {change.toFixed(1)}%
         </div>
       )
     }
@@ -203,9 +301,13 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">${summary.metrics.total_revenue.toFixed(2)}</div>
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-muted-foreground">
-                Previous: ${(summary.metrics.total_revenue * 0.89).toFixed(2)}
+                Previous: ${previousSummary ? previousSummary.metrics.total_revenue.toFixed(2) : '0.00'}
               </p>
-              {getChangeIndicator(12.5)}
+              {getChangeIndicator(
+                previousSummary 
+                  ? calculatePercentageChange(summary.metrics.total_revenue, previousSummary.metrics.total_revenue)
+                  : 0
+              )}
             </div>
           </CardContent>
         </Card>
@@ -221,9 +323,13 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">${summary.metrics.total_cost.toFixed(2)}</div>
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-muted-foreground">
-                Previous: ${(summary.metrics.total_cost * 0.93).toFixed(2)}
+                Previous: ${previousSummary ? previousSummary.metrics.total_cost.toFixed(2) : '0.00'}
               </p>
-              {getChangeIndicator(8.1)}
+              {getChangeIndicator(
+                previousSummary 
+                  ? calculatePercentageChange(summary.metrics.total_cost, previousSummary.metrics.total_cost)
+                  : 0
+              )}
             </div>
           </CardContent>
         </Card>
@@ -239,9 +345,13 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">{(summary.metrics.margin * 100).toFixed(1)}%</div>
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-muted-foreground">
-                Previous: {((summary.metrics.margin - 0.023) * 100).toFixed(1)}%
+                Previous: {previousSummary ? (previousSummary.metrics.margin * 100).toFixed(1) : '0.0'}%
               </p>
-              {getChangeIndicator(2.3)}
+              {getChangeIndicator(
+                previousSummary 
+                  ? calculatePercentageChange(summary.metrics.margin * 100, previousSummary.metrics.margin * 100)
+                  : 0
+              )}
             </div>
           </CardContent>
         </Card>
@@ -257,9 +367,13 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">{summary.metrics.activity_count.toLocaleString()}</div>
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-muted-foreground">
-                Previous: {Math.floor(summary.metrics.activity_count * 0.85).toLocaleString()}
+                Previous: {previousSummary ? previousSummary.metrics.activity_count.toLocaleString() : '0'}
               </p>
-              {getChangeIndicator(18.2)}
+              {getChangeIndicator(
+                previousSummary 
+                  ? calculatePercentageChange(summary.metrics.activity_count, previousSummary.metrics.activity_count)
+                  : 0
+              )}
             </div>
           </CardContent>
         </Card>
@@ -502,22 +616,24 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                       <div className="font-medium">${agent.metrics.total_revenue.toFixed(2)}</div>
-                      <div className="text-xs text-success">+{(Math.random() * 10 + 5).toFixed(1)}%</div>
+                      {getAgentChangeIndicator(agent.agent_id, agent.metrics.total_revenue, 'revenue')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                       <div className="font-medium">${agent.metrics.total_cost.toFixed(2)}</div>
-                      <div className="text-xs text-destructive">+{(Math.random() * 5 + 2).toFixed(1)}%</div>
+                      {getAgentChangeIndicator(agent.agent_id, agent.metrics.total_cost, 'cost')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                       <div className="font-medium">{(agent.metrics.margin * 100).toFixed(1)}%</div>
-                      <div className="text-xs text-success">+{(Math.random() * 3 + 1).toFixed(1)}%</div>
+                      {getAgentChangeIndicator(agent.agent_id, agent.metrics.margin, 'margin')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                      <div className="font-medium">{Math.floor(Math.random() * 1000 + 500).toLocaleString()}</div>
-                      <div className="text-xs text-success">+{(Math.random() * 15 + 10).toFixed(1)}%</div>
+                      <div className="font-medium">{agent.metrics.activity_count.toLocaleString()}</div>
+                      {getAgentChangeIndicator(agent.agent_id, agent.metrics.activity_count, 'activity')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <Badge className="bg-success/20 text-success hover:bg-success/30 border-0">Active</Badge>
+                      <Badge className={agent.is_active ? "bg-success/20 text-success hover:bg-success/30 border-0" : "bg-destructive/20 text-destructive hover:bg-destructive/30 border-0"}>
+                        {agent.is_active ? "Active" : "Inactive"}
+                      </Badge>
                     </td>
                   </tr>
                 ))}
