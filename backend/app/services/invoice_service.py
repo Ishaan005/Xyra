@@ -7,7 +7,7 @@ from sqlalchemy import func
 
 from app.models.invoice import Invoice, InvoiceLineItem
 from app.models.organization import Organization
-from app.models.agent import Agent, AgentCost, AgentOutcome, AgentActivity
+from app.models.agent import Agent, AgentOutcome, AgentActivity
 from app.schemas.invoice import InvoiceCreate, InvoiceUpdate, InvoiceLineItemCreate
 
 # Configure logging
@@ -86,7 +86,7 @@ def create_invoice(db: Session, invoice_in: InvoiceCreate) -> Invoice:
     
     # Calculate total amounts
     amount = sum(item.amount for item in invoice_in.items)
-    tax_amount = 0.0  # Could be calculated based on tax rules
+    tax_amount = 0.0  # CTODO: Implement tax calculation logic if needed
     total_amount = amount + tax_amount
     
     # Create invoice
@@ -131,7 +131,7 @@ def create_invoice(db: Session, invoice_in: InvoiceCreate) -> Invoice:
     return invoice
 
 
-def update_invoice(db: Session, invoice_id: int, invoice_in: InvoiceUpdate, extra_fields: dict = None) -> Optional[Invoice]:
+def update_invoice(db: Session, invoice_id: int, invoice_in: InvoiceUpdate, extra_fields: Optional[dict] = None) -> Optional[Invoice]:
     """
     Update an invoice
     """
@@ -172,11 +172,12 @@ def cancel_invoice(db: Session, invoice_id: int) -> Optional[Invoice]:
         return None
     
     # Check if invoice can be cancelled
-    if invoice.status == "paid":
+    current_status = str(invoice.status)
+    if current_status == "paid":
         raise ValueError("Cannot cancel a paid invoice")
     
     # Cancel invoice
-    invoice.status = "cancelled"
+    setattr(invoice, 'status', 'cancelled')
     db.commit()
     db.refresh(invoice)
     
@@ -194,16 +195,17 @@ def mark_invoice_as_paid(db: Session, invoice_id: int, payment_method: str, paym
         return None
     
     # Check if invoice can be marked as paid
-    if invoice.status == "cancelled":
+    current_status = str(invoice.status)
+    if current_status == "cancelled":
         raise ValueError("Cannot mark a cancelled invoice as paid")
     
-    if invoice.status == "paid":
+    if current_status == "paid":
         raise ValueError("Invoice is already marked as paid")
     
-    # Update invoice
-    invoice.status = "paid"
-    invoice.payment_method = payment_method
-    invoice.payment_date = payment_date or datetime.now(timezone.utc)
+    # Update invoice using setattr to avoid SQLAlchemy typing issues
+    setattr(invoice, 'status', 'paid')
+    setattr(invoice, 'payment_method', payment_method)
+    setattr(invoice, 'payment_date', payment_date or datetime.now(timezone.utc))
     
     # Commit changes to database
     db.commit()
@@ -265,6 +267,11 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
         billing_model = agent.billing_model
         model_type = billing_model.model_type
         
+        # Get actual values from SQLAlchemy objects
+        agent_id = getattr(agent, 'id')
+        billing_model_id = getattr(billing_model, 'id')
+        agent_name = getattr(agent, 'name')
+        
         if model_type == "seat":
             # Seat-based billing
             price_per_seat = billing_model.config.get("price_per_seat", 0)
@@ -275,14 +282,14 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                 item_amount = price_per_seat
                 invoice_items.append(
                     InvoiceLineItemCreate(
-                        description=f"Agent access: {agent.name} - {billing_frequency} subscription",
+                        description=f"Agent access: {agent_name} - {billing_frequency} subscription",
                         quantity=1,
                         unit_price=item_amount,
                         amount=item_amount,
                         item_type="subscription",
-                        reference_id=agent.id,
+                        reference_id=agent_id,
                         reference_type="Agent",
-                        item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                        item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
                     )
                 )
                 total_amount += item_amount
@@ -294,7 +301,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
             
             # Query activities in the date range
             activities_query = db.query(func.count(AgentActivity.id)).filter(
-                AgentActivity.agent_id == agent.id,
+                AgentActivity.agent_id == agent_id,
                 AgentActivity.timestamp >= start_date,
                 AgentActivity.timestamp <= end_date
             )
@@ -308,14 +315,14 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                 item_amount = price_per_action * activity_count
                 invoice_items.append(
                     InvoiceLineItemCreate(
-                        description=f"Agent usage: {agent.name} - {activity_count} activities",
+                        description=f"Agent usage: {agent_name} - {activity_count} activities",
                         quantity=activity_count,
                         unit_price=price_per_action,
                         amount=item_amount,
                         item_type="usage",
-                        reference_id=agent.id,
+                        reference_id=agent_id,
                         reference_type="Agent",
-                        item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                        item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
                     )
                 )
                 total_amount += item_amount
@@ -327,7 +334,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
             
             # Query outcomes in the date range
             outcomes_query = db.query(func.sum(AgentOutcome.value)).filter(
-                AgentOutcome.agent_id == agent.id,
+                AgentOutcome.agent_id == agent_id,
                 AgentOutcome.timestamp >= start_date,
                 AgentOutcome.timestamp <= end_date
             )
@@ -341,14 +348,14 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                 item_amount = outcome_value * percentage
                 invoice_items.append(
                     InvoiceLineItemCreate(
-                        description=f"Agent outcomes: {agent.name} - {percentage*100}% of {outcome_value}",
+                        description=f"Agent outcomes: {agent_name} - {percentage*100}% of {outcome_value}",
                         quantity=1,
                         unit_price=item_amount,
                         amount=item_amount,
                         item_type="outcome",
-                        reference_id=agent.id,
+                        reference_id=agent_id,
                         reference_type="Agent",
-                        item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                        item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
                     )
                 )
                 total_amount += item_amount
@@ -361,14 +368,14 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
             if base_fee > 0:
                 invoice_items.append(
                     InvoiceLineItemCreate(
-                        description=f"Agent base fee: {agent.name}",
+                        description=f"Agent base fee: {agent_name}",
                         quantity=1,
                         unit_price=base_fee,
                         amount=base_fee,
                         item_type="subscription",
-                        reference_id=agent.id,
+                        reference_id=agent_id,
                         reference_type="Agent",
-                        metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                        item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
                     )
                 )
                 total_amount += base_fee
@@ -384,14 +391,14 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                     item_amount = price_per_seat
                     invoice_items.append(
                         InvoiceLineItemCreate(
-                            description=f"Agent access: {agent.name} - {billing_frequency} subscription",
+                            description=f"Agent access: {agent_name} - {billing_frequency} subscription",
                             quantity=1,
                             unit_price=item_amount,
                             amount=item_amount,
                             item_type="subscription",
-                            reference_id=agent.id,
+                            reference_id=agent_id,
                             reference_type="Agent",
-                            item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                            item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
                         )
                     )
                     total_amount += item_amount
@@ -407,7 +414,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                 
                 # Query activities in the date range
                 activity_count = db.query(func.count(AgentActivity.id)).filter(
-                    AgentActivity.agent_id == agent.id,
+                    AgentActivity.agent_id == agent_id,
                     AgentActivity.activity_type == action_type,
                     AgentActivity.timestamp >= start_date,
                     AgentActivity.timestamp <= end_date
@@ -417,14 +424,14 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                     item_amount = price_per_action * activity_count
                     invoice_items.append(
                         InvoiceLineItemCreate(
-                            description=f"Agent usage: {agent.name} - {activity_count} {action_type} activities",
+                            description=f"Agent usage: {agent_name} - {activity_count} {action_type} activities",
                             quantity=activity_count,
                             unit_price=price_per_action,
                             amount=item_amount,
                             item_type="usage",
-                            reference_id=agent.id,
+                            reference_id=agent_id,
                             reference_type="Agent",
-                            item_metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                            item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
                         )
                     )
                     total_amount += item_amount
@@ -440,7 +447,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                 
                 # Query outcomes in the date range
                 outcome_value = db.query(func.sum(AgentOutcome.value)).filter(
-                    AgentOutcome.agent_id == agent.id,
+                    AgentOutcome.agent_id == agent_id,
                     AgentOutcome.outcome_type == outcome_type,
                     AgentOutcome.timestamp >= start_date,
                     AgentOutcome.timestamp <= end_date
@@ -450,14 +457,14 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
                     item_amount = outcome_value * percentage
                     invoice_items.append(
                         InvoiceLineItemCreate(
-                            description=f"Agent outcomes: {agent.name} - {percentage*100}% of {outcome_value} {outcome_type}",
+                            description=f"Agent outcomes: {agent_name} - {percentage*100}% of {outcome_value} {outcome_type}",
                             quantity=1,
                             unit_price=item_amount,
                             amount=item_amount,
                             item_type="outcome",
-                            reference_id=agent.id,
+                            reference_id=agent_id,
                             reference_type="Agent",
-                            metadata={"billing_model_id": billing_model.id, "billing_period": f"{year}-{month}"}
+                            item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
                         )
                     )
                     total_amount += item_amount
@@ -474,7 +481,7 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
         items=invoice_items,
         currency="USD",
         notes=f"Monthly invoice for {start_date.strftime('%B %Y')}",
-        metadata={"billing_period": f"{year}-{month}"}
+        invoice_metadata={"billing_period": f"{year}-{month}"}
     )
     
     # Create the invoice with items

@@ -22,7 +22,7 @@ def read_users(
     Regular users can only see their own user.
     Superusers can see all users.
     """
-    if current_user.is_superuser:
+    if bool(current_user.is_superuser):
         users = user_service.get_users(db, skip=skip, limit=limit)
     else:
         users = [current_user]
@@ -67,7 +67,7 @@ def read_user_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    if user.id != current_user.id and not current_user.is_superuser:
+    if getattr(user, 'id') != getattr(current_user, 'id') and not bool(current_user.is_superuser):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions",
@@ -94,7 +94,7 @@ def update_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    if user.id != current_user.id and not current_user.is_superuser:
+    if getattr(user, 'id') != getattr(current_user, 'id') and not bool(current_user.is_superuser):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions",

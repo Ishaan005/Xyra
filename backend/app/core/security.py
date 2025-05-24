@@ -33,7 +33,9 @@ def get_secret_key() -> str:
     """
     if key_vault_client:
         try:
-            return key_vault_client.get_secret("jwt-secret-key").value
+            secret_value = key_vault_client.get_secret("jwt-secret-key").value
+            if secret_value is not None:
+                return secret_value
         except Exception:
             pass
     return settings.SECRET_KEY

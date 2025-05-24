@@ -24,9 +24,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <SidebarNav />
       <MainContent>
         <div className="flex min-h-screen flex-col">
-          <Header>
             <SidebarTrigger className="md:hidden" />
-          </Header>
+
           <div className="flex-1 p-4 md:p-6">
             <div className="max-w-[1400px] mx-auto w-full">{children}</div>
           </div>

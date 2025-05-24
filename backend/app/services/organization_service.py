@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
 import logging
 import stripe
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -52,7 +53,7 @@ def create_organization(db: Session, org_in: OrganizationCreate) -> Organization
         try:
             stripe_customer = stripe.Customer.create(
                 name=org_in.name,
-                description=org_in.description,
+                description=org_in.description or "",
                 metadata={"source": "business_engine"}
             )
             stripe_customer_id = stripe_customer.id
@@ -94,7 +95,7 @@ def update_organization(db: Session, org_id: int, org_in: OrganizationUpdate) ->
             setattr(org, field, value)
     
     # Update Stripe customer if needed and Stripe is configured
-    if settings.STRIPE_API_KEY and org.stripe_customer_id and update_data:
+    if settings.STRIPE_API_KEY and org.stripe_customer_id is not None and update_data:
         try:
             stripe_update_data = {}
             if "name" in update_data:
@@ -103,7 +104,7 @@ def update_organization(db: Session, org_id: int, org_in: OrganizationUpdate) ->
                 stripe_update_data["description"] = update_data["description"]
                 
             if stripe_update_data:
-                stripe.Customer.modify(org.stripe_customer_id, **stripe_update_data)
+                stripe.Customer.modify(str(org.stripe_customer_id), **stripe_update_data)
                 logger.info(f"Updated Stripe customer for organization {org.name}: {org.stripe_customer_id}")
         except Exception as e:
             logger.error(f"Failed to update Stripe customer: {str(e)}")
@@ -126,9 +127,10 @@ def delete_organization(db: Session, org_id: int) -> Optional[Organization]:
         return None
     
     # Delete Stripe customer if it exists and Stripe is configured
-    if settings.STRIPE_API_KEY and org.stripe_customer_id:
+    if settings.STRIPE_API_KEY and org.stripe_customer_id is not None:
         try:
-            stripe.Customer.delete(org.stripe_customer_id)
+            customer = stripe.Customer.retrieve(str(org.stripe_customer_id))
+            customer.delete()
             logger.info(f"Deleted Stripe customer for organization {org.name}: {org.stripe_customer_id}")
         except Exception as e:
             logger.error(f"Failed to delete Stripe customer: {str(e)}")
@@ -157,11 +159,12 @@ def get_organization_stats(db: Session, org_id: int) -> Dict[str, Any]:
     ).scalar() or 0
     
     # Get monthly cost (sum of all agent costs in the last 30 days)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
     monthly_cost = db.query(func.sum(AgentCost.amount)).filter(
         AgentCost.agent_id.in_(
             db.query(Agent.id).filter(Agent.organization_id == org_id)
         ),
-        AgentCost.created_at >= func.now() - func.interval('30 days')
+        AgentCost.created_at >= thirty_days_ago
     ).scalar() or 0.0
     
     # Get monthly revenue (sum of all agent outcomes in the last 30 days)
@@ -169,7 +172,7 @@ def get_organization_stats(db: Session, org_id: int) -> Dict[str, Any]:
         AgentOutcome.agent_id.in_(
             db.query(Agent.id).filter(Agent.organization_id == org_id)
         ),
-        AgentOutcome.created_at >= func.now() - func.interval('30 days')
+        AgentOutcome.created_at >= thirty_days_ago
     ).scalar() or 0.0
     
     return {

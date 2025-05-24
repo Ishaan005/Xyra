@@ -285,7 +285,7 @@ export default function AgentsPage() {
               </select>
             </div>
           </div>
-          <Button className="mt-6" onClick={handleCreate}>
+          <Button className="mt-6 bg-gold/10" onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Create Agent
           </Button>

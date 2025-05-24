@@ -20,7 +20,7 @@ async def stripe_webhook(request: Request, db=Depends(deps.get_db)):
         )
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
+    except stripe.SignatureVerificationError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
 
     # Handle the event
@@ -29,8 +29,8 @@ async def stripe_webhook(request: Request, db=Depends(deps.get_db)):
         session_id = session["id"]
         # Find invoice by stripe_checkout_session_id and mark as paid
         invoice = invoice_service.get_invoice_by_stripe_session_id(db, session_id)
-        if invoice and invoice.status != "paid":
-            invoice_service.mark_invoice_as_paid(db, invoice_id=invoice.id, payment_method="stripe", payment_date=None)
+        if invoice and str(invoice.status) != "paid":
+            invoice_service.mark_invoice_as_paid(db, invoice_id=getattr(invoice, 'id'), payment_method="stripe", payment_date=None)
     elif event["type"] == "invoice.paid":
         # Optionally handle other Stripe events
         pass

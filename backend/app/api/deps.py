@@ -2,7 +2,7 @@ from typing import Generator, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
+from jose import jwt, JWTError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -42,7 +42,7 @@ def get_current_user(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = schemas.TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError):
+    except (JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -68,7 +68,7 @@ def get_current_active_user(
     Dependency function to get the current active user.
     Ensures the user is active.
     """
-    if not current_user.is_active:
+    if current_user.is_active is False:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user",
@@ -83,7 +83,7 @@ def get_current_superuser(
     Dependency function to get the current superuser.
     Ensures the user is a superuser.
     """
-    if not current_user.is_superuser:
+    if current_user.is_superuser is False:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions",
@@ -95,10 +95,11 @@ def get_current_admin_or_superuser(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
     """
-    Dependency function to get the current admin or superuser.
-    Ensures the user is either an admin or a superuser.
+    Dependency function to get the current superuser.
+    Ensures the user is a superuser.
+    Note: This function is equivalent to get_current_superuser since there's no is_admin field.
     """
-    if not (current_user.is_superuser or current_user.is_admin):
+    if not bool(current_user.is_superuser):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions",
@@ -107,16 +108,16 @@ def get_current_admin_or_superuser(
 
 
 def authenticate_user(
-    db: Session, username: str, password: str
+    db: Session, email: str, password: str
 ) -> Optional[User]:
     """
-    Authenticate a user by username and password.
+    Authenticate a user by email and password.
     """
-    # Try to find user with the given username
-    user = db.query(User).filter(User.username == username).first()
+    # Try to find user with the given email
+    user = db.query(User).filter(User.email == email).first()
     
     # If user exists, verify password
-    if user and verify_password(password, user.hashed_password):
+    if user and verify_password(password, str(user.hashed_password)):
         return user
     
     # Authentication failed

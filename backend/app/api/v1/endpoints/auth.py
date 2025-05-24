@@ -34,7 +34,7 @@ def login_access_token(
         )
     
     # Check if user is active
-    if not user.is_active:
+    if user.is_active is False:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user account",

@@ -1,6 +1,7 @@
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
 from app import schemas
@@ -29,7 +30,7 @@ def read_invoices(
     # Check permissions
     if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != org_id):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions to access invoices for this organization",
         )
     
@@ -37,7 +38,7 @@ def read_invoices(
     organization = organization_service.get_organization(db, org_id=org_id)
     if not organization:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Organization not found",
         )
     
@@ -66,24 +67,24 @@ def create_invoice(
         invoice = invoice_service.create_invoice(db, invoice_in=invoice_in)
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
     # Generate Stripe payment link
     try:
         stripe_result = stripe_service.create_checkout_session(
-            amount=invoice.total_amount,
-            currency=invoice.currency,
-            invoice_number=invoice.invoice_number,
-            description=invoice.notes or f"Invoice {invoice.invoice_number}",
+            amount=getattr(invoice, 'total_amount'),
+            currency=str(invoice.currency),
+            invoice_number=str(invoice.invoice_number),
+            description=str(invoice.notes) or f"Invoice {str(invoice.invoice_number)}",
             success_url="https://yourapp.com/success",  # TODO: Make configurable
             cancel_url="https://yourapp.com/cancel",   # TODO: Make configurable
         )
         if stripe_result:
             invoice = invoice_service.update_invoice(
                 db,
-                invoice_id=invoice.id,
+                invoice_id=getattr(invoice, 'id'),
                 invoice_in=schemas.InvoiceUpdate(),
                 extra_fields={
                     "stripe_checkout_session_id": stripe_result["session_id"],
@@ -98,7 +99,7 @@ def create_invoice(
     pdf_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
-            pdf_service.generate_invoice_pdf(invoice, db.query(organization_service.Organization).filter_by(id=invoice.organization_id).first(), invoice.line_items, tmpfile.name)
+            pdf_service.generate_invoice_pdf(invoice, db.query(organization_service.Organization).filter_by(id=getattr(invoice, 'organization_id')).first(), getattr(invoice, 'line_items'), tmpfile.name)
             pdf_path = tmpfile.name
             # TODO: store the path or upload to cloud storage here
     except Exception:
@@ -121,14 +122,14 @@ def read_invoice(
     invoice = invoice_service.get_invoice_with_items(db, invoice_id=invoice_id)
     if not invoice:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Invoice not found",
         )
     
     # Check permissions
-    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != invoice.organization_id):
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != getattr(invoice, 'organization_id')):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions to access this invoice",
         )
     
@@ -153,7 +154,7 @@ def update_invoice(
     invoice = invoice_service.get_invoice(db, invoice_id=invoice_id)
     if not invoice:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Invoice not found",
         )
     
@@ -162,7 +163,7 @@ def update_invoice(
         updated_invoice = invoice_service.update_invoice(db, invoice_id=invoice_id, invoice_in=invoice_in)
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     
@@ -186,7 +187,7 @@ def cancel_invoice(
     invoice = invoice_service.get_invoice(db, invoice_id=invoice_id)
     if not invoice:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Invoice not found",
         )
     
@@ -195,7 +196,7 @@ def cancel_invoice(
         invoice = invoice_service.cancel_invoice(db, invoice_id=invoice_id)
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     
@@ -220,7 +221,7 @@ def mark_invoice_as_paid(
     invoice = invoice_service.get_invoice(db, invoice_id=invoice_id)
     if not invoice:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Invoice not found",
         )
     
@@ -234,7 +235,7 @@ def mark_invoice_as_paid(
         )
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     
@@ -258,7 +259,7 @@ def generate_monthly_invoice(
     # Validate month
     if month < 1 or month > 12:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail="Month must be between 1 and 12",
         )
     
@@ -266,7 +267,7 @@ def generate_monthly_invoice(
     organization = organization_service.get_organization(db, org_id=org_id)
     if not organization:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Organization not found",
         )
     
@@ -275,7 +276,7 @@ def generate_monthly_invoice(
         invoice = invoice_service.generate_monthly_invoice(db, org_id=org_id, month=month, year=year)
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     
@@ -294,10 +295,10 @@ def download_invoice_pdf(
     invoice = invoice_service.get_invoice_with_items(db, invoice_id=invoice_id)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != invoice.organization_id):
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != getattr(invoice, 'organization_id')):
         raise HTTPException(status_code=403, detail="Not enough permissions to access this invoice")
-    organization = db.query(organization_service.Organization).filter_by(id=invoice.organization_id).first()
-    output_path = f"/tmp/invoice_{invoice.invoice_number}.pdf"
-    pdf_service.generate_invoice_pdf(invoice, organization, invoice.line_items, output_path)
+    organization = db.query(organization_service.Organization).filter_by(id=getattr(invoice, 'organization_id')).first()
+    output_path = f"/tmp/invoice_{str(invoice.invoice_number)}.pdf"
+    pdf_service.generate_invoice_pdf(invoice, organization, getattr(invoice, 'line_items'), output_path)
     from fastapi.responses import FileResponse
-    return FileResponse(output_path, filename=f"invoice_{invoice.invoice_number}.pdf", media_type="application/pdf")
+    return FileResponse(output_path, filename=f"invoice_{str(invoice.invoice_number)}.pdf", media_type="application/pdf")

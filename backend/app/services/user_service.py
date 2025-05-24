@@ -41,7 +41,7 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
         if not user:
             logger.warning(f"Authentication failed: User not found with email {email}")
             return None
-        if not verify_password(password, user.hashed_password):
+        if not verify_password(password, str(user.hashed_password)):
             logger.warning(f"Authentication failed: Invalid password for user {email}")
             return None
         return user
@@ -138,6 +138,6 @@ def get_current_active_user(current_user: User) -> User:
     Get current active user
     This is implemented in app/api/deps.py
     """
-    if not current_user.is_active:
+    if current_user.is_active is False:
         raise ValueError("Inactive user")
     return current_user

@@ -19,24 +19,6 @@ export function Header({ children }: HeaderProps) {
     return null
   }
 
-  const getPageTitle = () => {
-    switch (pathname) {
-      case "/dashboard":
-        return "Dashboard"
-      case "/pricing":
-        return "Pricing Models"
-      case "/agents":
-        return "Agents"
-      case "/customers":
-        return "Customers"
-      case "/reports":
-        return "Reports"
-      case "/settings":
-        return "Settings"
-      default:
-        return "Business Engine"
-    }
-  }
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">

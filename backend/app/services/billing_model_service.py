@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 import logging
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.billing_model import BillingModel
 from app.models.organization import Organization
@@ -12,19 +12,33 @@ logger = logging.getLogger(__name__)
 
 def get_billing_model(db: Session, model_id: int) -> Optional[BillingModel]:
     """
-    Get billing model by ID
+    Get billing model by ID with eagerly loaded relationships
     """
-    return db.query(BillingModel).filter(BillingModel.id == model_id).first()
+    return (
+        db.query(BillingModel)
+        .options(
+            joinedload(BillingModel.seat_config),
+            joinedload(BillingModel.activity_config),
+            joinedload(BillingModel.outcome_config)
+        )
+        .filter(BillingModel.id == model_id)
+        .first()
+    )
 
 
 def get_billing_models_by_organization(
     db: Session, org_id: int, skip: int = 0, limit: int = 100
 ) -> List[BillingModel]:
     """
-    Get all billing models for an organization with pagination
+    Get all billing models for an organization with pagination and eagerly loaded relationships
     """
     return (
         db.query(BillingModel)
+        .options(
+            joinedload(BillingModel.seat_config),
+            joinedload(BillingModel.activity_config),
+            joinedload(BillingModel.outcome_config)
+        )
         .filter(BillingModel.organization_id == org_id)
         .offset(skip)
         .limit(limit)
@@ -73,28 +87,28 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
     # Persist config into dedicated tables
     from app.models.billing_model import SeatBasedConfig, ActivityBasedConfig, OutcomeBasedConfig
     cfg = billing_model_in.config
-    if billing_model.model_type == "seat":
+    if billing_model_in.model_type == "seat":
         seat_cfg = SeatBasedConfig(
             billing_model_id=billing_model.id,
             price_per_seat=cfg.get("price_per_seat", 0),
             billing_frequency=cfg.get("billing_frequency", "monthly"),
         )
         db.add(seat_cfg)
-    elif billing_model.model_type == "activity":
+    elif billing_model_in.model_type == "activity":
         act_cfg = ActivityBasedConfig(
             billing_model_id=billing_model.id,
             price_per_action=cfg.get("price_per_action", 0),
             action_type=cfg.get("action_type", ""),
         )
         db.add(act_cfg)
-    elif billing_model.model_type == "outcome":
+    elif billing_model_in.model_type == "outcome":
         out_cfg = OutcomeBasedConfig(
             billing_model_id=billing_model.id,
             outcome_type=cfg.get("outcome_type", ""),
             percentage=cfg.get("percentage", 0),
         )
         db.add(out_cfg)
-    elif billing_model.model_type == "hybrid":
+    elif billing_model_in.model_type == "hybrid":
         # hybrid may include multiple configs
         if "seat_config" in cfg:
             sc = cfg["seat_config"]
@@ -110,8 +124,13 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
                     outcome_type=oc.get("outcome_type",""), percentage=oc.get("percentage",0)))
     db.commit()
     
-    logger.info(f"Created new billing model: {billing_model.name} for organization {organization.name}")
-    return billing_model
+    # Re-fetch with eager loading to ensure relationships are available
+    created_billing_model = get_billing_model(db, model_id=getattr(billing_model, 'id'))
+    if not created_billing_model:
+        raise ValueError("Failed to create billing model")
+    
+    logger.info(f"Created new billing model: {created_billing_model.name} for organization {organization.name}")
+    return created_billing_model
 
 
 def update_billing_model(
@@ -125,40 +144,54 @@ def update_billing_model(
         logger.warning(f"Billing model update failed: Model not found with ID {model_id}")
         return None
     
-    # Update billing model properties - Using model_dump instead of dict for Pydantic v2
+    # Get update data from Pydantic model, excluding unset fields
     update_data = billing_model_in.model_dump(exclude_unset=True)
+    
+    # Validate billing model type if being updated
+    if "model_type" in update_data:
+        valid_types = ["seat", "activity", "outcome", "hybrid"]
+        if update_data["model_type"] not in valid_types:
+            raise ValueError(
+                f"Invalid billing model type: {update_data['model_type']}. "
+                f"Must be one of: {', '.join(valid_types)}"
+            )
     
     # If config is being updated, validate it
     if "config" in update_data and update_data["config"]:
         model_type = billing_model.model_type
         if "model_type" in update_data:
             model_type = update_data["model_type"]
-        validate_billing_config(model_type, update_data["config"])
+        validate_billing_config(str(model_type), update_data["config"])
     
     # If config is being updated, handle child tables
     if "config" in update_data and update_data["config"] is not None:
         from app.models.billing_model import SeatBasedConfig, ActivityBasedConfig, OutcomeBasedConfig
         cfg = update_data["config"]
+        
+        # Get the current model type as a string value
+        current_model_type = str(billing_model.model_type)
+
         # remove old configs for this model_type and recreate
-        if billing_model.model_type in ("seat","hybrid"):
+        if current_model_type in ("seat","hybrid"):
             db.query(SeatBasedConfig).filter(SeatBasedConfig.billing_model_id==model_id).delete()
-        if billing_model.model_type in ("activity","hybrid"):
+        if current_model_type in ("activity","hybrid"):
             db.query(ActivityBasedConfig).filter(ActivityBasedConfig.billing_model_id==model_id).delete()
-        if billing_model.model_type in ("outcome","hybrid"):
+        if current_model_type in ("outcome","hybrid"):
             db.query(OutcomeBasedConfig).filter(OutcomeBasedConfig.billing_model_id==model_id).delete()
         db.flush()
+        
         # recreate based on cfg
-        if billing_model.model_type == "seat" or billing_model.model_type == "hybrid" and "seat_config" not in cfg:
+        if current_model_type == "seat" or (current_model_type == "hybrid" and "seat_config" in cfg):
             sc = cfg.get("seat_config", cfg)
             db.add(SeatBasedConfig(billing_model_id=model_id,
                 price_per_seat=sc.get("price_per_seat",0), billing_frequency=sc.get("billing_frequency","monthly")))
-        if billing_model.model_type == "activity" or billing_model.model_type == "hybrid":
-            acts = cfg.get("activity_config", [cfg]) if billing_model.model_type=="activity" else cfg.get("activity_config", [])
+        if current_model_type == "activity" or current_model_type == "hybrid":
+            acts = cfg.get("activity_config", [cfg]) if current_model_type=="activity" else cfg.get("activity_config", [])
             for acfg in acts:
                 db.add(ActivityBasedConfig(billing_model_id=model_id,
                     price_per_action=acfg.get("price_per_action",0), action_type=acfg.get("action_type","")))
-        if billing_model.model_type == "outcome" or billing_model.model_type == "hybrid":
-            outs = cfg.get("outcome_config", [cfg]) if billing_model.model_type=="outcome" else cfg.get("outcome_config", [])
+        if current_model_type == "outcome" or current_model_type == "hybrid":
+            outs = cfg.get("outcome_config", [cfg]) if current_model_type=="outcome" else cfg.get("outcome_config", [])
             for ocfg in outs:
                 db.add(OutcomeBasedConfig(billing_model_id=model_id,
                     outcome_type=ocfg.get("outcome_type",""), percentage=ocfg.get("percentage",0)))
@@ -170,10 +203,14 @@ def update_billing_model(
     
     # Commit changes to database
     db.commit()
-    db.refresh(billing_model)
     
-    logger.info(f"Updated billing model: {billing_model.name}")
-    return billing_model
+    # Re-fetch with eager loading to ensure relationships are available
+    updated_billing_model = get_billing_model(db, model_id=model_id)
+    if not updated_billing_model:
+        raise ValueError("Failed to update billing model")
+    
+    logger.info(f"Updated billing model: {updated_billing_model.name}")
+    return updated_billing_model
 
 
 def delete_billing_model(db: Session, model_id: int) -> Optional[BillingModel]:
@@ -271,24 +308,26 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
     """
     # Use dedicated config tables via relationships
     total_cost = 0.0
-    if billing_model.model_type == "seat":
+    current_model_type = str(billing_model.model_type)
+    
+    if current_model_type == "seat":
         # Expect one SeatBasedConfig row
         if billing_model.seat_config:
             cfg = billing_model.seat_config
             seats = usage_data.get("seats", 0)
             total_cost = cfg.price_per_seat * seats
-    elif billing_model.model_type == "activity":
+    elif current_model_type == "activity":
         # Expect one or more ActivityBasedConfig rows
         actions = usage_data.get("actions", 0)
         # if multiple action_types, sum matching
         for cfg in billing_model.activity_config:
             total_cost += cfg.price_per_action * actions
-    elif billing_model.model_type == "outcome":
+    elif current_model_type == "outcome":
         # Outcome-based billing: percentage of outcome_value
         outcome_value = usage_data.get("outcome_value", 0)
         for cfg in billing_model.outcome_config:
             total_cost += (cfg.percentage / 100.0) * outcome_value
-    elif billing_model.model_type == "hybrid":
+    elif current_model_type == "hybrid":
         # Hybrid: base fee from JSON stored, plus each component
         # Base fee fallback to JSON
         total_cost += billing_model.config.get("base_fee", 0)

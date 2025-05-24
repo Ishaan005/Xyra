@@ -288,22 +288,6 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-teal/5 to-transparent">
-            <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
-            <div className="rounded-full bg-teal/10 p-2">
-              <TrendingUp className="h-4 w-4 text-teal" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+15.4%</div>
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted-foreground">Previous: +12.8%</p>
-              {getChangeIndicator(2.6)}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Charts */}

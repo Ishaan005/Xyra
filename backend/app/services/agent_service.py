@@ -95,8 +95,8 @@ def update_agent(db: Session, agent_id: int, agent_in: AgentUpdate) -> Optional[
             setattr(agent, field, value)
     
     # Update last active timestamp if the agent is active
-    if agent.is_active:
-        agent.last_active = datetime.now(timezone.utc)
+    if agent.is_active is True:
+        setattr(agent, 'last_active', datetime.now(timezone.utc))
     
     # Commit changes to database
     db.commit()
@@ -149,7 +149,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
     db.commit()
     db.refresh(activity)
     # Update agent's last active timestamp
-    agent.last_active = datetime.now(timezone.utc)
+    setattr(agent, 'last_active', datetime.now(timezone.utc))
     db.commit()
 
     logger.info(f"Recorded activity {activity.activity_type} for agent: {agent.name}")

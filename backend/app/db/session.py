@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 # Create SQLAlchemy engine with connection pooling for better performance
 # Following Azure best practices for database connection management
+if not settings.SQLALCHEMY_DATABASE_URI:
+    raise ValueError("SQLALCHEMY_DATABASE_URI is not configured")
+
 engine = create_engine(
     settings.SQLALCHEMY_DATABASE_URI,
     pool_pre_ping=True,  # Verify connections before usage to avoid stale connections
