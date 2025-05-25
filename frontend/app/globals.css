@@ -381,3 +381,195 @@
 .border-gray-20 {
   border-color: var(--color-gray-20);
 }
+
+/* Custom Animations for Sophisticated Design Elements */
+@keyframes reverse-spin {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes draw-checkmark {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes clock-tick {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(30deg);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes money-fly {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20px) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes grow-bar {
+  0% {
+    height: 20%;
+  }
+  100% {
+    height: 100%;
+  }
+}
+
+@keyframes connect-links {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+/* Apply custom animations */
+.reverse-spin {
+  animation: reverse-spin 2s linear infinite;
+}
+
+.draw-checkmark {
+  animation: draw-checkmark 2s ease-in-out infinite;
+}
+
+.clock-tick {
+  animation: clock-tick 2s ease-in-out infinite;
+}
+
+.blink {
+  animation: blink 3s ease-in-out infinite;
+}
+
+.money-fly {
+  animation: money-fly 2s ease-out infinite;
+}
+
+.grow-bar {
+  animation: grow-bar 2s ease-out infinite;
+}
+
+.connect-links {
+  animation: connect-links 3s ease-in-out infinite;
+}
+
+/* Custom Animations for Sophisticated Design Elements */
+@keyframes reverse-spin {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes draw-checkmark {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes clock-tick {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(30deg);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes money-fly {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20px) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes grow-bar {
+  0% {
+    height: 20%;
+  }
+  100% {
+    height: 100%;
+  }
+}
+
+@keyframes connect-links {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+/* Apply custom animations */
+.reverse-spin {
+  animation: reverse-spin 2s linear infinite;
+}
+
+.draw-checkmark {
+  animation: draw-checkmark 2s ease-in-out infinite;
+}
+
+.clock-tick {
+  animation: clock-tick 2s ease-in-out infinite;
+}
+
+.blink {
+  animation: blink 3s ease-in-out infinite;
+}
+
+.money-fly {
+  animation: money-fly 2s ease-out infinite;
+}
+
+.grow-bar {
+  animation: grow-bar 2s ease-out infinite;
+}
+
+.connect-links {
+  animation: connect-links 3s ease-in-out infinite;
+}

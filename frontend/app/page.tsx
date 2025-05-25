@@ -1,11 +1,9 @@
 import { HeroSection } from "@/components/hero-section"
-import { ProblemSection } from "@/components/problem-section"
-import { SolutionSection } from "@/components/solution-section"
-import { HowItWorks } from "@/components/how-it-works"
-import { PrototypeSection } from "@/components/prototype-section"
-import { TeamsSection } from "@/components/teams-section"
-import { IntegrationSection } from "@/components/integration-section"
-import { TestimonialsSection } from "@/components/testimonials-section"
+import { BenefitsSection } from "@/components/benefits-section"
+import { PricingSection } from "@/components/pricing-section"
+import { SocialProofSection } from "@/components/social-proof-section"
+import { HowItWorksSection } from "@/components/how-it-works-section"
+import { FAQSection } from "@/components/faq-section"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
 import Link from "next/link"
@@ -24,13 +22,11 @@ export default function Home() {
       </div>
       <main className="flex-1">
         <HeroSection />
-        <ProblemSection />
-        <SolutionSection />
-        <HowItWorks />
-        <PrototypeSection />
-        <TeamsSection />
-        <IntegrationSection />
-        <TestimonialsSection />
+        <BenefitsSection />
+        <PricingSection />
+        <SocialProofSection />
+        <HowItWorksSection />
+        <FAQSection />
         <CTASection />
       </main>
       <Footer />
