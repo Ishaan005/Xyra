@@ -60,9 +60,9 @@ export function SocialProofSection() {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-dark mb-4 flex items-center justify-center gap-4">
             <div className="relative">
               {/* Speech bubble with stars - represents testimonials/reviews */}
-              <div className="w-12 h-12 bg-gradient-to-br from-purple/20 to-purple/40 rounded-2xl flex items-center justify-center border-2 border-purple/30 relative">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple/20 to-purple/40 rounded-2xl flex items-center justify-center border border-purple/8 ring-1 ring-purple/5 relative">
                 {/* Speech bubble tail */}
-                <div className="absolute -bottom-1 left-3 w-2 h-2 bg-gradient-to-br from-purple/20 to-purple/40 transform rotate-45 border-r border-b border-purple/30"></div>
+                <div className="absolute -bottom-1 left-3 w-2 h-2 bg-gradient-to-br from-purple/20 to-purple/40 transform rotate-45 border-r border-b border-purple/8"></div>
                 {/* Stars inside bubble */}
                 <div className="flex gap-0.5">
                   <div className="w-1.5 h-1.5 bg-gold transform rotate-45 animate-pulse"></div>
@@ -82,7 +82,7 @@ export function SocialProofSection() {
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className={`group relative overflow-hidden rounded-2xl border border-${testimonial.color}/20 bg-gradient-to-br from-white to-${testimonial.color}-20 p-8 shadow-lg transition-all duration-1000 hover:shadow-xl hover:scale-105 ${
+              className={`group relative overflow-hidden rounded-2xl border border-${testimonial.color}/8 bg-gradient-to-br from-white to-${testimonial.color}-20 p-8 shadow-lg transition-all duration-1000 hover:shadow-xl hover:scale-105 ring-1 ring-${testimonial.color}/5 hover:ring-${testimonial.color}/10 ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
               }`}
               style={{ transitionDelay: `${testimonial.delay}ms` }}
@@ -118,7 +118,7 @@ export function SocialProofSection() {
         <div
           className={`text-center mt-16 transition-all duration-1000 delay-600 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
         >
-          <div className="inline-flex items-center gap-4 bg-gradient-to-r from-gold/10 to-purple/10 rounded-full px-8 py-4 border border-gold/20">
+          <div className="inline-flex items-center gap-4 bg-gradient-to-r from-gold/10 to-purple/10 rounded-full px-8 py-4 border border-gold/8 ring-1 ring-gold/5 hover:ring-gold/10 transition-all duration-300">
             <div className="relative">
               {/* Trophy/achievement formation */}
               <div className="w-8 h-8 relative">

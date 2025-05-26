@@ -62,7 +62,7 @@ export function HowItWorksSection() {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-dark mb-4 flex items-center justify-center gap-4">
             <div className="relative">
               {/* Step-by-step workflow visualization */}
-              <div className="w-12 h-12 bg-gradient-to-br from-blue/20 to-teal/40 rounded-lg flex items-center justify-center border-2 border-blue/30">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue/20 to-teal/40 rounded-lg flex items-center justify-center border border-blue/8 ring-1 ring-blue/5">
                 <div className="flex items-center gap-1">
                   {/* Step 1: Clock (Define) */}
                   <div className="relative w-2 h-2">
@@ -106,7 +106,7 @@ export function HowItWorksSection() {
 
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div
-                  className={`flex-shrink-0 h-16 w-16 rounded-full bg-${step.color}/10 flex items-center justify-center border-2 border-${step.color}/20 relative`}
+                  className={`flex-shrink-0 h-16 w-16 rounded-full bg-${step.color}/10 flex items-center justify-center border border-${step.color}/8 ring-1 ring-${step.color}/5 relative`}
                 >
                   <step.icon className={`h-8 w-8 text-${step.color}`} />
                   {/* Content-specific animations for each step */}
@@ -122,8 +122,8 @@ export function HowItWorksSection() {
                   {step.color === "purple" && (
                     <>
                       {/* Chain links connecting for "Connect" */}
-                      <div className="absolute -top-2 -right-2 w-3 h-3 border border-purple/50 rounded-full animate-pulse"></div>
-                      <div className="absolute -bottom-2 -left-2 w-3 h-3 border border-purple/50 rounded-full animate-pulse delay-200"></div>
+                      <div className="absolute -top-2 -right-2 w-3 h-3 border border-purple/15 rounded-full animate-pulse"></div>
+                      <div className="absolute -bottom-2 -left-2 w-3 h-3 border border-purple/15 rounded-full animate-pulse delay-200"></div>
                       <div className="absolute top-1 right-1 w-1 h-1 bg-purple/50 rounded-full animate-bounce"></div>
                     </>
                   )}
@@ -140,7 +140,7 @@ export function HowItWorksSection() {
 
                 <div className="flex-1">
                   <div
-                    className={`bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-${step.color}/20 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
+                    className={`bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-${step.color}/8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ring-1 ring-${step.color}/5 hover:ring-${step.color}/10`}
                   >
                     <h3 className="text-2xl font-bold text-gray-dark mb-2">{step.title}</h3>
                     <div className={`text-lg font-medium text-${step.color} mb-4`}>{step.subtitle}</div>

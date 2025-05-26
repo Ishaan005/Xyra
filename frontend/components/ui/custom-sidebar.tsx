@@ -130,7 +130,7 @@ export function Sidebar({ children, className, ...props }: SidebarProps) {
   if (isMobile) {
     return (
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-[var(--sidebar-mobile-width)] p-0 border-r">
+        <SheetContent side="left" className="w-[var(--sidebar-mobile-width)] p-0 border border-white/10 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.05)] backdrop-blur-md">
           <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">{children}</div>
         </SheetContent>
       </Sheet>
@@ -141,7 +141,7 @@ export function Sidebar({ children, className, ...props }: SidebarProps) {
   return (
     <div
       className={cn(
-        "h-screen fixed top-0 left-0 z-30 flex flex-col border-r bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
+        "h-screen fixed top-0 left-0 z-30 flex flex-col border-r border-white/10 bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out shadow-[0_0_25px_rgba(255,255,255,0.05)] backdrop-blur-md",
         expanded ? "w-[var(--sidebar-width)]" : "w-[var(--sidebar-width-collapsed)]",
         className,
       )}
@@ -159,7 +159,7 @@ interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function SidebarHeader({ children, className, ...props }: SidebarHeaderProps) {
   return (
-    <div className={cn("flex h-16 shrink-0 items-center border-b px-4", className)} {...props}>
+    <div className={cn("flex h-16 shrink-0 items-center border-b border-white/10 px-4", className)} {...props}>
       {children}
     </div>
   )
@@ -185,7 +185,7 @@ interface SidebarFooterProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function SidebarFooter({ children, className, ...props }: SidebarFooterProps) {
   return (
-    <div className={cn("mt-auto border-t p-4", className)} {...props}>
+    <div className={cn("mt-auto border-t border-white/10 p-4", className)} {...props}>
       {children}
     </div>
   )

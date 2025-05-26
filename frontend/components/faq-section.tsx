@@ -40,7 +40,7 @@ export function FAQSection() {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-dark mb-4 flex items-center justify-center gap-4">
             <div className="relative">
               {/* Question mark formation */}
-              <div className="w-12 h-12 bg-gradient-to-br from-purple/20 to-purple/40 rounded-full flex items-center justify-center border-2 border-purple/30">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple/20 to-purple/40 rounded-full flex items-center justify-center border border-purple/8 ring-1 ring-purple/5">
                 <div className="relative">
                   {/* Question mark shape */}
                   <div className="w-4 h-4 relative">
@@ -65,7 +65,7 @@ export function FAQSection() {
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className={`mb-4 rounded-2xl border border-${faq.color}/20 bg-gradient-to-r from-white to-${faq.color}-20 overflow-hidden shadow-lg`}
+              className={`mb-4 rounded-2xl border border-${faq.color}/8 bg-gradient-to-r from-white to-${faq.color}-20 overflow-hidden shadow-lg ring-1 ring-${faq.color}/5 hover:ring-${faq.color}/10 transition-all duration-300`}
             >
               <button
                 className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-white/50 transition-all duration-300"

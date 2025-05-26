@@ -44,14 +44,14 @@ export function PricingSection() {
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Normal Pricing */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-gray-40 shadow-lg">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-gray/15 shadow-lg ring-1 ring-gray/10">
             <h3 className="text-2xl font-bold text-gray-dark mb-6">What You'd Normally Pay:</h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-gray-20">
+              <div className="flex justify-between items-center py-3 border-b border-gray/10">
                 <span className="text-gray-dark">Enterprise pricing platforms:</span>
                 <span className="font-bold text-destructive">$50K+ per year</span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-20">
+              <div className="flex justify-between items-center py-3 border-b border-gray/10">
                 <span className="text-gray-dark">Custom development:</span>
                 <span className="font-bold text-destructive">$200K+ and 6 months</span>
               </div>
@@ -63,7 +63,7 @@ export function PricingSection() {
           </div>
 
           {/* Our Pricing */}
-          <div className="relative bg-gradient-to-br from-gold/10 to-purple/10 rounded-2xl p-8 border-2 border-gold shadow-xl transform hover:scale-105 transition-all duration-300">
+          <div className="relative bg-gradient-to-br from-gold/10 to-purple/10 rounded-2xl p-8 border border-gold/8 shadow-xl transform hover:scale-105 transition-all duration-300 ring-1 ring-gold/5 hover:ring-gold/10">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
               <div className="bg-gold text-white px-6 py-2 rounded-full font-bold text-sm">🔥 LIMITED TIME OFFER</div>
             </div>
@@ -77,7 +77,7 @@ export function PricingSection() {
             </div>
 
             {/* Countdown Timer */}
-            <div className="bg-white/80 rounded-xl p-6 mb-8 border border-gold/20">
+            <div className="bg-white/80 rounded-xl p-6 mb-8 border border-gold/15 ring-1 ring-gold/5">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Clock className="h-5 w-5 text-gold" />
                 <span className="font-bold text-gray-dark">Deal expires in:</span>

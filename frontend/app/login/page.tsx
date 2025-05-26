@@ -47,7 +47,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
 
-        <Card className="border-border/50 shadow-sm overflow-hidden">
+        <Card className="border-border/8 ring-1 ring-border/5 shadow-sm overflow-hidden hover:ring-border/10 transition-all duration-300">
           <CardHeader className="bg-gradient-to-r from-muted/30 to-transparent">
             <CardTitle>Sign In</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>
@@ -113,7 +113,7 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4 border-t">
+          <CardFooter className="flex flex-col space-y-4 border-t border-border/10">
             <div className="text-center text-sm pt-4">
               <span className="text-muted-foreground">Don't have an account? </span>
               <Link href="/signup" className="text-primary font-medium hover:underline">

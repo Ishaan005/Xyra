@@ -72,7 +72,7 @@ export default function SignupPage() {
           <p className="text-muted-foreground mt-2">Create your account to get started</p>
         </div>
 
-        <Card className="border-border/50 shadow-sm overflow-hidden">
+        <Card className="border-border/8 ring-1 ring-border/5 shadow-sm overflow-hidden hover:ring-border/10 transition-all duration-300">
           <CardHeader className="bg-gradient-to-r from-muted/30 to-transparent">
             <CardTitle>Create Account</CardTitle>
             <CardDescription>Fill in your details to sign up</CardDescription>
@@ -136,7 +136,7 @@ export default function SignupPage() {
                 </div>
 
                 {passwordFocus && (
-                  <div className="mt-2 text-xs space-y-1 bg-muted/30 p-2 rounded-md border border-border/50">
+                  <div className="mt-2 text-xs space-y-1 bg-muted/30 p-2 rounded-md border border-border/10 ring-1 ring-border/5">
                     <p className="flex items-center">
                       {passwordLength ? (
                         <CheckCircle className="h-3 w-3 text-success mr-1" />

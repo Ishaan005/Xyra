@@ -37,7 +37,7 @@ export function CTASection() {
             </Button>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-2xl mx-auto border border-white/20">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-2xl mx-auto border border-white/8 ring-1 ring-white/5 hover:ring-white/10 transition-all duration-300">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Shield className="h-8 w-8" />
               <h3 className="text-2xl font-bold">60-Day Money-Back Guarantee</h3>
@@ -60,14 +60,14 @@ export function CTASection() {
       <div className="absolute bottom-0 left-0 right-0 bg-gray-dark text-white py-6">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center">
-            <p className="text-xl font-bold mb-4 flex items-center justify-center gap-3">
+            <div className="text-xl font-bold mb-4 flex items-center justify-center gap-3">
               <div className="relative">
                 <div className="w-8 h-8 bg-gradient-to-r from-gold via-yellow-500 to-orange-500 rounded-full animate-bounce"></div>
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-gold rounded-full animate-ping"></div>
                 <div className="absolute top-1 left-1 w-2 h-2 bg-white rounded-full animate-pulse"></div>
               </div>
               Join 300+ AI companies already crushing it with outcome-based pricing
-            </p>
+            </div>
             <Button className="bg-gold hover:bg-gold-dark text-white font-bold text-lg px-8 py-3 rounded-xl transition-all duration-300 transform hover:scale-105">
               Claim Your Lifetime Deal Before It's Gone
             </Button>

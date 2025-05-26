@@ -216,13 +216,13 @@ export default function PricingPage() {
   const getModelTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "usage":
-        return "bg-blue/10 text-blue border-blue/20"
+        return "bg-blue/10 text-blue border-blue/8"
       case "seat":
-        return "bg-purple/10 text-purple border-purple/20"
+        return "bg-purple/10 text-purple border-purple/8"
       case "hybrid":
-        return "bg-gold/10 text-gold-dark border-gold/20"
+        return "bg-gold/10 text-gold-dark border-gold/8"
       default:
-        return "bg-teal/10 text-teal border-teal/20"
+        return "bg-teal/10 text-teal border-teal/8"
     }
   }
 
@@ -238,7 +238,7 @@ export default function PricingPage() {
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/8 shadow-sm ring-1 ring-border/5 hover:ring-border/10 transition-all duration-300">
         <div className="flex items-center gap-3">
           <div className="rounded-full bg-gold/10 p-2">
             <DollarSign className="h-6 w-6 text-gold" />
@@ -294,14 +294,14 @@ export default function PricingPage() {
 
       {/* Create Form */}
       {showCreateForm && (
-        <Card className="border-border/50 shadow-sm overflow-hidden">
+        <Card className="border-border/8 ring-1 ring-border/5 shadow-sm overflow-hidden hover:ring-border/10 transition-all duration-300">
           <CardHeader className="bg-gradient-to-r from-gold/5 to-transparent">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Plus className="h-4 w-4 text-gold" />
                 <CardTitle>Create New Pricing Model</CardTitle>
               </div>
-              <Badge variant="outline" className="bg-gold/10 text-gold-dark border-gold/20">
+              <Badge variant="outline" className="bg-gold/10 text-gold-dark border-gold/8">
                 New
               </Badge>
             </div>
@@ -574,7 +574,7 @@ export default function PricingPage() {
           {filteredModels.map((model) => (
             <Card
               key={model.id}
-              className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300"
+              className="overflow-hidden border-border/8 ring-1 ring-border/5 shadow-sm hover:shadow-md transition-shadow duration-300 hover:ring-border/10"
             >
               <CardHeader className="pb-4 bg-gradient-to-r from-muted/30 to-transparent">
                 <div className="flex justify-between items-start">
@@ -606,7 +606,7 @@ export default function PricingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-4">
-                <div className="bg-muted/20 rounded-lg p-3 overflow-auto max-h-[200px] border border-border/30">
+                <div className="bg-muted/20 rounded-lg p-3 overflow-auto max-h-[200px] border border-border/10 ring-1 ring-border/5">
                   <pre className="text-xs font-mono">{JSON.stringify(model.config, null, 2)}</pre>
                 </div>
               </CardContent>

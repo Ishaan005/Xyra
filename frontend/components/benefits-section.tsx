@@ -88,7 +88,7 @@ export function BenefitsSection() {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-dark mb-4 flex items-center justify-center gap-4">
             <div className="relative">
               {/* Checkmark animation - represents "benefits verified" */}
-              <div className="w-12 h-12 bg-gradient-to-r from-success/20 to-success/40 rounded-full flex items-center justify-center border-2 border-success/30">
+              <div className="w-12 h-12 bg-gradient-to-r from-success/20 to-success/40 rounded-full flex items-center justify-center border border-success/8 ring-1 ring-success/5">
                 <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path 
                     strokeLinecap="round" 
@@ -115,13 +115,19 @@ export function BenefitsSection() {
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className={`group relative overflow-hidden rounded-2xl ${
-                benefit.color === "gold" ? "border-gold/20 bg-gradient-to-br from-white to-gold-20" :
-                benefit.color === "blue" ? "border-blue/20 bg-gradient-to-br from-white to-blue-20" :
-                benefit.color === "purple" ? "border-purple/20 bg-gradient-to-br from-white to-purple-20" :
-                benefit.color === "teal" ? "border-teal/20 bg-gradient-to-br from-white to-teal-20" : 
-                "border-gray/20 bg-gradient-to-br from-white to-gray-20"
-              } p-8 shadow-lg transition-all duration-1000 hover:shadow-xl hover:scale-105 ${
+              className={`group relative overflow-hidden rounded-2xl border ${
+                benefit.color === "gold" ? "border-gold/8 bg-gradient-to-br from-white to-gold-20" :
+                benefit.color === "blue" ? "border-blue/8 bg-gradient-to-br from-white to-blue-20" :
+                benefit.color === "purple" ? "border-purple/8 bg-gradient-to-br from-white to-purple-20" :
+                benefit.color === "teal" ? "border-teal/8 bg-gradient-to-br from-white to-teal-20" : 
+                "border-gray/8 bg-gradient-to-br from-white to-gray-20"
+              } p-8 shadow-lg transition-all duration-1000 hover:shadow-xl hover:scale-105 ring-1 ${
+                benefit.color === "gold" ? "ring-gold/5 hover:ring-gold/10" :
+                benefit.color === "blue" ? "ring-blue/5 hover:ring-blue/10" :
+                benefit.color === "purple" ? "ring-purple/5 hover:ring-purple/10" :
+                benefit.color === "teal" ? "ring-teal/5 hover:ring-teal/10" : 
+                "ring-gray/5 hover:ring-gray/10"
+              } ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
               }`}
               style={{ transitionDelay: `${benefit.delay}ms` }}

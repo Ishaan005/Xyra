@@ -187,7 +187,7 @@ export default function AgentsPage() {
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-12 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-12 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/8 shadow-sm ring-1 ring-border/5 hover:ring-border/10 transition-all duration-300">
         <div className="flex items-center gap-3">
           <div className="rounded-full bg-gold/10 p-2">
             <Zap className="h-6 w-6 text-gold" />
@@ -224,14 +224,14 @@ export default function AgentsPage() {
       )}
 
       {/* Create New Agent Card */}
-      <Card className="border-border/50 shadow-gray">
+      <Card className="border-border/8 ring-1 ring-border/5 shadow-gray hover:ring-border/10 transition-all duration-300">
         <CardHeader className="bg-gradient-to-r from-gold/5 to-transparent">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Plus className="h-4 w-4 text-gold" />
               <CardTitle>Create New Agent</CardTitle>
             </div>
-            <Badge variant="outline" className="bg-gold/10 text-gold-dark border-gold/20">
+            <Badge variant="outline" className="bg-gold/10 text-gold-dark border-gold/8">
               New
             </Badge>
           </div>
@@ -293,7 +293,7 @@ export default function AgentsPage() {
       </Card>
 
       {/* Agents List */}
-      <Card className="border-border/50 shadow-sm overflow-hidden">
+      <Card className="border-border/8 ring-1 ring-border/5 shadow-sm overflow-hidden hover:ring-border/10 transition-all duration-300">
         <CardHeader className="bg-gradient-to-r from-purple/5 to-transparent">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -374,7 +374,7 @@ export default function AgentsPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="divide-y divide-border/15">
                   {filteredAgents.map((agent) => {
                     const stats = agentStats[agent.id]
                     return (

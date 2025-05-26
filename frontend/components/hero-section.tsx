@@ -24,7 +24,7 @@ export function HeroSection() {
         <div className="mx-auto max-w-4xl text-center">
           {/* Animated badge with rocket effect */}
           <div
-            className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold/10 to-gold/20 px-4 py-2 text-sm font-medium text-gold-dark mb-8 transition-all duration-1000 border border-gold/30 shadow-md hover:shadow-lg ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+            className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold/10 to-gold/20 px-4 py-2 text-sm font-medium text-gold-dark mb-8 transition-all duration-1000 border border-white/10 shadow-[0_0_15px_rgba(255,181,0,0.1)] backdrop-blur-md hover:border-white/20 hover:shadow-[0_0_20px_rgba(255,181,0,0.15)] ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
           >
             <div className="relative">
               <Zap className="h-4 w-4 animate-pulse" />
@@ -57,7 +57,7 @@ export function HeroSection() {
 
           {/* Problem statement with animation */}
           <div
-            className={`bg-white/80 backdrop-blur-sm rounded-2xl p-8 mb-12 border border-gold/20 shadow-lg transition-all duration-1000 delay-600 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            className={`bg-white/80 backdrop-blur-sm rounded-2xl p-8 mb-12 border border-gold/8 ring-1 ring-border/5 shadow-lg transition-all duration-1000 delay-600 hover:ring-border/10 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           >
             <h2 className="text-2xl font-bold text-gray-dark mb-4">
               <span className="relative inline-block">
@@ -113,7 +113,7 @@ export function HeroSection() {
 
           {/* Solution statement */}
           <div
-            className={`bg-gradient-to-r from-gold/10 to-purple/10 rounded-2xl p-8 mb-12 border border-purple/20 transition-all duration-1000 delay-800 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            className={`bg-gradient-to-r from-gold/10 to-purple/10 rounded-2xl p-8 mb-12 border border-purple/8 ring-1 ring-purple/5 transition-all duration-1000 delay-800 hover:ring-purple/10 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           >
             <div className="text-xl text-gray-dark mb-4">
               <span className="font-bold text-purple">Xyra</span> is like having a financial advisor, data

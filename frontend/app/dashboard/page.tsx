@@ -263,7 +263,7 @@ export default function DashboardPage() {
   return (
     <div className="p-8 md:p-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/50 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between md:items-center bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/10 shadow-sm ring-1 ring-border/5 backdrop-blur-sm">
         <div>
           <h1 className="text-3xl font-bold">Organization Dashboard</h1>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground">
@@ -278,7 +278,7 @@ export default function DashboardPage() {
           defaultValue="month"
           value={period}
           onValueChange={setPeriod}
-          className="w-full md:w-auto bg-background/80 backdrop-blur-sm rounded-lg p-1 border border-border/50 shadow-sm"
+          className="w-full md:w-auto bg-background/80 backdrop-blur-sm rounded-lg p-1 border border-border/8 shadow-sm ring-1 ring-border/5"
         >
           <TabsList className="grid grid-cols-3 w-full md:w-[300px]">
             <TabsTrigger value="week">Week</TabsTrigger>
@@ -290,7 +290,7 @@ export default function DashboardPage() {
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <Card className="overflow-hidden border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 ring-1 ring-border/5 hover:ring-border/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-gold/5 to-transparent">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <div className="rounded-full bg-gold/10 p-2">
@@ -312,7 +312,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <Card className="overflow-hidden border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 ring-1 ring-border/5 hover:ring-border/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-destructive/5 to-transparent">
             <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
             <div className="rounded-full bg-destructive/10 p-2">
@@ -334,7 +334,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <Card className="overflow-hidden border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 ring-1 ring-border/5 hover:ring-border/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-success/5 to-transparent">
             <CardTitle className="text-sm font-medium">Margin %</CardTitle>
             <div className="rounded-full bg-success/10 p-2">
@@ -356,7 +356,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <Card className="overflow-hidden border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 ring-1 ring-border/5 hover:ring-border/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-blue/5 to-transparent">
             <CardTitle className="text-sm font-medium">Activity Count</CardTitle>
             <div className="rounded-full bg-blue/10 p-2">
@@ -378,7 +378,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <Card className="overflow-hidden border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 ring-1 ring-border/5 hover:ring-border/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-purple/5 to-transparent">
             <CardTitle className="text-sm font-medium">Total Agents</CardTitle>
             <div className="rounded-full bg-purple/10 p-2">
@@ -389,13 +389,13 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">{summary.agents.total}</div>
             <div className="flex items-center justify-between mt-1">
               <div className="text-xs text-muted-foreground">
-                <Badge variant="outline" className="text-[10px] py-0 h-4 bg-success/10 text-success border-success/20">
+                <Badge variant="outline" className="text-[10px] py-0 h-4 bg-success/10 text-success border-success/8">
                   {summary.agents.active} active
                 </Badge>
               </div>
               <Badge
                 variant="outline"
-                className="text-[10px] py-0 h-4 bg-destructive/10 text-destructive border-destructive/20"
+                className="text-[10px] py-0 h-4 bg-destructive/10 text-destructive border-destructive/8"
               >
                 {summary.agents.total - summary.agents.active} inactive
               </Badge>
@@ -406,14 +406,14 @@ export default function DashboardPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="col-span-1 border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+        <Card className="col-span-1 border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 overflow-hidden ring-1 ring-border/5 hover:ring-border/10">
           <CardHeader className="bg-gradient-to-r from-gold/5 to-transparent">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Top Agents by Revenue & Cost</CardTitle>
                 <CardDescription>Comparing revenue and costs across your top performing agents</CardDescription>
               </div>
-              <Badge variant="outline" className="bg-gold/10 text-gold-dark border-gold/20">
+              <Badge variant="outline" className="bg-gold/10 text-gold-dark border-gold/15">
                 Revenue Analysis
               </Badge>
             </div>
@@ -483,14 +483,14 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+        <Card className="col-span-1 border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 overflow-hidden ring-1 ring-border/5 hover:ring-border/10">
           <CardHeader className="bg-gradient-to-r from-success/5 to-transparent">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Margin Analysis</CardTitle>
                 <CardDescription>Profit margin percentage by agent</CardDescription>
               </div>
-              <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+              <Badge variant="outline" className="bg-success/10 text-success border-success/15">
                 Profitability
               </Badge>
             </div>
@@ -562,7 +562,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Agent Performance Table */}
-      <Card className="border-border/50 shadow-sm overflow-hidden">
+      <Card className="border-border/8 shadow-sm hover:shadow-md hover:border-border/15 transition-all duration-300 overflow-hidden ring-1 ring-border/5 hover:ring-border/10">
         <CardHeader className="bg-gradient-to-r from-purple/5 to-transparent">
           <div className="flex items-center justify-between">
             <div>
@@ -600,7 +600,7 @@ export default function DashboardPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-border/20">
                 {topAgents.map((agent, index) => (
                   <tr key={index} className="hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -631,7 +631,7 @@ export default function DashboardPage() {
                       {getAgentChangeIndicator(agent.agent_id, agent.metrics.activity_count, 'activity')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <Badge className={agent.is_active ? "bg-success/20 text-success hover:bg-success/30 border-0" : "bg-destructive/20 text-destructive hover:bg-destructive/30 border-0"}>
+                      <Badge className={agent.is_active ? "bg-success/20 text-success hover:bg-success/25 border-0" : "bg-destructive/20 text-destructive hover:bg-destructive/25 border-0"}>
                         {agent.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </td>
