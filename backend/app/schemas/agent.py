@@ -10,6 +10,10 @@ class AgentBase(BaseModel):
     config: Optional[Dict[str, Any]] = None
     is_active: bool = True
     external_id: Optional[str] = None
+    # New fields from revised schema
+    status: str = 'active'
+    type: Optional[str] = None
+    capabilities: List = []
 
 
 class AgentCreate(AgentBase):
@@ -25,6 +29,9 @@ class AgentUpdate(BaseModel):
     config: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
     billing_model_id: Optional[int] = None
+    status: Optional[str] = None
+    type: Optional[str] = None
+    capabilities: Optional[List] = None
 
 
 class AgentInDBBase(AgentBase):
@@ -71,8 +78,7 @@ class AgentActivityInDB(AgentActivityBase):
     timestamp: datetime
     
     class Config:
-        from_attributes = True  # allow reading SQLAlchemy model attributes
-        orm_mode = True        # enable ORM mode for Pydantic v1 compatibility
+        from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility
 
 
 class AgentActivity(AgentActivityInDB):
@@ -100,8 +106,7 @@ class AgentCostInDB(AgentCostBase):
     timestamp: datetime
     
     class Config:
-        from_attributes = True
-        orm_mode = True
+        from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility
 
 
 class AgentCost(AgentCostInDB):
@@ -130,8 +135,7 @@ class AgentOutcomeInDB(AgentOutcomeBase):
     timestamp: datetime
     
     class Config:
-        from_attributes = True
-        orm_mode = True
+        from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility
 
 
 class AgentOutcome(AgentOutcomeInDB):

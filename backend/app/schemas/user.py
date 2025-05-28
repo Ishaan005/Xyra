@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr
+from datetime import datetime
 
 
 class UserBase(BaseModel):
@@ -8,6 +9,7 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     is_active: Optional[bool] = True
     is_superuser: bool = False
+    role: str = 'user'  # New field from revised schema
 
 
 class UserCreate(UserBase):
@@ -23,12 +25,14 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     is_active: Optional[bool] = None
     organization_id: Optional[int] = None
+    role: Optional[str] = None
 
 
 class UserInDBBase(UserBase):
     """Base schema for users in DB, includes ID"""
     id: int
     organization_id: Optional[int] = None
+    last_login: Optional[datetime] = None  # New field from revised schema
     
     class Config:
         from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility

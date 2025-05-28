@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -7,6 +7,14 @@ class OrganizationBase(BaseModel):
     """Base organization schema"""
     name: str
     description: Optional[str] = None
+    # New fields from revised schema
+    external_id: Optional[str] = None
+    status: str = 'active'
+    billing_email: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    timezone: str = 'UTC'
+    settings: Dict = {}
 
 
 class OrganizationCreate(OrganizationBase):
@@ -18,6 +26,13 @@ class OrganizationUpdate(BaseModel):
     """Schema for updating organizations"""
     name: Optional[str] = None
     description: Optional[str] = None
+    external_id: Optional[str] = None
+    status: Optional[str] = None
+    billing_email: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    timezone: Optional[str] = None
+    settings: Optional[Dict] = None
 
 
 class OrganizationInDBBase(OrganizationBase):

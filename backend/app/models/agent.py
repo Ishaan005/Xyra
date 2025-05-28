@@ -21,12 +21,20 @@ class Agent(BaseModel):
     # External ID for the agent in the customer's system
     external_id = Column(String, nullable=True)
     
+    # New fields from revised schema
+    status = Column(String(50), nullable=False, default='active')
+    type = Column(String(100), nullable=True)
+    capabilities = Column(JSON, nullable=False, default=[])
+    
     # Relationships
     organization = relationship("Organization", back_populates="agents")
     billing_model = relationship("BillingModel", back_populates="agents")
     activities = relationship("AgentActivity", back_populates="agent", cascade="all, delete, delete-orphan", passive_deletes=True)
     costs = relationship("AgentCost", back_populates="agent", cascade="all, delete, delete-orphan", passive_deletes=True)
     outcomes = relationship("AgentOutcome", back_populates="agent", cascade="all, delete, delete-orphan", passive_deletes=True)
+    
+    # Integration layer relationships
+    integration_events = relationship("IntegrationEvent", back_populates="agent")
     
     def __str__(self) -> str:
         return f"Agent(name={self.name}, org={self.organization_id})"

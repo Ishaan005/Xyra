@@ -30,7 +30,7 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
-    print("Starting server with integration layer. Access the API documentation at:")
+    print("Starting server Access the API documentation at:")
     print("  - Swagger UI: http://localhost:8000/docs")
     print("  - ReDoc: http://localhost:8000/redoc")
     print("  - Health Check: http://localhost:8000/health")
