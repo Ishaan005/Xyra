@@ -9,6 +9,32 @@ USER_DATA = {
 UPDATED_NAME = "Updated User"
 
 
+@pytest.fixture()
+def created_user(client, token):
+    """Create a user for testing and return its ID"""
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.post(
+        "/api/v1/users/",
+        json=USER_DATA,
+        headers=headers
+    )
+    if response.status_code == 200:
+        user = response.json()
+        assert user["email"] == USER_DATA["email"]
+        return user["id"]
+    
+    # If already exists, fetch existing user
+    list_response = client.get("/api/v1/users/", headers=headers)
+    assert list_response.status_code == 200, f"Failed to list users: {list_response.status_code}, {list_response.text}"
+    users = list_response.json()
+    for user in users:
+        if user.get("email") == USER_DATA["email"]:
+            return user["id"]
+    
+    # If we get here, there was an unexpected error
+    pytest.fail(f"User '{USER_DATA['email']}' not found and could not be created. Response: {response.status_code}, {response.text}")
+
+
 def test_read_users(client, token):
     headers = {"Authorization": f"Bearer {token}"}
     response = client.get("/api/v1/users/", headers=headers)
@@ -28,21 +54,20 @@ def test_create_user(client, token):
     assert response.status_code == 200
     user = response.json()
     assert user["email"] == USER_DATA["email"]
-    pytest.global_user_id = user["id"]
 
 
-def test_get_user_by_id(client, token):
+def test_get_user_by_id(client, token, created_user):
     headers = {"Authorization": f"Bearer {token}"}
-    user_id = pytest.global_user_id
+    user_id = created_user
     response = client.get(f"/api/v1/users/{user_id}", headers=headers)
     assert response.status_code == 200
     user = response.json()
     assert user["id"] == user_id
 
 
-def test_update_user(client, token):
+def test_update_user(client, token, created_user):
     headers = {"Authorization": f"Bearer {token}"}
-    user_id = pytest.global_user_id
+    user_id = created_user
     response = client.put(
         f"/api/v1/users/{user_id}",
         json={"full_name": UPDATED_NAME},
@@ -53,9 +78,9 @@ def test_update_user(client, token):
     assert user["full_name"] == UPDATED_NAME
 
 
-def test_delete_user(client, token):
+def test_delete_user(client, token, created_user):
     headers = {"Authorization": f"Bearer {token}"}
-    user_id = pytest.global_user_id
+    user_id = created_user
     response = client.delete(f"/api/v1/users/{user_id}", headers=headers)
     assert response.status_code == 200
     # subsequent get should 404

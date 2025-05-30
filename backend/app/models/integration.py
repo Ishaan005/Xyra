@@ -2,13 +2,36 @@
 Integration layer models for connectors, webhooks, and events.
 These models provide persistence for the integration layer with proper multi-tenancy.
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, ARRAY, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, ARRAY, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
+import os
 
 from app.models.base import BaseModel
+
+
+def get_json_column_type():
+    """Get appropriate JSON column type based on database backend"""
+    database_url = os.getenv("DATABASE_URL", "")
+    if "sqlite" in database_url.lower() or database_url == "":
+        # For SQLite or test environments, use standard JSON
+        return JSON
+    else:
+        # For PostgreSQL, use JSONB for better performance
+        return JSONB
+
+
+def get_array_column_type(item_type_instance):
+    """Get appropriate array column type based on database backend"""
+    database_url = os.getenv("DATABASE_URL", "")
+    if "sqlite" in database_url.lower() or database_url == "":
+        # For SQLite, store arrays as JSON strings
+        return JSON
+    else:
+        # For PostgreSQL, use proper ARRAY type
+        return ARRAY(item_type_instance)
 
 
 class IntegrationConnector(BaseModel):
@@ -25,8 +48,8 @@ class IntegrationConnector(BaseModel):
     connector_type = Column(String(50), nullable=False)  # 'rest_api', 'graphql', 'webhook'
     
     # Configuration and authentication
-    config = Column(JSONB, nullable=False, default={})
-    auth_config = Column(JSONB, nullable=False, default={})
+    config = Column(get_json_column_type(), nullable=False, default={})
+    auth_config = Column(get_json_column_type(), nullable=False, default={})
     
     # Status and health monitoring
     status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'error'
@@ -34,7 +57,7 @@ class IntegrationConnector(BaseModel):
     last_health_check = Column(DateTime, nullable=True)
     
     # Metrics and monitoring
-    metrics = Column(JSONB, default={})
+    metrics = Column(get_json_column_type(), default={})
     
     # Relationships
     organization = relationship("Organization", back_populates="integration_connectors")
@@ -58,11 +81,11 @@ class IntegrationWebhook(BaseModel):
     secret = Column(String(255), nullable=False)
     
     # Event filtering
-    event_types = Column(ARRAY(String(100)), nullable=False)
+    event_types = Column(get_array_column_type(String(100)), nullable=False)
     
     # Status and configuration
     status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'paused'
-    retry_config = Column(JSONB, default={
+    retry_config = Column(get_json_column_type(), default={
         'max_retries': 3,
         'retry_delay': 60,  # seconds
         'backoff_multiplier': 2
@@ -70,7 +93,7 @@ class IntegrationWebhook(BaseModel):
     
     # Monitoring
     last_triggered_at = Column(DateTime, nullable=True)
-    metrics = Column(JSONB, default={
+    metrics = Column(get_json_column_type(), default={
         'total_calls': 0,
         'successful_calls': 0,
         'failed_calls': 0,
@@ -107,8 +130,8 @@ class IntegrationEvent(BaseModel):
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
     
     # Event data
-    raw_data = Column(JSONB, nullable=False)
-    processed_data = Column(JSONB, nullable=True)
+    raw_data = Column(get_json_column_type(), nullable=False)
+    processed_data = Column(get_json_column_type(), nullable=True)
     
     # Processing status
     processing_status = Column(String(50), default='pending')  # 'pending', 'processed', 'failed', 'skipped'
@@ -137,13 +160,13 @@ class IntegrationStream(BaseModel):
     
     # Stream configuration
     protocol = Column(String(50), nullable=False)  # 'kafka', 'redis', 'websocket', 'sse'
-    config = Column(JSONB, nullable=False, default={})
+    config = Column(get_json_column_type(), nullable=False, default={})
     
     # Status and monitoring
     status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'error'
     
     # Metrics
-    metrics = Column(JSONB, default={
+    metrics = Column(get_json_column_type(), default={
         'messages_processed': 0,
         'messages_failed': 0,
         'last_message_at': None,

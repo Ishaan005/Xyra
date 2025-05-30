@@ -176,6 +176,8 @@ class TestAPIGatewayMiddleware:
         
         # Mock the app call
         async def mock_app(scope, receive, send_wrapper):
+            # Add a small delay to simulate processing time
+            await asyncio.sleep(0.001)  # 1ms delay
             # Simulate sending response start
             await send_wrapper({
                 "type": "http.response.start",

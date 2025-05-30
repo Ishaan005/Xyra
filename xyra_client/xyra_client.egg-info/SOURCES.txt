@@ -1,0 +1,6 @@
+setup.py
+xyra_client.egg-info/PKG-INFO
+xyra_client.egg-info/SOURCES.txt
+xyra_client.egg-info/dependency_links.txt
+xyra_client.egg-info/requires.txt
+xyra_client.egg-info/top_level.txt
