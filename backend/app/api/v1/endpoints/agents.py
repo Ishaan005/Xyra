@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from app import schemas
 from app.api import deps
+from app.api.data_processing_deps import get_data_processing_pipeline
 from app.services import agent_service, organization_service
+from app.services.data_processing_pipeline import DataProcessingPipeline
 
 router = APIRouter()
 
@@ -53,9 +55,10 @@ def create_agent(
     db: Session = Depends(deps.get_db),
     agent_in: schemas.AgentCreate,
     current_user: schemas.User = Depends(deps.get_current_active_user),
+    pipeline: DataProcessingPipeline = Depends(get_data_processing_pipeline),
 ) -> Any:
     """
-    Create new agent for an organization.
+    Create new agent for an organization with data processing validation and enrichment.
     
     Users can only create agents for their own organization unless they are superusers.
     """
@@ -66,9 +69,9 @@ def create_agent(
             detail="Not enough permissions to create agents for this organization",
         )
     
-    # Create agent
+    # Create agent with data processing pipeline
     try:
-        agent = agent_service.create_agent(db, agent_in=agent_in)
+        agent = agent_service.create_agent(db, agent_in=agent_in, pipeline=pipeline)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -215,9 +218,10 @@ def record_activity(
     agent_id: int,
     activity_in: schemas.AgentActivityCreate,
     current_user: schemas.User = Depends(deps.get_current_active_user),
+    pipeline: DataProcessingPipeline = Depends(get_data_processing_pipeline),
 ) -> Any:
     """
-    Record activity for an agent.
+    Record activity for an agent with data processing validation and enrichment.
     
     Users can only record activities for agents in their own organization unless they are superusers.
     """
@@ -243,9 +247,9 @@ def record_activity(
             detail="Not enough permissions to record activities for this agent",
         )
     
-    # Record activity
+    # Record activity with data processing pipeline
     try:
-        activity = agent_service.record_agent_activity(db, activity_in=activity_in)
+        activity = agent_service.record_agent_activity(db, activity_in=activity_in, pipeline=pipeline)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

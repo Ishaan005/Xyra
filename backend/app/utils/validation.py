@@ -522,6 +522,30 @@ class DataValidator:
     def add_global_rule(self, rule: ValidationRule):
         """Add a global validation rule that applies to all schemas"""
         self.global_rules.append(rule)
+    
+    def get_rules_by_type(self, validation_type: str) -> List[Dict[str, Any]]:
+        """Get validation rules filtered by type"""
+        rules = []
+        if validation_type in self.schemas:
+            schema = self.schemas[validation_type]
+            for field_name, field_schema in schema.items():
+                for rule in field_schema.rules:
+                    rules.append({
+                        "rule_name": rule.name,
+                        "field": field_name,
+                        "validation_type": validation_type,
+                        "required": isinstance(rule, RequiredRule),
+                        "description": getattr(rule, 'message', ''),
+                        "severity": rule.severity.value
+                    })
+        return rules
+    
+    def get_all_rules(self) -> List[Dict[str, Any]]:
+        """Get all validation rules across all schemas"""
+        all_rules = []
+        for schema_name in self.schemas:
+            all_rules.extend(self.get_rules_by_type(schema_name))
+        return all_rules
 
 
 class SchemaBuilder:

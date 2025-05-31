@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from app import schemas
 from app.api import deps
+from app.api.data_processing_deps import get_data_processing_pipeline
 from app.services import organization_service
+from app.services.data_processing_pipeline import DataProcessingPipeline
 
 router = APIRouter()
 
@@ -38,9 +40,10 @@ def create_organization(
     db: Session = Depends(deps.get_db),
     organization_in: schemas.OrganizationCreate,
     current_user: schemas.User = Depends(deps.get_current_superuser),
+    pipeline: DataProcessingPipeline = Depends(get_data_processing_pipeline),
 ) -> Any:
     """
-    Create new organization.
+    Create new organization with data processing validation and enrichment.
     Only superusers can create organizations.
     """
     organization = organization_service.get_organization_by_name(db, name=organization_in.name)
@@ -49,7 +52,13 @@ def create_organization(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="An organization with this name already exists",
         )
-    organization = organization_service.create_organization(db, org_in=organization_in)
+    try:
+        organization = organization_service.create_organization(db, org_in=organization_in, pipeline=pipeline)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     return organization
 
 

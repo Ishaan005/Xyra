@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from app import schemas
 from app.api import deps
+from app.api.data_processing_deps import get_data_processing_pipeline
 from app.services import billing_model_service, organization_service
+from app.services.data_processing_pipeline import DataProcessingPipeline
 
 router = APIRouter()
 
@@ -63,9 +65,10 @@ def create_billing_model(
     db: Session = Depends(deps.get_db),
     billing_model_in: schemas.BillingModelCreate,
     current_user: schemas.User = Depends(deps.get_current_active_user),
+    pipeline: DataProcessingPipeline = Depends(get_data_processing_pipeline),
 ) -> Any:
     """
-    Create new billing model for an organization.
+    Create new billing model for an organization with data processing validation and enrichment.
     
     Users can only create billing models for their own organization unless they are superusers.
     """
@@ -76,9 +79,9 @@ def create_billing_model(
             detail="Not enough permissions to create billing models for this organization",
         )
     
-    # Create billing model
+    # Create billing model with data processing pipeline
     try:
-        billing_model = billing_model_service.create_billing_model(db, billing_model_in=billing_model_in)
+        billing_model = billing_model_service.create_billing_model(db, billing_model_in=billing_model_in, pipeline=pipeline)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

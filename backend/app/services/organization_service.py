@@ -10,6 +10,10 @@ from app.models.organization import Organization
 from app.models.agent import Agent, AgentCost, AgentOutcome
 from app.schemas.organization import OrganizationCreate, OrganizationUpdate
 
+# Data processing imports
+from app.services.data_processing_pipeline import DataProcessingPipeline
+from app.services.data_enrichment import EnrichmentRule, EnrichmentType, EnrichmentPriority
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -38,33 +42,74 @@ def get_organizations(db: Session, skip: int = 0, limit: int = 100) -> List[Orga
     return db.query(Organization).offset(skip).limit(limit).all()
 
 
-def create_organization(db: Session, org_in: OrganizationCreate) -> Organization:
+def create_organization(db: Session, org_in: OrganizationCreate, pipeline: Optional[DataProcessingPipeline] = None) -> Organization:
     """
-    Create a new organization with optional Stripe customer
+    Create a new organization with optional Stripe customer and data processing validation and enrichment
     """
+    # Validate input data if pipeline is provided
+    if pipeline:
+        validation_result = pipeline.validation_framework.validate(org_in.model_dump(), "organization_creation")
+        if not validation_result.is_valid:
+            raise ValueError(f"Organization data validation failed: {[error.message for error in validation_result.errors]}")
+    
     # Check if organization already exists
     db_org = get_organization_by_name(db, name=org_in.name)
     if db_org:
         raise ValueError(f"Organization with name {org_in.name} already exists")
+    
+    # Enrich organization data if pipeline is provided
+    enriched_data = org_in.model_dump()
+    if pipeline:
+        enrichment_rules = [
+            EnrichmentRule(
+                name="organization_name_standardization",
+                enrichment_type=EnrichmentType.CALCULATION,
+                source_fields=["name"],
+                target_fields=["name"],
+                parameters={"standardize_format": True, "capitalize_words": True},
+                priority=EnrichmentPriority.HIGH,
+                description="Standardize organization name format"
+            ),
+            EnrichmentRule(
+                name="organization_metadata_enrichment",
+                enrichment_type=EnrichmentType.CONTEXTUAL,
+                source_fields=["name", "email"],
+                target_fields=["metadata"],
+                parameters={"add_creation_context": True},
+                priority=EnrichmentPriority.LOW,
+                description="Add contextual metadata to organization"
+            )
+        ]
+        
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            enrichment_result = loop.run_until_complete(
+                pipeline.enrichment_service.enrich_data(enriched_data, enrichment_rules, validate_input=False)
+            )
+            if enrichment_result.success and enrichment_result.enriched_data:
+                enriched_data = enrichment_result.enriched_data
+        except Exception as e:
+            logger.warning(f"Failed to enrich organization data: {e}")
     
     # Create Stripe customer if Stripe is configured
     stripe_customer_id = None
     if settings.STRIPE_API_KEY:
         try:
             stripe_customer = stripe.Customer.create(
-                name=org_in.name,
-                description=org_in.description or "",
+                name=enriched_data.get("name", org_in.name),
+                description=enriched_data.get("description", org_in.description) or "",
                 metadata={"source": "business_engine"}
             )
             stripe_customer_id = stripe_customer.id
-            logger.info(f"Created Stripe customer for organization {org_in.name}: {stripe_customer_id}")
+            logger.info(f"Created Stripe customer for organization {enriched_data.get('name', org_in.name)}: {stripe_customer_id}")
         except Exception as e:
             logger.error(f"Failed to create Stripe customer: {str(e)}")
     
-    # Create organization
+    # Create organization with enriched data
     org = Organization(
-        name=org_in.name,
-        description=org_in.description,
+        name=enriched_data.get("name", org_in.name),
+        description=enriched_data.get("description", org_in.description),
         stripe_customer_id=stripe_customer_id,
     )
     

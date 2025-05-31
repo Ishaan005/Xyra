@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta, timezone
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -7,9 +8,14 @@ from sqlalchemy import func
 
 from app import schemas
 from app.api import deps
+from app.api.data_processing_deps import get_data_processing_pipeline, get_enrichment_service
 from app.models.agent import Agent, AgentActivity, AgentCost, AgentOutcome
 from app.models.organization import Organization
 from app.services import agent_service, organization_service
+from app.services.data_processing_pipeline import DataProcessingPipeline
+from app.services.data_enrichment import DataEnrichmentService, EnrichmentRule, EnrichmentType, EnrichmentPriority
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -396,3 +402,168 @@ def get_activity_breakdown(
         "total_activities": total_activities,
         "activity_types": activity_types_with_percent
     }
+
+
+@router.post("/organization/{org_id}/enhanced-insights", response_model=Dict[str, Any])
+async def get_enhanced_analytics_insights(
+    org_id: int,
+    start_date: Optional[datetime] = Query(None, description="Start date for analytics (defaults to 30 days ago)"),
+    end_date: Optional[datetime] = Query(None, description="End date for analytics (defaults to now)"),
+    db: Session = Depends(deps.get_db),
+    current_user: schemas.User = Depends(deps.get_current_active_user),
+    enrichment_service: DataEnrichmentService = Depends(get_enrichment_service),
+) -> Any:
+    """
+    Get enhanced analytics insights with data processing enrichment for deeper analysis.
+    
+    Uses the data enrichment service to provide contextual insights, trends, and predictions.
+    """
+    # Check permissions
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != org_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions to access analytics for this organization",
+        )
+    
+    # Check if organization exists
+    organization = organization_service.get_organization(db, org_id=org_id)
+    if not organization:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization not found",
+        )
+    
+    # Set default date range if not provided
+    if not start_date:
+        start_date = datetime.now(timezone.utc) - timedelta(days=30)
+    if not end_date:
+        end_date = datetime.now(timezone.utc)
+    
+    # Get basic analytics data
+    agents = agent_service.get_agents_by_organization(db, org_id=org_id)
+    agent_ids = [agent.id for agent in agents]
+    
+    if not agent_ids:
+        base_analytics = {
+            "organization_id": org_id,
+            "organization_name": organization.name,
+            "period": {"start_date": start_date, "end_date": end_date},
+            "summary": {"total_cost": 0.0, "total_revenue": 0.0, "margin": 0.0, "activities": 0},
+            "agents": {"total": 0, "active": 0}
+        }
+    else:
+        # Query aggregate data
+        activity_count = db.query(func.count(AgentActivity.id)).filter(
+            AgentActivity.agent_id.in_(agent_ids),
+            AgentActivity.timestamp >= start_date,
+            AgentActivity.timestamp <= end_date
+        ).scalar() or 0
+        
+        total_cost = db.query(func.sum(AgentCost.amount)).filter(
+            AgentCost.agent_id.in_(agent_ids),
+            AgentCost.timestamp >= start_date,
+            AgentCost.timestamp <= end_date
+        ).scalar() or 0.0
+        
+        total_revenue = db.query(func.sum(AgentOutcome.value)).filter(
+            AgentOutcome.agent_id.in_(agent_ids),
+            AgentOutcome.timestamp >= start_date,
+            AgentOutcome.timestamp <= end_date
+        ).scalar() or 0.0
+        
+        margin = (total_revenue - total_cost) if total_revenue > 0 else 0.0
+        active_agents = db.query(func.count(Agent.id)).filter(
+            Agent.organization_id == org_id,
+            Agent.is_active == True
+        ).scalar() or 0
+        
+        base_analytics = {
+            "organization_id": org_id,
+            "organization_name": organization.name,
+            "period": {"start_date": start_date, "end_date": end_date},
+            "summary": {
+                "total_cost": float(total_cost),
+                "total_revenue": float(total_revenue),
+                "margin": float(margin),
+                "activities": activity_count
+            },
+            "agents": {"total": len(agents), "active": active_agents}
+        }
+    
+    # Define enrichment rules for analytics insights
+    enrichment_rules = [
+        EnrichmentRule(
+            name="trend_analysis",
+            enrichment_type=EnrichmentType.CALCULATION,
+            source_fields=["summary"],
+            target_fields=["trends"],
+            parameters={
+                "analysis_type": "time_series",
+                "period_days": (end_date - start_date).days,
+                "calculate_growth_rate": True
+            },
+            priority=EnrichmentPriority.HIGH,
+            description="Analyze trends and growth patterns"
+        ),
+        EnrichmentRule(
+            name="performance_insights",
+            enrichment_type=EnrichmentType.CONTEXTUAL,
+            source_fields=["summary", "agents"],
+            target_fields=["insights"],
+            parameters={
+                "generate_recommendations": True,
+                "benchmark_comparison": True,
+                "efficiency_analysis": True
+            },
+            priority=EnrichmentPriority.MEDIUM,
+            description="Generate performance insights and recommendations"
+        ),
+        EnrichmentRule(
+            name="predictive_analytics",
+            enrichment_type=EnrichmentType.ML_PREDICTION,
+            source_fields=["summary", "trends"],
+            target_fields=["predictions"],
+            parameters={
+                "forecast_horizon_days": 30,
+                "confidence_interval": 0.95,
+                "include_seasonality": True
+            },
+            priority=EnrichmentPriority.LOW,
+            description="Generate predictive analytics and forecasts"
+        )
+    ]
+    
+    try:
+        # Apply enrichment to analytics data
+        enrichment_result = await enrichment_service.enrich_data(
+            base_analytics, 
+            enrichment_rules, 
+            validate_input=False
+        )
+        
+        if enrichment_result.success and enrichment_result.enriched_data:
+            enhanced_analytics = enrichment_result.enriched_data
+            enhanced_analytics["enrichment_metadata"] = {
+                "processing_time": enrichment_result.processing_time,
+                "cache_hit": enrichment_result.cache_hit,
+                "applied_enrichments": len(enrichment_rules)
+            }
+        else:
+            enhanced_analytics = base_analytics
+            enhanced_analytics["enrichment_metadata"] = {
+                "processing_time": None,
+                "cache_hit": False,
+                "applied_enrichments": 0,
+                "errors": enrichment_result.errors if hasattr(enrichment_result, 'errors') else []
+            }
+    except Exception as e:
+        logger.warning(f"Failed to enrich analytics data: {e}")
+        enhanced_analytics = base_analytics
+        enhanced_analytics["enrichment_metadata"] = {
+            "processing_time": None,
+            "cache_hit": False,
+            "applied_enrichments": 0,
+            "error": str(e)
+        }
+    
+    return enhanced_analytics

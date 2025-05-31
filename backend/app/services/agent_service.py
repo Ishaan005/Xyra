@@ -12,6 +12,12 @@ from app.schemas.agent import (
 )
 from app.services.billing_model_service import calculate_cost
 
+# Data processing imports
+from app.services.data_processing_pipeline import DataProcessingPipeline, ProcessingStage
+from app.services.data_transformation import TransformationRule
+from app.services.data_enrichment import EnrichmentRule, EnrichmentType, EnrichmentPriority
+from app.utils.validation import ValidationRule, DataValidator
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -44,10 +50,16 @@ def get_agents_by_organization(
     return query.offset(skip).limit(limit).all()
 
 
-def create_agent(db: Session, agent_in: AgentCreate) -> Agent:
+def create_agent(db: Session, agent_in: AgentCreate, pipeline: Optional[DataProcessingPipeline] = None) -> Agent:
     """
-    Create a new agent for an organization
+    Create a new agent for an organization with data processing validation and enrichment
     """
+    # Validate input data if pipeline is provided
+    if pipeline:
+        validation_result = pipeline.validation_framework.validate(agent_in.model_dump(), "agent_creation")
+        if not validation_result.is_valid:
+            raise ValueError(f"Agent data validation failed: {[error.message for error in validation_result.errors]}")
+    
     # Check if organization exists
     organization = db.query(Organization).filter(
         Organization.id == agent_in.organization_id
@@ -56,10 +68,47 @@ def create_agent(db: Session, agent_in: AgentCreate) -> Agent:
     if not organization:
         raise ValueError(f"Organization with ID {agent_in.organization_id} not found")
     
-    # Create agent
+    # Enrich agent data if pipeline is provided
+    enriched_data = agent_in.model_dump()
+    if pipeline:
+        enrichment_rules = [
+            EnrichmentRule(
+                name="agent_name_standardization",
+                enrichment_type=EnrichmentType.CALCULATION,
+                source_fields=["name"],
+                target_fields=["name"],
+                parameters={"calculation_type": "standardize"},
+                priority=EnrichmentPriority.HIGH,
+                description="Standardize agent name format"
+            ),
+            EnrichmentRule(
+                name="agent_audit_trail",
+                enrichment_type=EnrichmentType.AUDIT,
+                source_fields=[],
+                target_fields=["created_at", "created_by"],
+                priority=EnrichmentPriority.LOW,
+                description="Add audit trail information"
+            )
+        ]
+        
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            enrichment_result = loop.run_until_complete(
+                pipeline.enrichment_service.enrich_data(enriched_data, enrichment_rules, validate_input=False)
+            )
+            if enrichment_result.success and enrichment_result.enriched_data:
+                enriched_data = enrichment_result.enriched_data
+        except Exception as e:
+            logger.warning(f"Failed to enrich agent data: {e}")
+    
+    # Create agent with enriched data - ensure enriched_data is a dict
+    if not isinstance(enriched_data, dict):
+        enriched_data = agent_in.model_dump()
+    
     agent = Agent(
-        name=agent_in.name,
-        description=agent_in.description,
+        name=enriched_data.get("name", agent_in.name),
+        description=enriched_data.get("description", agent_in.description),
         organization_id=agent_in.organization_id,
         billing_model_id=agent_in.billing_model_id,
         config=agent_in.config,
@@ -127,32 +176,83 @@ def delete_agent(db: Session, agent_id: int) -> Optional[Agent]:
     return agent
 
 
-def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> AgentActivityModel:
+def record_agent_activity(db: Session, activity_in: AgentActivityCreate, pipeline: Optional[DataProcessingPipeline] = None) -> AgentActivityModel:
     """
-    Record an activity for an agent
+    Record an activity for an agent with data processing validation and enrichment
     """
+    # Validate activity data if pipeline is provided
+    if pipeline:
+        validation_result = pipeline.validation_framework.validate(activity_in.model_dump(), "agent_activity")
+        if not validation_result.is_valid:
+            raise ValueError(f"Activity data validation failed: {[error.message for error in validation_result.errors]}")
+    
     # Check if agent exists
     agent = get_agent(db, agent_id=activity_in.agent_id)
     if not agent:
         raise ValueError(f"Agent with ID {activity_in.agent_id} not found")
     
-    # Create activity
+    # Process and enrich activity data
+    enriched_data = activity_in.model_dump()
+    if pipeline:
+        enrichment_rules = [
+            EnrichmentRule(
+                name="activity_type_standardization",
+                enrichment_type=EnrichmentType.CALCULATION,
+                source_fields=["activity_type"],
+                target_fields=["activity_type"],
+                parameters={"standardize_format": True, "normalize_case": "lower"},
+                priority=EnrichmentPriority.MEDIUM,
+                description="Standardize activity type format"
+            ),
+            EnrichmentRule(
+                name="activity_metadata_enrichment",
+                enrichment_type=EnrichmentType.CONTEXTUAL,
+                source_fields=["activity_metadata"],
+                target_fields=["activity_metadata"],
+                parameters={
+                    "add_timestamp": True,
+                    "add_agent_context": True,
+                    "agent_id": agent.id,
+                    "organization_id": agent.organization_id
+                },
+                priority=EnrichmentPriority.LOW,
+                description="Add contextual metadata to activity"
+            )
+        ]
+        
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            enrichment_result = loop.run_until_complete(
+                pipeline.enrichment_service.enrich_data(enriched_data, enrichment_rules, validate_input=False)
+            )
+            if enrichment_result.success and enrichment_result.enriched_data:
+                enriched_data = enrichment_result.enriched_data
+        except Exception as e:
+            logger.warning(f"Failed to enrich activity data: {e}")
+    
+    # Create activity with enriched data - ensure enriched_data is a dict
+    if not isinstance(enriched_data, dict):
+        enriched_data = activity_in.model_dump()
+    
     activity = AgentActivityModel(
         agent_id=activity_in.agent_id,
-        activity_type=activity_in.activity_type,
+        activity_type=enriched_data.get("activity_type", activity_in.activity_type),
         timestamp=datetime.now(timezone.utc),
-        activity_metadata=activity_in.activity_metadata,
+        activity_metadata=enriched_data.get("activity_metadata", activity_in.activity_metadata),
     )
     
     # Add activity to database
     db.add(activity)
     db.commit()
     db.refresh(activity)
+    
     # Update agent's last active timestamp
     setattr(agent, 'last_active', datetime.now(timezone.utc))
     db.commit()
 
     logger.info(f"Recorded activity {activity.activity_type} for agent: {agent.name}")
+    
     # Auto-record cost for activity based on billing model
     bm = agent.billing_model
     if bm and bm.model_type in ("activity", "hybrid"):
@@ -291,3 +391,114 @@ def get_agent_stats(db: Session, agent_id: int) -> Dict[str, Any]:
         "total_outcomes_value": total_outcomes_value,
         "margin": margin
     }
+
+
+# Enhanced data processing functions
+async def process_agent_data_async(
+    db: Session, 
+    agent_data: Dict[str, Any], 
+    pipeline: DataProcessingPipeline
+) -> Dict[str, Any]:
+    """
+    Process agent data through the complete pipeline asynchronously
+    """
+    try:
+        result = await pipeline.process_data(
+            data=agent_data,
+            transformation_rules=None,
+            enrichment_rules=[
+                EnrichmentRule(
+                    name="agent_data_enrichment",
+                    enrichment_type=EnrichmentType.AUDIT,
+                    source_fields=[],
+                    target_fields=["processed_at", "data_quality_score"],
+                    priority=EnrichmentPriority.MEDIUM,
+                    description="Add processing metadata and quality score"
+                )
+            ]
+        )
+        
+        if result.success:
+            logger.info(f"Successfully processed agent data: {result.processed_records} records")
+            # Handle different types of output_data safely
+            if result.output_data is not None:
+                if isinstance(result.output_data, list) and len(result.output_data) > 0:
+                    first_item = result.output_data[0]
+                    if isinstance(first_item, dict):
+                        return first_item
+                elif isinstance(result.output_data, dict):
+                    return result.output_data
+            return agent_data
+        else:
+            logger.warning(f"Agent data processing completed with errors: {result.errors}")
+            return agent_data
+            
+    except Exception as e:
+        logger.error(f"Failed to process agent data: {e}")
+        return agent_data
+
+
+def create_agent_activity_enrichment_rules(agent: Agent) -> List[EnrichmentRule]:
+    """
+    Create enrichment rules specific to agent activity processing
+    """
+    return [
+        EnrichmentRule(
+            name="activity_standardization",
+            enrichment_type=EnrichmentType.CALCULATION,
+            source_fields=["activity_type"],
+            target_fields=["activity_type"],
+            parameters={"calculation_type": "standardize"},
+            priority=EnrichmentPriority.HIGH,
+            description="Standardize activity type format"
+        ),
+        EnrichmentRule(
+            name="activity_audit_trail",
+            enrichment_type=EnrichmentType.AUDIT,
+            source_fields=[],
+            target_fields=["processed_at", "agent_context"],
+            parameters={
+                "agent_id": agent.id,
+                "organization_id": agent.organization_id,
+                "agent_name": agent.name
+            },
+            priority=EnrichmentPriority.LOW,
+            description="Add audit trail and agent context"
+        )
+    ]
+
+
+def validate_agent_data_quality(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Validate agent data quality and return quality metrics
+    """
+    quality_metrics = {
+        "completeness_score": 0.0,
+        "validity_score": 0.0,
+        "overall_quality": 0.0,
+        "issues": []
+    }
+    
+    required_fields = ["name", "organization_id"]
+    total_fields = len(data)
+    complete_fields = 0
+    
+    # Check completeness
+    for field in data:
+        if data[field] is not None and str(data[field]).strip() != "":
+            complete_fields += 1
+    
+    quality_metrics["completeness_score"] = (complete_fields / total_fields) * 100 if total_fields > 0 else 0
+    
+    # Check required fields
+    missing_required = [field for field in required_fields if field not in data or not data[field]]
+    if missing_required:
+        quality_metrics["issues"].append(f"Missing required fields: {missing_required}")
+        quality_metrics["validity_score"] = 50.0
+    else:
+        quality_metrics["validity_score"] = 100.0
+    
+    # Calculate overall quality
+    quality_metrics["overall_quality"] = (quality_metrics["completeness_score"] + quality_metrics["validity_score"]) / 2
+    
+    return quality_metrics

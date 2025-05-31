@@ -6,6 +6,10 @@ from app.models.billing_model import BillingModel
 from app.models.organization import Organization
 from app.schemas.billing_model import BillingModelCreate, BillingModelUpdate
 
+# Data processing imports
+from app.services.data_processing_pipeline import DataProcessingPipeline
+from app.services.data_enrichment import EnrichmentRule, EnrichmentType, EnrichmentPriority
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -46,10 +50,16 @@ def get_billing_models_by_organization(
     )
 
 
-def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> BillingModel:
+def create_billing_model(db: Session, billing_model_in: BillingModelCreate, pipeline: Optional[DataProcessingPipeline] = None) -> BillingModel:
     """
-    Create a new billing model for an organization
+    Create a new billing model for an organization with data processing validation and enrichment
     """
+    # Validate input data if pipeline is provided
+    if pipeline:
+        validation_result = pipeline.validation_framework.validate(billing_model_in.model_dump(), "billing_model_creation")
+        if not validation_result.is_valid:
+            raise ValueError(f"Billing model data validation failed: {[error.message for error in validation_result.errors]}")
+    
     # Check if organization exists
     organization = db.query(Organization).filter(
         Organization.id == billing_model_in.organization_id
@@ -69,13 +79,47 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
     # Validate config based on model type
     validate_billing_config(billing_model_in.model_type, billing_model_in.config)
     
-    # Create billing model
+    # Enrich billing model data if pipeline is provided
+    enriched_data = billing_model_in.model_dump()
+    if pipeline:
+        enrichment_rules = [
+            EnrichmentRule(
+                name="billing_model_pricing_validation",
+                enrichment_type=EnrichmentType.CALCULATION,
+                source_fields=["config"],
+                target_fields=["config"],
+                parameters={"validate_pricing_structure": True},
+                priority=EnrichmentPriority.HIGH,
+                description="Validate and enrich pricing structure"
+            ),
+            EnrichmentRule(
+                name="billing_model_audit_trail",
+                enrichment_type=EnrichmentType.AUDIT,
+                source_fields=[],
+                target_fields=["created_at", "created_by"],
+                priority=EnrichmentPriority.LOW,
+                description="Add audit trail information"
+            )
+        ]
+        
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            enrichment_result = loop.run_until_complete(
+                pipeline.enrichment_service.enrich_data(enriched_data, enrichment_rules, validate_input=False)
+            )
+            if enrichment_result.success and enrichment_result.enriched_data:
+                enriched_data = enrichment_result.enriched_data
+        except Exception as e:
+            logger.warning(f"Failed to enrich billing model data: {e}")
+    
+    # Create billing model with enriched data
     billing_model = BillingModel(
-        name=billing_model_in.name,
-        description=billing_model_in.description,
+        name=enriched_data.get("name", billing_model_in.name),
+        description=enriched_data.get("description", billing_model_in.description),
         organization_id=billing_model_in.organization_id,
         model_type=billing_model_in.model_type,
-        config=billing_model_in.config,
+        config=enriched_data.get("config", billing_model_in.config),
         is_active=billing_model_in.is_active,
     )
     
@@ -84,9 +128,9 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
     db.commit()
     db.refresh(billing_model)
 
-    # Persist config into dedicated tables
+    # Persist config into dedicated tables using enriched config
     from app.models.billing_model import SeatBasedConfig, ActivityBasedConfig, OutcomeBasedConfig
-    cfg = billing_model_in.config
+    cfg = enriched_data.get("config", billing_model_in.config)
     if billing_model_in.model_type == "seat":
         seat_cfg = SeatBasedConfig(
             billing_model_id=billing_model.id,

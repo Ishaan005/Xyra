@@ -29,9 +29,6 @@ from app.services.data_transformation import (
 from app.services.data_enrichment import (
     DataEnrichmentService, 
     EnrichmentRule, 
-    EnrichmentResult,
-    EnrichmentType,
-    EnrichmentPriority
 )
 
 logger = logging.getLogger(__name__)
