@@ -99,7 +99,10 @@ def init_db(max_retries=5, retry_delay=3) -> None:
                 logger.error("Authentication failed. Please check your database credentials.")
                 logger.error(f"Error details: {str(e)}")
                 logger.error("For Azure PostgreSQL, ensure you're using the correct username format:")
-                logger.error(f"  - Try using: username@{settings.POSTGRES_SERVER.split('.')[0]}")
+                if settings.POSTGRES_SERVER:
+                    logger.error(f"  - Try using: username@{settings.POSTGRES_SERVER.split('.')[0]}")
+                else:
+                    logger.error("  - Try using: username@servername")
                 logger.error("  - Example: xyraadmin@xyrasql")
                 break
             elif "no pg_hba.conf entry" in error_str:

@@ -48,91 +48,97 @@ def test_read_agents_empty(client, token, setup_org):
     assert response.json() == []
 
 
-def test_create_agent(client, token, setup_org, setup_agent):
-    agent_id, ext_id = setup_agent
-    assert agent_id is not None
-    pytest.agent_id = agent_id
-    pytest.ext_id = ext_id
+class TestAgentLifecycle:
+    """Test agent CRUD operations and related functionality in sequence."""
+    
+    agent_id = None
+    ext_id = None
+    
+    def test_create_agent(self, client, token, setup_org, setup_agent):
+        agent_id, ext_id = setup_agent
+        assert agent_id is not None
+        TestAgentLifecycle.agent_id = agent_id
+        TestAgentLifecycle.ext_id = ext_id
 
+    def test_read_agent_by_id(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        agent_id = TestAgentLifecycle.agent_id
+        assert agent_id is not None, "Agent must be created first"
+        response = client.get(f"/api/v1/agents/{agent_id}", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == agent_id
 
-def test_read_agent_by_id(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    agent_id = pytest.agent_id
-    response = client.get(f"/api/v1/agents/{agent_id}", headers=headers)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == agent_id
+    def test_read_agent_by_external_id(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        ext_id = TestAgentLifecycle.ext_id
+        assert ext_id is not None, "Agent must be created first"
+        response = client.get(f"/api/v1/agents/external/{ext_id}", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["external_id"] == ext_id
 
+    def test_update_agent(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        agent_id = TestAgentLifecycle.agent_id
+        assert agent_id is not None, "Agent must be created first"
+        response = client.put(
+            f"/api/v1/agents/{agent_id}", json={"name": UPDATED_NAME}, headers=headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == UPDATED_NAME
 
-def test_read_agent_by_external_id(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    ext_id = pytest.ext_id
-    response = client.get(f"/api/v1/agents/external/{ext_id}", headers=headers)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["external_id"] == ext_id
+    def test_record_activity(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        agent_id = TestAgentLifecycle.agent_id
+        assert agent_id is not None, "Agent must be created first"
+        body = {"agent_id": agent_id, "activity_type": "api_call"}
+        response = client.post(
+            f"/api/v1/agents/{agent_id}/activities", json=body, headers=headers
+        )
+        assert response.status_code == 200
+        act = response.json()
+        assert act["agent_id"] == agent_id
 
+    def test_record_cost(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        agent_id = TestAgentLifecycle.agent_id
+        assert agent_id is not None, "Agent must be created first"
+        body = {"agent_id": agent_id, "cost_type": "manual", "amount": 5.0}
+        response = client.post(
+            f"/api/v1/agents/{agent_id}/costs", json=body, headers=headers
+        )
+        assert response.status_code == 200
+        cost = response.json()
+        assert cost["agent_id"] == agent_id
 
-def test_update_agent(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    agent_id = pytest.agent_id
-    response = client.put(
-        f"/api/v1/agents/{agent_id}", json={"name": UPDATED_NAME}, headers=headers
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["name"] == UPDATED_NAME
+    def test_record_outcome(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        agent_id = TestAgentLifecycle.agent_id
+        assert agent_id is not None, "Agent must be created first"
+        body = {"agent_id": agent_id, "outcome_type": "result", "value": 10.0}
+        response = client.post(
+            f"/api/v1/agents/{agent_id}/outcomes", json=body, headers=headers
+        )
+        assert response.status_code == 200
+        outcome = response.json()
+        assert outcome["agent_id"] == agent_id
 
+    def test_get_agent_stats(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        agent_id = TestAgentLifecycle.agent_id
+        assert agent_id is not None, "Agent must be created first"
+        response = client.get(f"/api/v1/agents/{agent_id}/stats", headers=headers)
+        assert response.status_code == 200
+        stats = response.json()
+        assert stats.get("activity_count", None) is not None
 
-def test_record_activity(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    agent_id = pytest.agent_id
-    body = {"agent_id": agent_id, "activity_type": "api_call"}
-    response = client.post(
-        f"/api/v1/agents/{agent_id}/activities", json=body, headers=headers
-    )
-    assert response.status_code == 200
-    act = response.json()
-    assert act["agent_id"] == agent_id
-
-
-def test_record_cost(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    agent_id = pytest.agent_id
-    body = {"agent_id": agent_id, "cost_type": "manual", "amount": 5.0}
-    response = client.post(
-        f"/api/v1/agents/{agent_id}/costs", json=body, headers=headers
-    )
-    assert response.status_code == 200
-    cost = response.json()
-    assert cost["agent_id"] == agent_id
-
-
-def test_record_outcome(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    agent_id = pytest.agent_id
-    body = {"agent_id": agent_id, "outcome_type": "result", "value": 10.0}
-    response = client.post(
-        f"/api/v1/agents/{agent_id}/outcomes", json=body, headers=headers
-    )
-    assert response.status_code == 200
-    outcome = response.json()
-    assert outcome["agent_id"] == agent_id
-
-
-def test_get_agent_stats(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    agent_id = pytest.agent_id
-    response = client.get(f"/api/v1/agents/{agent_id}/stats", headers=headers)
-    assert response.status_code == 200
-    stats = response.json()
-    assert stats.get("activity_count", None) is not None
-
-
-def test_delete_agent(client, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    agent_id = pytest.agent_id
-    response = client.delete(f"/api/v1/agents/{agent_id}", headers=headers)
-    assert response.status_code == 200
-    response = client.get(f"/api/v1/agents/{agent_id}", headers=headers)
-    assert response.status_code == 404
+    def test_delete_agent(self, client, token):
+        headers = {"Authorization": f"Bearer {token}"}
+        agent_id = TestAgentLifecycle.agent_id
+        assert agent_id is not None, "Agent must be created first"
+        response = client.delete(f"/api/v1/agents/{agent_id}", headers=headers)
+        assert response.status_code == 200
+        response = client.get(f"/api/v1/agents/{agent_id}", headers=headers)
+        assert response.status_code == 404
