@@ -1,9 +1,13 @@
 """
-Integration layer models for connectors, webhooks, and events.
-These models provide persistence for the integration layer with proper multi-tenancy.
+Integration layer models for connectors, webhooks, and eve    # Status and configuration
+    status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'paused'
+    retry_config = Column(JSON, default={
+        'max_retries': 3,
+        'retry_delay': 60,  # seconds
+        'backoff_multiplier': 2
+    })ese models provide persistence for the integration layer with proper multi-tenancy.
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, ARRAY, ForeignKey
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -18,15 +22,15 @@ class IntegrationConnector(BaseModel):
     """
     __tablename__ = 'integration_connectors'  # type: ignore[assignment]
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     organization_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
     connector_id = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     connector_type = Column(String(50), nullable=False)  # 'rest_api', 'graphql', 'webhook'
     
     # Configuration and authentication
-    config = Column(JSONB, nullable=False, default={})
-    auth_config = Column(JSONB, nullable=False, default={})
+    config = Column(JSON, nullable=False, default={})
+    auth_config = Column(JSON, nullable=False, default={})
     
     # Status and health monitoring
     status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'error'
@@ -34,7 +38,7 @@ class IntegrationConnector(BaseModel):
     last_health_check = Column(DateTime, nullable=True)
     
     # Metrics and monitoring
-    metrics = Column(JSONB, default={})
+    metrics = Column(JSON, default={})
     
     # Relationships
     organization = relationship("Organization", back_populates="integration_connectors")
@@ -50,7 +54,7 @@ class IntegrationWebhook(BaseModel):
     """
     __tablename__ = 'integration_webhooks'  # type: ignore[assignment]
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     organization_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
     endpoint_id = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
@@ -58,11 +62,11 @@ class IntegrationWebhook(BaseModel):
     secret = Column(String(255), nullable=False)
     
     # Event filtering
-    event_types = Column(ARRAY(String(100)), nullable=False)
+    event_types = Column(JSON, nullable=False)  # Store as JSON array for cross-database compatibility
     
     # Status and configuration
     status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'paused'
-    retry_config = Column(JSONB, default={
+    retry_config = Column(JSON, default={
         'max_retries': 3,
         'retry_delay': 60,  # seconds
         'backoff_multiplier': 2
@@ -70,7 +74,7 @@ class IntegrationWebhook(BaseModel):
     
     # Monitoring
     last_triggered_at = Column(DateTime, nullable=True)
-    metrics = Column(JSONB, default={
+    metrics = Column(JSON, default={
         'total_calls': 0,
         'successful_calls': 0,
         'failed_calls': 0,
@@ -91,7 +95,7 @@ class IntegrationEvent(BaseModel):
     """
     __tablename__ = 'integration_events'  # type: ignore[assignment]
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     organization_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
     agent_id = Column(Integer, ForeignKey("agent.id"), nullable=True)
     
@@ -107,8 +111,8 @@ class IntegrationEvent(BaseModel):
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
     
     # Event data
-    raw_data = Column(JSONB, nullable=False)
-    processed_data = Column(JSONB, nullable=True)
+    raw_data = Column(JSON, nullable=False)
+    processed_data = Column(JSON, nullable=True)
     
     # Processing status
     processing_status = Column(String(50), default='pending')  # 'pending', 'processed', 'failed', 'skipped'
@@ -130,20 +134,20 @@ class IntegrationStream(BaseModel):
     """
     __tablename__ = 'integration_streams'  # type: ignore[assignment]
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     organization_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
     stream_id = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     
     # Stream configuration
     protocol = Column(String(50), nullable=False)  # 'kafka', 'redis', 'websocket', 'sse'
-    config = Column(JSONB, nullable=False, default={})
+    config = Column(JSON, nullable=False, default={})
     
     # Status and monitoring
     status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'error'
     
     # Metrics
-    metrics = Column(JSONB, default={
+    metrics = Column(JSON, default={
         'messages_processed': 0,
         'messages_failed': 0,
         'last_message_at': None,
