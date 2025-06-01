@@ -323,6 +323,7 @@ async def update_connector(
 @router.post("/connectors/bulk", response_model=integration_schemas.BulkOperationResponse)
 async def bulk_connector_operations(
     bulk_request: integration_schemas.BulkOperationRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
     current_user: schemas.User = Depends(deps.get_current_active_user)
 ):
@@ -363,7 +364,7 @@ async def bulk_connector_operations(
                 # Activate connector
                 update_data = integration_schemas.ConnectorUpdate(
                     name = str(db_connector.name),
-                    description= db_connector.description,
+                    description= str(db_connector.description),
                     status= ConnectorStatusEnum.ACTIVE,
                 )
                 integration_service.update_connector(db, connector_id, organization_id, update_data)
@@ -378,7 +379,7 @@ async def bulk_connector_operations(
                 # Deactivate connector
                 update_data = integration_schemas.ConnectorUpdate(
                     name=str(db_connector.name),
-                    description=db_connector.description,
+                    description=str(db_connector.description),
                     status= ConnectorStatusEnum.INACTIVE,
                 )
                 integration_service.update_connector(db, connector_id, organization_id, update_data)
@@ -589,7 +590,7 @@ async def test_connector(
         status_str = ConnectorStatusEnum.ACTIVE if health.is_healthy else ConnectorStatusEnum.ERROR
         update_data = integration_schemas.ConnectorUpdate(
             name=str(db_connector.name),
-            description=db_connector.description,
+            description=str(db_connector.description),
             status=status_str,
             health_status=status_str
         )
@@ -684,7 +685,7 @@ async def extract_data(
         
         update_data = integration_schemas.ConnectorUpdate(
             name=str(db_connector.name),
-            description=db_connector.description,
+            description=str(db_connector.description),
             metrics=current_metrics
         )
         integration_service.update_connector(db, connector_id, organization_id, update_data)

@@ -64,7 +64,7 @@ def create_connector(
         organization_id=organization_id,
         name=connector_in.name,
         connector_type=connector_in.connector_type,
-        config=connector_in.config if connector_in.config else {},  # Changed this line
+        config=connector_in.config.model_dump() if connector_in.config else {},
         description=connector_in.description,
         status="inactive",  # Start as inactive until configured
         health_status="unknown",

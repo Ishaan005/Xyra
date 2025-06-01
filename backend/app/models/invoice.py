@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Float, Integer, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
 
 from app.models.base import BaseModel
 
@@ -12,7 +12,7 @@ class Invoice(BaseModel):
     
     # Invoice details
     invoice_number = Column(String, nullable=False, unique=True)
-    issue_date = Column(DateTime, default=datetime.utcnow)
+    issue_date = Column(DateTime, default=lambda: datetime.now(UTC))
     due_date = Column(DateTime, nullable=False)
     status = Column(String, default="pending")  # pending, paid, overdue, cancelled
     

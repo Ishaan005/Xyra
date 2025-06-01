@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional
 import asyncio
 import aiohttp
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from app.api import deps
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -78,7 +78,7 @@ class BaseConnector(ABC):
         self.status = ConnectorStatus.INACTIVE
         self.health = ConnectionHealth(
             is_healthy=False,
-            last_check=datetime.utcnow(),
+            last_check=datetime.now(UTC),
             response_time=0.0
         )
         self.metrics = ConnectorMetrics()
@@ -161,7 +161,7 @@ class BaseConnector(ABC):
             
             self.health = ConnectionHealth(
                 is_healthy=is_healthy,
-                last_check=datetime.utcnow(),
+                last_check=datetime.now(UTC),
                 response_time=response_time,
                 consecutive_failures=0 if is_healthy else self.health.consecutive_failures + 1
             )
@@ -175,7 +175,7 @@ class BaseConnector(ABC):
             response_time = time.time() - start_time
             self.health = ConnectionHealth(
                 is_healthy=False,
-                last_check=datetime.utcnow(),
+                last_check=datetime.now(UTC),
                 response_time=response_time,
                 error_message=str(e),
                 consecutive_failures=self.health.consecutive_failures + 1
@@ -282,7 +282,7 @@ class RestApiConnector(BaseConnector):
             logger.error(f"Data extraction failed for {self.connector_id}: {e}")
             raise
         finally:
-            self.metrics.last_request_time = datetime.utcnow()
+            self.metrics.last_request_time = datetime.now(UTC)
     
     def _extract_from_response(
         self,
@@ -415,7 +415,7 @@ class GraphQLConnector(BaseConnector):
             logger.error(f"GraphQL data extraction failed for {self.connector_id}: {e}")
             raise
         finally:
-            self.metrics.last_request_time = datetime.utcnow()
+            self.metrics.last_request_time = datetime.now(UTC)
     
     def _extract_from_graphql_response(
         self,
@@ -565,7 +565,7 @@ async def create_connector(
             "name": connector.name,
             "connector_type": connector.connector_type,
             "status": connector.status,
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.now(UTC).isoformat()
         }
         
     except ValueError as e:
@@ -674,7 +674,7 @@ async def extract_data(
             "connector_id": connector_id,
             "records_extracted": len(data),
             "data": data,
-            "extraction_time": datetime.utcnow().isoformat()
+            "extraction_time": datetime.now(UTC).isoformat()
         }
     except ValueError as e:
         raise HTTPException(

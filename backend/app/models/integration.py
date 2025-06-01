@@ -1,15 +1,11 @@
 """
-Integration layer models for connectors, webhooks, and eve    # Status and configuration
-    status = Column(String(50), nullable=False, default='active')  # 'active', 'inactive', 'paused'
-    retry_config = Column(JSON, default={
-        'max_retries': 3,
-        'retry_delay': 60,  # seconds
-        'backoff_multiplier': 2
-    })ese models provide persistence for the integration layer with proper multi-tenancy.
+Integration layer models for connectors, webhooks, and events.
+These models provide persistence for the integration layer with proper multi-tenancy.
 """
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
+import uuid
 import uuid
 
 from app.models.base import BaseModel
@@ -27,6 +23,7 @@ class IntegrationConnector(BaseModel):
     connector_id = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     connector_type = Column(String(50), nullable=False)  # 'rest_api', 'graphql', 'webhook'
+    description = Column(Text, nullable=True)
     
     # Configuration and authentication
     config = Column(JSON, nullable=False, default={})
@@ -108,7 +105,7 @@ class IntegrationEvent(BaseModel):
     external_reference_id = Column(String(255), nullable=True)
     
     # Event timing
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     
     # Event data
     raw_data = Column(JSON, nullable=False)

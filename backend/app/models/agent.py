@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Text, Integer, ForeignKey, Boolean, JSON, DateTime, Float
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
 
 from app.models.base import BaseModel
 
@@ -16,7 +16,7 @@ class Agent(BaseModel):
     # Agent configuration and metadata
     config = Column(JSON, nullable=True)
     is_active = Column(Boolean, default=True)
-    last_active = Column(DateTime, default=datetime.utcnow)
+    last_active = Column(DateTime, default=lambda: datetime.now(UTC))
     
     # External ID for the agent in the customer's system
     external_id = Column(String, nullable=True)
@@ -46,7 +46,7 @@ class AgentActivity(BaseModel):
     """
     agent_id = Column(Integer, ForeignKey("agent.id", ondelete="CASCADE"), nullable=False)
     activity_type = Column(String, nullable=False)  # api_call, query, completion, etc.
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(UTC))
     activity_metadata = Column(JSON, nullable=True)  # Additional information about the activity
     
     # Relationships
@@ -64,7 +64,7 @@ class AgentCost(BaseModel):
     cost_type = Column(String, nullable=False)  # compute, api, labor, etc.
     amount = Column(Float, nullable=False)
     currency = Column(String, default="USD")
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(UTC))
     details = Column(JSON, nullable=True)
     
     # Relationships
@@ -82,7 +82,7 @@ class AgentOutcome(BaseModel):
     outcome_type = Column(String, nullable=False)  # revenue_uplift, cost_savings, etc.
     value = Column(Float, nullable=False)
     currency = Column(String, default="USD")
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(UTC))
     details = Column(JSON, nullable=True)
     verified = Column(Boolean, default=False)  # Whether the outcome has been verified
     
