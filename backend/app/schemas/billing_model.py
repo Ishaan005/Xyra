@@ -9,21 +9,56 @@ class BillingModelBase(BaseModel):
     name: str
     description: Optional[str] = None
     model_type: str = Field(..., description="One of: 'seat', 'activity', 'outcome', 'hybrid'")
-    config: Dict[str, Any] = {}
     is_active: bool = True
 
 
 class BillingModelCreate(BillingModelBase):
     """Schema for creating billing models"""
     organization_id: int
+    
+    # Seat-based config fields
+    seat_price_per_seat: Optional[float] = None
+    seat_billing_frequency: Optional[str] = "monthly"
+    
+    # Activity-based config fields
+    activity_price_per_action: Optional[float] = None
+    activity_action_type: Optional[str] = None
+    
+    # Outcome-based config fields
+    outcome_outcome_type: Optional[str] = None
+    outcome_percentage: Optional[float] = None
+    
+    # Hybrid-specific config
+    hybrid_base_fee: Optional[float] = None
+    hybrid_seat_config: Optional[SeatBasedConfigSchema] = None
+    hybrid_activity_configs: Optional[List[ActivityBasedConfigSchema]] = None
+    hybrid_outcome_configs: Optional[List[OutcomeBasedConfigSchema]] = None
 
 
 class BillingModelUpdate(BaseModel):
     """Schema for updating billing models"""
     name: Optional[str] = None
     description: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
+    model_type: Optional[str] = Field(None, description="One of: 'seat', 'activity', 'outcome', 'hybrid'")
     is_active: Optional[bool] = None
+    
+    # Seat-based config fields
+    seat_price_per_seat: Optional[float] = None
+    seat_billing_frequency: Optional[str] = None
+    
+    # Activity-based config fields
+    activity_price_per_action: Optional[float] = None
+    activity_action_type: Optional[str] = None
+    
+    # Outcome-based config fields
+    outcome_outcome_type: Optional[str] = None
+    outcome_percentage: Optional[float] = None
+    
+    # Hybrid-specific config
+    hybrid_base_fee: Optional[float] = None
+    hybrid_seat_config: Optional[SeatBasedConfigSchema] = None
+    hybrid_activity_configs: Optional[List[ActivityBasedConfigSchema]] = None
+    hybrid_outcome_configs: Optional[List[OutcomeBasedConfigSchema]] = None
 
 
 class BillingModelInDBBase(BillingModelBase):
@@ -36,6 +71,7 @@ class BillingModelInDBBase(BillingModelBase):
     seat_config: Optional["SeatBasedConfigSchema"] = None
     activity_config: Optional[List["ActivityBasedConfigSchema"]] = None
     outcome_config: Optional[List["OutcomeBasedConfigSchema"]] = None
+    hybrid_config: Optional["HybridConfigSchema"] = None
     
     class Config:
         from_attributes = True  # Updated from orm_mode = True for Pydantic v2 compatibility
@@ -67,7 +103,12 @@ class OutcomeBasedConfigSchema(BaseModel):
 
 class HybridConfigSchema(BaseModel):
     """Configuration schema for hybrid billing"""
+    base_fee: float = 0.0
+
+
+class HybridConfigExtendedSchema(BaseModel):
+    """Extended configuration schema for hybrid billing with all components"""
+    base_fee: Optional[float] = 0.0
     seat_config: Optional[SeatBasedConfigSchema] = None
     activity_config: Optional[List[ActivityBasedConfigSchema]] = None
     outcome_config: Optional[List[OutcomeBasedConfigSchema]] = None
-    base_fee: Optional[float] = None

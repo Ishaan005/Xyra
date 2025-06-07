@@ -5,7 +5,8 @@ BM_DATA = {
     "name": "BM1",
     "description": "Test billing model",
     "model_type": "seat",
-    "config": {"price_per_seat": 10.0, "billing_frequency": "monthly"},
+    "seat_price_per_seat": 10.0,
+    "seat_billing_frequency": "monthly",
 }
 UPDATED_NAME = "BM1 Updated"
 

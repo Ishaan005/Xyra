@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Integer, ForeignKey, Boolean, JSON
+from sqlalchemy import Column, String, Float, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModel
@@ -13,9 +13,6 @@ class BillingModel(BaseModel):
     
     # Billing model type: 'seat', 'activity', 'outcome', 'hybrid'
     model_type = Column(String, nullable=False)
-    
-    # Configuration stored as JSON
-    config = Column(JSON, nullable=False, default={})
     
     # Whether this billing model is active
     is_active = Column(Boolean, default=True)
@@ -39,6 +36,13 @@ class BillingModel(BaseModel):
     )
     outcome_config = relationship(
         "OutcomeBasedConfig",
+        back_populates="billing_model",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True
+    )
+    hybrid_config = relationship(
+        "HybridConfig",
+        uselist=False,
         back_populates="billing_model",
         cascade="all, delete, delete-orphan",
         passive_deletes=True
@@ -79,3 +83,13 @@ class OutcomeBasedConfig(BaseModel):
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="outcome_config")
+
+class HybridConfig(BaseModel):
+    """
+    Configuration for hybrid billing - stores base fee and other hybrid-specific settings
+    """
+    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
+    base_fee = Column(Float, nullable=False, default=0.0)
+    
+    # Relationship
+    billing_model = relationship("BillingModel", back_populates="hybrid_config")

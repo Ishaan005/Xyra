@@ -1,0 +1,32 @@
+
+> frontend@0.1.0 build
+> next build
+
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'swcMinify'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+   ▲ Next.js 15.3.1
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 5.0s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/12) ...
+   Generating static pages (3/12) 
+   Generating static pages (6/12) 
+Error occurred prerendering page "/login/dist". Read more: https://nextjs.org/docs/messages/prerender-error
+Error: Attempted to call generateViewport() from the server but generateViewport is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.
+    at Proxy.generateViewport (/Users/ishaan/Repositories/Xyra/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:3799)
+    at /Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/550.js:179:27034
+    at /Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:19:4491
+    at a.with (/Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:20:11256)
+    at u.with (/Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:20:5503)
+    at u.startActiveSpan (/Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:20:20469)
+    at a.startActiveSpan (/Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:20:21003)
+    at /Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:19:3999
+    at a.with (/Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:20:11256)
+    at u.with (/Users/ishaan/Repositories/Xyra/frontend/.next/server/chunks/243.js:20:5503)
+Export encountered an error on /login/dist/page: /login/dist, exiting the build.
+ ⨯ Next.js build worker exited with code: 1 and signal: null

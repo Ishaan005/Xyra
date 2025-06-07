@@ -58,11 +58,22 @@ class XyraClient:
         bm_id = agent.get("billing_model_id")
         if not bm_id:
             raise ValueError("Agent has no billing_model_id assigned")
+        
         # Fetch billing model to get activity_config list
         bm = await self._get(f"/api/v1/billing-models/{bm_id}")
-        configs = bm.get("activity_config") or []
+        model_type = bm.get("model_type")
+        configs = []
+
+        if model_type == "activity":
+            configs = bm.get("activity_config") or []
+        elif model_type == "hybrid":
+            hybrid_config_data = bm.get("hybrid_config")
+            if hybrid_config_data:
+                configs = hybrid_config_data.get("activity_configs") or []
+        
         if not configs:
-            raise ValueError("No activity-based config found for billing model")
+            raise ValueError(f"No applicable activity configurations found for billing model type '{model_type}'")
+        
         results = []
         for cfg in configs:
             activity_type = cfg.get("action_type")
@@ -104,10 +115,21 @@ class XyraClient:
         bm_id = agent.get("billing_model_id")
         if not bm_id:
             raise ValueError("Agent has no billing model assigned")
+        
         bm = await self._get(f"/api/v1/billing-models/{bm_id}")
-        configs = bm.get('outcome_config') or []
+        model_type = bm.get("model_type")
+        configs = []
+
+        if model_type == "outcome":
+            configs = bm.get("outcome_config") or []
+        elif model_type == "hybrid":
+            hybrid_config_data = bm.get("hybrid_config")
+            if hybrid_config_data:
+                configs = hybrid_config_data.get("outcome_configs") or []
+
         if not configs:
-            raise ValueError("No outcome config found for billing model")
+            raise ValueError(f"No applicable outcome configurations found for billing model type '{model_type}'")
+        
         results = []
         for cfg in configs:
             payload = {

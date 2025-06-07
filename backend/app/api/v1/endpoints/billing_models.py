@@ -1,7 +1,8 @@
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
+from pydantic import ValidationError
 
 from app import schemas
 from app.api import deps
@@ -79,12 +80,17 @@ def create_billing_model(
     # Create billing model
     try:
         billing_model = billing_model_service.create_billing_model(db, billing_model_in=billing_model_in)
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: {str(e)}",
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    
+
     return billing_model
 
 

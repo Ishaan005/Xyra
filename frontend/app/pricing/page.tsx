@@ -80,37 +80,39 @@ export default function PricingPage() {
 
   const handleCreateModel = async () => {
     if (!orgId || !newModel.name || !newModel.model_type) return
-    // build config object
-    let config: any = {}
+    
+    // Build payload with dedicated fields instead of config object
+    const payload: any = {
+      name: newModel.name,
+      description: newModel.description,
+      model_type: newModel.model_type,
+      is_active: true,
+      organization_id: orgId,
+    }
+
     switch (newModel.model_type) {
       case "usage":
-        config = {
-          price_per_action: Number.parseFloat(newModel.price_per_action) || 0,
-          action_type: newModel.action_type,
-        }
+        payload.activity_price_per_action = Number.parseFloat(newModel.price_per_action) || 0
+        payload.activity_action_type = newModel.action_type
         break
       case "seat":
-        config = {
-          price_per_seat: Number.parseFloat(newModel.price_per_seat) || 0,
-          billing_frequency: newModel.billing_frequency,
-        }
+        payload.seat_price_per_seat = Number.parseFloat(newModel.price_per_seat) || 0
+        payload.seat_billing_frequency = newModel.billing_frequency
         break
       case "outcome":
-        config = {
-          outcome_type: newModel.outcome_type,
-          percentage: Number.parseFloat(newModel.percentage) || 0,
-        }
+        payload.outcome_outcome_type = newModel.outcome_type
+        payload.outcome_percentage = Number.parseFloat(newModel.percentage) || 0
         break
       case "hybrid":
-        config.base_fee = Number.parseFloat(newModel.base_fee) || 0
+        payload.hybrid_base_fee = Number.parseFloat(newModel.base_fee) || 0
         if (newModel.include_seat) {
-          config.seat_config = {
+          payload.hybrid_seat_config = {
             price_per_seat: Number.parseFloat(newModel.price_per_seat) || 0,
             billing_frequency: newModel.billing_frequency,
           }
         }
         if (newModel.include_activity) {
-          config.activity_config = [
+          payload.hybrid_activity_configs = [
             {
               action_type: newModel.action_type,
               price_per_action: Number.parseFloat(newModel.price_per_action) || 0,
@@ -118,7 +120,7 @@ export default function PricingPage() {
           ]
         }
         if (newModel.include_outcome) {
-          config.outcome_config = [
+          payload.hybrid_outcome_configs = [
             {
               outcome_type: newModel.outcome_type,
               percentage: Number.parseFloat(newModel.percentage) || 0,
@@ -126,14 +128,6 @@ export default function PricingPage() {
           ]
         }
         break
-    }
-    const payload = {
-      name: newModel.name,
-      description: newModel.description,
-      model_type: newModel.model_type,
-      config,
-      is_active: true,
-      organization_id: orgId,
     }
 
     try {
