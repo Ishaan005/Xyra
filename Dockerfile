@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
     libxml2 \
     libxslt1.1 \
     libjpeg-dev \
-    libgobject-2.0-dev \
+    libgobject\
     fonts-liberation \
     fonts-dejavu \
     fonts-freefont-ttf \
