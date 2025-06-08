@@ -10,7 +10,21 @@ RUN npm run build
 # Stage 2: Setup Python, FastAPI, and Supervisor for the final image
 FROM python:3.13-slim
 WORKDIR /app
-RUN apt-get update && apt-get install -y supervisor curl libpq-dev gcc \
+RUN apt-get update && apt-get install -y \
+    supervisor curl libpq-dev gcc \
+    libcairo2 \
+    pango1.0-tools \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    libxml2 \
+    libxslt1.1 \
+    libjpeg-dev \
+    libgobject-2.0-0 \
+    fonts-liberation \
+    fonts-dejavu \
+    fonts-freefont-ttf \
     && rm -rf /var/lib/apt/lists/*
 ENV PYTHONUNBUFFERED=1 \
     APP_MODULE="main:app" \
