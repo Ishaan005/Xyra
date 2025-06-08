@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_RESOURCE_GROUP: 'Xyra-Dev-RG'
+  AZURE_RESOURCE_GROUP: 'xyra'
   ACR_NAME: 'xyradevacr'
-  CONTAINER_APP_NAME: 'xyra-combined-app-dev'
+  CONTAINER_APP_NAME: 'xyra-app-dev'
   CONTAINER_APP_ENV_NAME: 'xyra-dev-ev'
-  IMAGE_NAME: 'xyra-app-combined'
+  IMAGE_NAME: 'xyra-app'
 
 jobs:
   build_and_deploy:
