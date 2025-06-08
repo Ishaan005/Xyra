@@ -21,7 +21,6 @@ kafka-python
 redis
 # Integration layer dependencies
 celery[redis]
-apache-airflow
 pandas
 pyarrow
 aiofiles
