@@ -8,7 +8,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Setup Python, FastAPI, and Supervisor for the final image
-FROM python:3.9-slim
+FROM python:3.13-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y supervisor curl libpq-dev gcc \
     && rm -rf /var/lib/apt/lists/*
