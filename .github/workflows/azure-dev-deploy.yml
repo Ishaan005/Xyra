@@ -10,7 +10,7 @@ env:
   AZURE_RESOURCE_GROUP: 'Xyra-Dev-RG'
   ACR_NAME: 'xyradevacr'
   CONTAINER_APP_NAME: 'xyra-combined-app-dev'
-  CONTAINER_APP_ENV_NAME: 'xyra-dev-env'
+  CONTAINER_APP_ENV_NAME: 'xyra-dev-ev'
   IMAGE_NAME: 'xyra-app-combined'
 
 jobs:
