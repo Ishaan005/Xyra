@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation"
 
 import { SidebarProvider, MainContent, SidebarTrigger } from "@/components/ui/custom-sidebar"
 import { SidebarNav } from "@/components/layout/sidebar-nav"
-import { Header } from "@/components/layout/header"
+
+// Removed unused Header import
 
 interface DashboardLayoutProps {
   children: React.ReactNode

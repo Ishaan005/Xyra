@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, CreditCard, Settings, Users, LogOut, HelpCircle, FileText, Zap, User } from "lucide-react"
+import { BarChart3, CreditCard, Settings, LogOut, HelpCircle, Zap, User } from "lucide-react"
 
 import {
   Sidebar,

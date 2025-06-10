@@ -12,6 +12,8 @@ const nextConfig = {
     unoptimized: true,
   },
   output: 'standalone',
+  // Disable telemetry for CI/CD environments
+  telemetry: false,
 }
 
 export default nextConfig

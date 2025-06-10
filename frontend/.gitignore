@@ -19,6 +19,8 @@
 
 # production
 /build
+**/dist/
+*.js.map
 
 # misc
 .DS_Store
