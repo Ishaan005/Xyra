@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question / Discuss with the community
+    url: https://github.com/your-username/Xyra/discussions/new?category=q-a # Replace with actual discussions link
+    about: Ask questions and discuss with other Xyra users and contributors.
+  - name: Xyra Security Policy
+    url: https://github.com/your-username/Xyra/blob/main/SECURITY.md
+    about: Please review our security policy before reporting a security vulnerability.

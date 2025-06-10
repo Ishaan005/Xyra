@@ -20,6 +20,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Python dependency vulnerability scan
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit (backend)
+        run: pip-audit -r backend/requirements.txt
+      - name: Run pip-audit (xyra_client)
+        run: |
+          if [ -f xyra_client/requirements.txt ]; then pip-audit -r xyra_client/requirements.txt; fi
+
+      # Python static analysis
+      - name: Install bandit
+        run: pip install bandit
+      - name: Run bandit (backend)
+        run: bandit -r backend/app -ll --exit-zero
+      - name: Run bandit (xyra_client)
+        run: |
+          if [ -d xyra_client ]; then bandit -r xyra_client -ll --exit-zero; fi
+
+      # Node.js dependency vulnerability scan
+      - name: Run npm audit (frontend)
+        run: |
+          cd frontend && npm ci && npm audit --audit-level=high
+
+      # Node.js static analysis (eslint)
+      - name: Run ESLint (frontend)
+        run: |
+          cd frontend && npm run lint
+
+      # Secret scanning
+      - name: Run Gitleaks for secret detection
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: ''
+          fail: true
+
+      # Build and push Docker image
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -29,9 +65,21 @@ jobs:
         run: |
           az acr login --name ${{ env.ACR_NAME }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
           docker build -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} -f Dockerfile .
+
+      # Container image vulnerability scan
+      - name: Run Trivy vulnerability scanner on Docker image
+        uses: aquasecurity/trivy-action@v0.19.0
+        with:
+          image-ref: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - name: Push Docker image
+        run: |
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Deploy to Azure Container Apps
