@@ -187,7 +187,7 @@ Xyra uses JWT (JSON Web Tokens) for authentication.
 
    ```bash
    curl -X GET "http://localhost:8000/api/v1/users/me" \
-     -H "Authorization: Bearer YOUR_ACTUAL_TOKEN_HERE"
+     -H "Authorization: Bearer <YOUR_ACTUAL_TOKEN_HERE>"
    ```
 
 ## Using the API

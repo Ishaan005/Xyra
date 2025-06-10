@@ -1,0 +1,79 @@
+# Gitleaks configuration for Xyra project
+title = "Gitleaks config for Xyra"
+
+[extend]
+# Use the default gitleaks config as a base
+useDefault = true
+
+# Global allowlist patterns
+[allowlist]
+description = "Global allowlist"
+paths = [
+    ".*test.*", # Allow test files to have test tokens
+    ".*example.*", # Allow example files
+    ".*template.*", # Allow template files
+    "documentation/.*", # Allow documentation examples
+    "README.*", # Allow README examples
+]
+
+# Specific rules to ignore certain patterns
+regexes = [
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9", # Specific example JWT from docs
+    "YOUR_ACTUAL_TOKEN_HERE", # Placeholder text
+    "your-.*", # Generic placeholder patterns
+    "example.*", # Example patterns
+    "REDACTED", # Already redacted content
+]
+
+# Allow specific commits (for old test data that's already public)
+commits = [
+    "d50e172e62d59d0589cb20b1d41fed563bb1f9b8", # Test agent commits
+    "849da6a820b6576816c83e7af418aabdac63a642",
+    "7e2c4e00fa3fb244a587314f8100fd1a08757eb9",
+    "a7cd881fcced079fca9bbea002fffd27129f054e",
+]
+
+# Custom rule modifications
+[[rules]]
+id = "jwt"
+description = "JWT tokens"
+regex = '''eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9._-]*\.[A-Za-z0-9._-]*'''
+tags = ["key", "JWT"]
+keywords = ["jwt", "token"]
+
+# Allowlist for JWT rule - ignore test and documentation files
+[rules.allowlist]
+paths = [
+    "test_agent/.*", # Allow test agent files
+    "documentation/.*", # Allow documentation
+    ".*test.*", # Allow any test files
+]
+regexes = [
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.*", # Specific example JWT pattern
+]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key"
+regex = '''(?i)["']?[a-z0-9]{32,}["']?'''
+tags = ["key", "API"]
+
+# Allowlist for generic API key rule
+[rules.allowlist]
+paths = [
+    "documentation/.*", # Allow documentation examples
+    ".*example.*", # Allow example files
+]
+
+[[rules]]
+id = "curl-auth-header"
+description = "Curl authorization header"
+regex = '''(?i)authorization['"]*\s*:\s*['"][^'"]*['"]'''
+tags = ["key", "curl"]
+
+# Allowlist for curl auth header rule
+[rules.allowlist]
+paths = [
+    "documentation/.*", # Allow documentation examples
+    "README.*", # Allow README examples
+]
