@@ -115,7 +115,7 @@ async def main():
         xyra_client = XyraClient(
             base_url="http://localhost:8000/",
             agent_id=2,
-            token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDY5ODIxNzAsInN1YiI6IjEifQ.spXw-pClrYYVz9DRDnrFy8-9rRNC_91qhhHd62Yk_2k"
+            token="<insert_token_here>"  # Replace with your Xyra token
         )
 
         # Process log files

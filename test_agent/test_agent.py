@@ -1,10 +1,14 @@
 from xyra_client import XyraClient
 import asyncio
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 xyra_client = XyraClient(
-    base_url="http://localhost:8000",  # Replace with your actual base URL
-    token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDY5OTIzNjgsInN1YiI6IjEifQ.rlqGBkrZRo_N3g9Chs1SFOVErfBpxEVB8Jqc99tnsHA",
-    agent_id=3,
+    base_url=os.getenv("XYRA_BASE_URL", "http://localhost:8000"),
+    token=os.getenv("XYRA_TOKEN") or "",  # Token from environment variable with fallback
+    agent_id=int(os.getenv("XYRA_AGENT_ID", "3")),
 )
 
 ## Insert your Agent Functions here

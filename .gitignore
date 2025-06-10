@@ -3,6 +3,13 @@ __pycache__
 .venv
 Research
 
+# Environment files (all variations)
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/test_agent/.env
+
 # Build outputs and compiled files
 **/dist/
 **/build/
