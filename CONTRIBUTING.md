@@ -45,7 +45,13 @@ Before you begin, ensure you have the following installed:
 
 5.  **Configure Environment Variables**
 
-    Create a `.env` file in the `backend` directory. You can copy `backend/.env.example` (if it exists) or create one from scratch. Key variables include:
+    Create a `.env` file in the `backend` directory:
+    ```bash
+    cd backend
+    cp .env.example .env
+    ```
+    
+    Update the `.env` file with your configuration. Key variables include:
 
     ```env
     # API Settings

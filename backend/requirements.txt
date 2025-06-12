@@ -19,14 +19,3 @@ pytest
 httpx
 kafka-python
 redis
-# Integration layer dependencies
-celery[redis]
-pandas
-pyarrow
-aiofiles
-slowapi
-aioboto3
-cryptography
-pyjwt
-httpx-sse
-schedule
