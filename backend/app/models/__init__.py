@@ -6,7 +6,7 @@ Models package for the Xyra backend application.
 from .base import BaseModel
 from .user import User
 from .organization import Organization
-from .billing_model import BillingModel, SeatBasedConfig, ActivityBasedConfig, OutcomeBasedConfig
+from .billing_model import BillingModel, AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig
 from .agent import Agent, AgentActivity, AgentCost, AgentOutcome
 from .invoice import Invoice, InvoiceLineItem
 from .integration import IntegrationConnector, IntegrationWebhook, IntegrationEvent, IntegrationStream
@@ -17,7 +17,7 @@ __all__ = [
     "User",
     "Organization", 
     "BillingModel",
-    "SeatBasedConfig",
+    "AgentBasedConfig",
     "ActivityBasedConfig", 
     "OutcomeBasedConfig",
     "Agent",

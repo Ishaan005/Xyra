@@ -49,15 +49,20 @@ export default function PricingPage() {
     // Usage/Activity
     price_per_action: "",
     action_type: "",
-    // Seat
-    price_per_seat: "",
+    // Agent
+    base_agent_fee: "",
     billing_frequency: "monthly",
+    setup_fee: "",
+    volume_discount_enabled: false,
+    volume_discount_threshold: "",
+    volume_discount_percentage: "",
+    agent_tier: "professional",
     // Outcome
     outcome_type: "",
     percentage: "",
     // Hybrid
     base_fee: "",
-    include_seat: false,
+    include_agent: false,
     include_activity: false,
     include_outcome: false,
   })
@@ -95,9 +100,16 @@ export default function PricingPage() {
         payload.activity_price_per_action = Number.parseFloat(newModel.price_per_action) || 0
         payload.activity_action_type = newModel.action_type
         break
-      case "seat":
-        payload.seat_price_per_seat = Number.parseFloat(newModel.price_per_seat) || 0
-        payload.seat_billing_frequency = newModel.billing_frequency
+      case "agent":
+        payload.agent_base_agent_fee = Number.parseFloat(newModel.base_agent_fee) || 0
+        payload.agent_billing_frequency = newModel.billing_frequency
+        payload.agent_setup_fee = Number.parseFloat(newModel.setup_fee) || 0
+        payload.agent_volume_discount_enabled = newModel.volume_discount_enabled
+        if (newModel.volume_discount_enabled) {
+          payload.agent_volume_discount_threshold = Number.parseInt(newModel.volume_discount_threshold) || 0
+          payload.agent_volume_discount_percentage = Number.parseFloat(newModel.volume_discount_percentage) || 0
+        }
+        payload.agent_tier = newModel.agent_tier
         break
       case "outcome":
         payload.outcome_outcome_type = newModel.outcome_type
@@ -105,10 +117,15 @@ export default function PricingPage() {
         break
       case "hybrid":
         payload.hybrid_base_fee = Number.parseFloat(newModel.base_fee) || 0
-        if (newModel.include_seat) {
-          payload.hybrid_seat_config = {
-            price_per_seat: Number.parseFloat(newModel.price_per_seat) || 0,
+        if (newModel.include_agent) {
+          payload.hybrid_agent_config = {
+            base_agent_fee: Number.parseFloat(newModel.base_agent_fee) || 0,
             billing_frequency: newModel.billing_frequency,
+            setup_fee: Number.parseFloat(newModel.setup_fee) || 0,
+            volume_discount_enabled: newModel.volume_discount_enabled,
+            volume_discount_threshold: newModel.volume_discount_enabled ? Number.parseInt(newModel.volume_discount_threshold) || 0 : null,
+            volume_discount_percentage: newModel.volume_discount_enabled ? Number.parseFloat(newModel.volume_discount_percentage) || 0 : null,
+            agent_tier: newModel.agent_tier,
           }
         }
         if (newModel.include_activity) {
@@ -141,12 +158,17 @@ export default function PricingPage() {
         model_type: "usage",
         price_per_action: "",
         action_type: "",
-        price_per_seat: "",
+        base_agent_fee: "",
         billing_frequency: "monthly",
+        setup_fee: "",
+        volume_discount_enabled: false,
+        volume_discount_threshold: "",
+        volume_discount_percentage: "",
+        agent_tier: "professional",
         outcome_type: "",
         percentage: "",
         base_fee: "",
-        include_seat: false,
+        include_agent: false,
         include_activity: false,
         include_outcome: false,
       })
@@ -198,7 +220,7 @@ export default function PricingPage() {
     switch (type.toLowerCase()) {
       case "usage":
         return <BarChart className="h-5 w-5" />
-      case "seat":
+      case "agent":
         return <Users className="h-5 w-5" />
       case "hybrid":
         return <Zap className="h-5 w-5" />
@@ -211,7 +233,7 @@ export default function PricingPage() {
     switch (type.toLowerCase()) {
       case "usage":
         return "bg-blue/10 text-blue border-blue/8"
-      case "seat":
+      case "agent":
         return "bg-purple/10 text-purple border-purple/8"
       case "hybrid":
         return "bg-gold/10 text-gold-dark border-gold/8"
@@ -275,7 +297,7 @@ export default function PricingPage() {
           <TabsList className="grid grid-cols-4 w-full sm:w-auto">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="usage">Usage</TabsTrigger>
-            <TabsTrigger value="seat">Seat</TabsTrigger>
+            <TabsTrigger value="agent">Agent</TabsTrigger>
             <TabsTrigger value="hybrid">Hybrid</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -337,7 +359,7 @@ export default function PricingPage() {
                     onChange={(e) => setNewModel({ ...newModel, model_type: e.target.value })}
                   >
                     <option value="usage">Usage-based</option>
-                    <option value="seat">Seat-based</option>
+                    <option value="agent">Agent-based</option>
                     <option value="hybrid">Hybrid</option>
                     <option value="outcome">Outcome-based</option>
                   </select>
@@ -367,17 +389,37 @@ export default function PricingPage() {
                     </div>
                   </>
                 )}
-                {newModel.model_type === "seat" && (
+                {newModel.model_type === "agent" && (
                   <>
                     {" "}
-                    {/* Seat-based */}
+                    {/* Agent-based */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Price per seat</label>
+                      <label className="text-sm font-medium">Base agent fee</label>
                       <Input
                         type="number"
-                        value={newModel.price_per_seat}
-                        onChange={(e) => setNewModel({ ...newModel, price_per_seat: e.target.value })}
+                        value={newModel.base_agent_fee}
+                        onChange={(e) => setNewModel({ ...newModel, base_agent_fee: e.target.value })}
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Setup fee (optional)</label>
+                      <Input
+                        type="number"
+                        value={newModel.setup_fee}
+                        onChange={(e) => setNewModel({ ...newModel, setup_fee: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Agent tier</label>
+                      <select
+                        className="w-full"
+                        value={newModel.agent_tier}
+                        onChange={(e) => setNewModel({ ...newModel, agent_tier: e.target.value })}
+                      >
+                        <option value="starter">Starter</option>
+                        <option value="professional">Professional</option>
+                        <option value="enterprise">Enterprise</option>
+                      </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Billing frequency</label>
@@ -387,10 +429,33 @@ export default function PricingPage() {
                         onChange={(e) => setNewModel({ ...newModel, billing_frequency: e.target.value })}
                       >
                         <option value="monthly">Monthly</option>
-                        <option value="quarterly">Quarterly</option>
                         <option value="yearly">Yearly</option>
                       </select>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newModel.volume_discount_enabled}
+                        onChange={(e) => setNewModel({ ...newModel, volume_discount_enabled: e.target.checked })}
+                      />
+                      <label className="text-sm">Enable volume discount</label>
+                    </div>
+                    {newModel.volume_discount_enabled && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Volume threshold (number of agents)</label>
+                        <Input
+                          type="number"
+                          value={newModel.volume_discount_threshold}
+                          onChange={(e) => setNewModel({ ...newModel, volume_discount_threshold: e.target.value })}
+                        />
+                        <label className="text-sm font-medium">Discount percentage</label>
+                        <Input
+                          type="number"
+                          value={newModel.volume_discount_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, volume_discount_percentage: e.target.value })}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
                 {newModel.model_type === "outcome" && (
@@ -430,19 +495,35 @@ export default function PricingPage() {
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={newModel.include_seat}
-                        onChange={(e) => setNewModel({ ...newModel, include_seat: e.target.checked })}
+                        checked={newModel.include_agent}
+                        onChange={(e) => setNewModel({ ...newModel, include_agent: e.target.checked })}
                       />
-                      <label className="text-sm">Include seat configuration</label>
+                      <label className="text-sm">Include agent configuration</label>
                     </div>
-                    {newModel.include_seat && (
+                    {newModel.include_agent && (
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Seat price per seat</label>
+                        <label className="text-sm font-medium">Base agent fee</label>
                         <Input
                           type="number"
-                          value={newModel.price_per_seat}
-                          onChange={(e) => setNewModel({ ...newModel, price_per_seat: e.target.value })}
+                          value={newModel.base_agent_fee}
+                          onChange={(e) => setNewModel({ ...newModel, base_agent_fee: e.target.value })}
                         />
+                        <label className="text-sm font-medium">Setup fee (optional)</label>
+                        <Input
+                          type="number"
+                          value={newModel.setup_fee}
+                          onChange={(e) => setNewModel({ ...newModel, setup_fee: e.target.value })}
+                        />
+                        <label className="text-sm font-medium">Agent tier</label>
+                        <select
+                          className="w-full"
+                          value={newModel.agent_tier}
+                          onChange={(e) => setNewModel({ ...newModel, agent_tier: e.target.value })}
+                        >
+                          <option value="starter">Starter</option>
+                          <option value="professional">Professional</option>
+                          <option value="enterprise">Enterprise</option>
+                        </select>
                         <label className="text-sm font-medium">Billing frequency</label>
                         <select
                           className="w-full"
@@ -450,9 +531,32 @@ export default function PricingPage() {
                           onChange={(e) => setNewModel({ ...newModel, billing_frequency: e.target.value })}
                         >
                           <option value="monthly">Monthly</option>
-                          <option value="quarterly">Quarterly</option>
                           <option value="yearly">Yearly</option>
                         </select>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={newModel.volume_discount_enabled}
+                            onChange={(e) => setNewModel({ ...newModel, volume_discount_enabled: e.target.checked })}
+                          />
+                          <label className="text-sm">Enable volume discount</label>
+                        </div>
+                        {newModel.volume_discount_enabled && (
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Volume threshold</label>
+                            <Input
+                              type="number"
+                              value={newModel.volume_discount_threshold}
+                              onChange={(e) => setNewModel({ ...newModel, volume_discount_threshold: e.target.value })}
+                            />
+                            <label className="text-sm font-medium">Discount percentage</label>
+                            <Input
+                              type="number"
+                              value={newModel.volume_discount_percentage}
+                              onChange={(e) => setNewModel({ ...newModel, volume_discount_percentage: e.target.value })}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                     <div className="flex items-center gap-2">

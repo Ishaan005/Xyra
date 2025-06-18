@@ -8,7 +8,7 @@ class BillingModelBase(BaseModel):
     """Base billing model schema"""
     name: str
     description: Optional[str] = None
-    model_type: str = Field(..., description="One of: 'seat', 'activity', 'outcome', 'hybrid'")
+    model_type: str = Field(..., description="One of: 'agent', 'activity', 'outcome', 'hybrid'")
     is_active: bool = True
 
 
@@ -16,9 +16,14 @@ class BillingModelCreate(BillingModelBase):
     """Schema for creating billing models"""
     organization_id: int
     
-    # Seat-based config fields
-    seat_price_per_seat: Optional[float] = None
-    seat_billing_frequency: Optional[str] = "monthly"
+    # Agent-based config fields
+    agent_base_agent_fee: Optional[float] = None
+    agent_billing_frequency: Optional[str] = "monthly"
+    agent_setup_fee: Optional[float] = 0.0
+    agent_volume_discount_enabled: Optional[bool] = False
+    agent_volume_discount_threshold: Optional[int] = None
+    agent_volume_discount_percentage: Optional[float] = None
+    agent_tier: Optional[str] = "professional"
     
     # Activity-based config fields
     activity_price_per_action: Optional[float] = None
@@ -30,7 +35,7 @@ class BillingModelCreate(BillingModelBase):
     
     # Hybrid-specific config
     hybrid_base_fee: Optional[float] = None
-    hybrid_seat_config: Optional[SeatBasedConfigSchema] = None
+    hybrid_agent_config: Optional[AgentBasedConfigSchema] = None
     hybrid_activity_configs: Optional[List[ActivityBasedConfigSchema]] = None
     hybrid_outcome_configs: Optional[List[OutcomeBasedConfigSchema]] = None
 
@@ -39,12 +44,17 @@ class BillingModelUpdate(BaseModel):
     """Schema for updating billing models"""
     name: Optional[str] = None
     description: Optional[str] = None
-    model_type: Optional[str] = Field(None, description="One of: 'seat', 'activity', 'outcome', 'hybrid'")
+    model_type: Optional[str] = Field(None, description="One of: 'agent', 'activity', 'outcome', 'hybrid'")
     is_active: Optional[bool] = None
     
-    # Seat-based config fields
-    seat_price_per_seat: Optional[float] = None
-    seat_billing_frequency: Optional[str] = None
+    # Agent-based config fields
+    agent_base_agent_fee: Optional[float] = None
+    agent_billing_frequency: Optional[str] = None
+    agent_setup_fee: Optional[float] = None
+    agent_volume_discount_enabled: Optional[bool] = None
+    agent_volume_discount_threshold: Optional[int] = None
+    agent_volume_discount_percentage: Optional[float] = None
+    agent_tier: Optional[str] = None
     
     # Activity-based config fields
     activity_price_per_action: Optional[float] = None
@@ -56,7 +66,7 @@ class BillingModelUpdate(BaseModel):
     
     # Hybrid-specific config
     hybrid_base_fee: Optional[float] = None
-    hybrid_seat_config: Optional[SeatBasedConfigSchema] = None
+    hybrid_agent_config: Optional[AgentBasedConfigSchema] = None
     hybrid_activity_configs: Optional[List[ActivityBasedConfigSchema]] = None
     hybrid_outcome_configs: Optional[List[OutcomeBasedConfigSchema]] = None
 
@@ -68,7 +78,7 @@ class BillingModelInDBBase(BillingModelBase):
     created_at: datetime
     updated_at: datetime
     # Nested config from dedicated tables
-    seat_config: Optional["SeatBasedConfigSchema"] = None
+    agent_config: Optional["AgentBasedConfigSchema"] = None
     activity_config: Optional[List["ActivityBasedConfigSchema"]] = None
     outcome_config: Optional[List["OutcomeBasedConfigSchema"]] = None
     hybrid_config: Optional["HybridConfigSchema"] = None
@@ -83,10 +93,15 @@ class BillingModel(BillingModelInDBBase):
 
 
 # Specific configuration schemas for different billing types
-class SeatBasedConfigSchema(BaseModel):
-    """Configuration schema for seat-based billing"""
-    price_per_seat: float
-    billing_frequency: str = "monthly"  # monthly, quarterly, yearly
+class AgentBasedConfigSchema(BaseModel):
+    """Configuration schema for agent-based billing"""
+    base_agent_fee: float
+    billing_frequency: str = "monthly"  # monthly, yearly
+    setup_fee: float = 0.0
+    volume_discount_enabled: bool = False
+    volume_discount_threshold: Optional[int] = None
+    volume_discount_percentage: Optional[float] = None
+    agent_tier: str = "professional"  # starter, professional, enterprise
 
 
 class ActivityBasedConfigSchema(BaseModel):
@@ -109,6 +124,6 @@ class HybridConfigSchema(BaseModel):
 class HybridConfigExtendedSchema(BaseModel):
     """Extended configuration schema for hybrid billing with all components"""
     base_fee: Optional[float] = 0.0
-    seat_config: Optional[SeatBasedConfigSchema] = None
+    agent_config: Optional[AgentBasedConfigSchema] = None
     activity_config: Optional[List[ActivityBasedConfigSchema]] = None
     outcome_config: Optional[List[OutcomeBasedConfigSchema]] = None

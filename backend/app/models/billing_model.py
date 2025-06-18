@@ -11,7 +11,7 @@ class BillingModel(BaseModel):
     description = Column(String, nullable=True)
     organization_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
     
-    # Billing model type: 'seat', 'activity', 'outcome', 'hybrid'
+    # Billing model type: 'agent', 'activity', 'outcome', 'hybrid'
     model_type = Column(String, nullable=False)
     
     # Whether this billing model is active
@@ -21,8 +21,8 @@ class BillingModel(BaseModel):
     organization = relationship("Organization", back_populates="billing_models")
     agents = relationship("Agent", back_populates="billing_model")
     # Dedicated config relationships
-    seat_config = relationship(
-        "SeatBasedConfig",
+    agent_config = relationship(
+        "AgentBasedConfig",
         uselist=False,
         back_populates="billing_model",
         cascade="all, delete, delete-orphan",
@@ -51,16 +51,25 @@ class BillingModel(BaseModel):
     def __str__(self) -> str:
         return f"BillingModel(name={self.name}, type={self.model_type})"
 
-class SeatBasedConfig(BaseModel):
+class AgentBasedConfig(BaseModel):
     """
-    Configuration for seat-based billing
+    Configuration for agent-based billing
     """
     billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
-    price_per_seat = Column(Float, nullable=False)
-    billing_frequency = Column(String, nullable=False, default="monthly")  # monthly, quarterly, yearly
+    base_agent_fee = Column(Float, nullable=False)  # Base fee per agent
+    billing_frequency = Column(String, nullable=False, default="monthly")  # monthly, yearly
+    setup_fee = Column(Float, nullable=True, default=0.0)  # Optional one-time setup fee
+    
+    # Volume discount configuration
+    volume_discount_enabled = Column(Boolean, default=False)
+    volume_discount_threshold = Column(Integer, nullable=True)  # Number of agents to qualify for discount
+    volume_discount_percentage = Column(Float, nullable=True)  # Discount percentage for volume
+    
+    # Agent tier configuration (for different agent capabilities)
+    agent_tier = Column(String, nullable=False, default="professional")  # starter, professional, enterprise
     
     # Relationship
-    billing_model = relationship("BillingModel", back_populates="seat_config")
+    billing_model = relationship("BillingModel", back_populates="agent_config")
 
 class ActivityBasedConfig(BaseModel):
     """

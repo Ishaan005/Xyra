@@ -17,7 +17,7 @@ def get_billing_model(db: Session, model_id: int) -> Optional[BillingModel]:
     return (
         db.query(BillingModel)
         .options(
-            joinedload(BillingModel.seat_config),
+            joinedload(BillingModel.agent_config),
             joinedload(BillingModel.activity_config),
             joinedload(BillingModel.outcome_config),
             joinedload(BillingModel.hybrid_config)
@@ -36,7 +36,7 @@ def get_billing_models_by_organization(
     return (
         db.query(BillingModel)
         .options(
-            joinedload(BillingModel.seat_config),
+            joinedload(BillingModel.agent_config),
             joinedload(BillingModel.activity_config),
             joinedload(BillingModel.outcome_config),
             joinedload(BillingModel.hybrid_config)
@@ -61,7 +61,7 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
         raise ValueError(f"Organization with ID {billing_model_in.organization_id} not found")
     
     # Validate billing model type
-    valid_types = ["seat", "activity", "outcome", "hybrid"]
+    valid_types = ["agent", "activity", "outcome", "hybrid"]
     if billing_model_in.model_type not in valid_types:
         raise ValueError(
             f"Invalid billing model type: {billing_model_in.model_type}. "
@@ -86,15 +86,20 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
     db.refresh(billing_model)
 
     # Persist config into dedicated tables
-    from app.models.billing_model import SeatBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig
+    from app.models.billing_model import AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig
     
-    if billing_model_in.model_type == "seat":
-        seat_cfg = SeatBasedConfig(
+    if billing_model_in.model_type == "agent":
+        agent_cfg = AgentBasedConfig(
             billing_model_id=billing_model.id,
-            price_per_seat=billing_model_in.seat_price_per_seat,
-            billing_frequency=billing_model_in.seat_billing_frequency,
+            base_agent_fee=billing_model_in.agent_base_agent_fee,
+            billing_frequency=billing_model_in.agent_billing_frequency,
+            setup_fee=billing_model_in.agent_setup_fee or 0.0,
+            volume_discount_enabled=billing_model_in.agent_volume_discount_enabled or False,
+            volume_discount_threshold=billing_model_in.agent_volume_discount_threshold,
+            volume_discount_percentage=billing_model_in.agent_volume_discount_percentage,
+            agent_tier=billing_model_in.agent_tier or "professional",
         )
-        db.add(seat_cfg)
+        db.add(agent_cfg)
     elif billing_model_in.model_type == "activity":
         act_cfg = ActivityBasedConfig(
             billing_model_id=billing_model.id,
@@ -118,14 +123,19 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
             )
             db.add(hybrid_cfg)
         
-        # Create seat config if provided
-        if billing_model_in.hybrid_seat_config:
-            seat_cfg = SeatBasedConfig(
+        # Create agent config if provided
+        if billing_model_in.hybrid_agent_config:
+            agent_cfg = AgentBasedConfig(
                 billing_model_id=billing_model.id,
-                price_per_seat=billing_model_in.hybrid_seat_config.price_per_seat,
-                billing_frequency=billing_model_in.hybrid_seat_config.billing_frequency,
+                base_agent_fee=billing_model_in.hybrid_agent_config.base_agent_fee,
+                billing_frequency=billing_model_in.hybrid_agent_config.billing_frequency,
+                setup_fee=billing_model_in.hybrid_agent_config.setup_fee or 0.0,
+                volume_discount_enabled=billing_model_in.hybrid_agent_config.volume_discount_enabled or False,
+                volume_discount_threshold=billing_model_in.hybrid_agent_config.volume_discount_threshold,
+                volume_discount_percentage=billing_model_in.hybrid_agent_config.volume_discount_percentage,
+                agent_tier=billing_model_in.hybrid_agent_config.agent_tier or "professional",
             )
-            db.add(seat_cfg)
+            db.add(agent_cfg)
             
         # Create activity configs if provided
         if billing_model_in.hybrid_activity_configs:
@@ -173,7 +183,7 @@ def update_billing_model(
     
     # Validate billing model type if being updated
     if "model_type" in update_data:
-        valid_types = ["seat", "activity", "outcome", "hybrid"]
+        valid_types = ["agent", "activity", "outcome", "hybrid"]
         if update_data["model_type"] not in valid_types:
             raise ValueError(
                 f"Invalid billing model type: {update_data['model_type']}. "
@@ -182,24 +192,26 @@ def update_billing_model(
     
     # Validate config based on model type and input fields if config fields are being updated
     if any(field in update_data for field in [
-        "seat_price_per_seat", "seat_billing_frequency",
+        "agent_base_agent_fee", "agent_billing_frequency", "agent_setup_fee", 
+        "agent_volume_discount_enabled", "agent_volume_discount_threshold", "agent_volume_discount_percentage", "agent_tier",
         "activity_price_per_action", "activity_action_type", 
         "outcome_outcome_type", "outcome_percentage",
-        "hybrid_base_fee", "hybrid_seat_config", "hybrid_activity_configs", "hybrid_outcome_configs"
+        "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs"
     ]):
         current_model_type = str(billing_model.model_type)
         validate_billing_config_from_schema(billing_model_in, current_model_type)
     
     # Handle config updates through dedicated schema fields
     config_updated = any(field in update_data for field in [
-        "seat_price_per_seat", "seat_billing_frequency",
+        "agent_base_agent_fee", "agent_billing_frequency", "agent_setup_fee", 
+        "agent_volume_discount_enabled", "agent_volume_discount_threshold", "agent_volume_discount_percentage", "agent_tier",
         "activity_price_per_action", "activity_action_type", 
         "outcome_outcome_type", "outcome_percentage",
-        "hybrid_base_fee", "hybrid_seat_config", "hybrid_activity_configs", "hybrid_outcome_configs"
+        "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs"
     ])
     
     if config_updated:
-        from app.models.billing_model import SeatBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig
+        from app.models.billing_model import AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig
         
         # Get the current model type as a string value
         current_model_type = str(billing_model.model_type)
@@ -207,8 +219,8 @@ def update_billing_model(
         new_model_type = update_data.get("model_type", current_model_type)
 
         # Remove old configs for this model_type and recreate
-        if current_model_type in ("seat", "hybrid") or model_type_changing:
-            db.query(SeatBasedConfig).filter(SeatBasedConfig.billing_model_id == model_id).delete()
+        if current_model_type in ("agent", "hybrid") or model_type_changing:
+            db.query(AgentBasedConfig).filter(AgentBasedConfig.billing_model_id == model_id).delete()
         if current_model_type in ("activity", "hybrid") or model_type_changing:
             db.query(ActivityBasedConfig).filter(ActivityBasedConfig.billing_model_id == model_id).delete()
         if current_model_type in ("outcome", "hybrid") or model_type_changing:
@@ -218,14 +230,19 @@ def update_billing_model(
         db.flush()
         
         # Recreate configs based on new values and model type
-        if new_model_type == "seat":
-            if billing_model_in.seat_price_per_seat is not None:
-                seat_cfg = SeatBasedConfig(
+        if new_model_type == "agent":
+            if billing_model_in.agent_base_agent_fee is not None:
+                agent_cfg = AgentBasedConfig(
                     billing_model_id=model_id,
-                    price_per_seat=billing_model_in.seat_price_per_seat,
-                    billing_frequency=billing_model_in.seat_billing_frequency or "monthly",
+                    base_agent_fee=billing_model_in.agent_base_agent_fee,
+                    billing_frequency=billing_model_in.agent_billing_frequency or "monthly",
+                    setup_fee=billing_model_in.agent_setup_fee or 0.0,
+                    volume_discount_enabled=billing_model_in.agent_volume_discount_enabled or False,
+                    volume_discount_threshold=billing_model_in.agent_volume_discount_threshold,
+                    volume_discount_percentage=billing_model_in.agent_volume_discount_percentage,
+                    agent_tier=billing_model_in.agent_tier or "professional",
                 )
-                db.add(seat_cfg)
+                db.add(agent_cfg)
         elif new_model_type == "activity":
             if billing_model_in.activity_price_per_action is not None:
                 act_cfg = ActivityBasedConfig(
@@ -251,14 +268,19 @@ def update_billing_model(
                 )
                 db.add(hybrid_cfg)
             
-            # Create seat config if provided
-            if billing_model_in.hybrid_seat_config:
-                seat_cfg = SeatBasedConfig(
+            # Create agent config if provided
+            if billing_model_in.hybrid_agent_config:
+                agent_cfg = AgentBasedConfig(
                     billing_model_id=model_id,
-                    price_per_seat=billing_model_in.hybrid_seat_config.price_per_seat,
-                    billing_frequency=billing_model_in.hybrid_seat_config.billing_frequency,
+                    base_agent_fee=billing_model_in.hybrid_agent_config.base_agent_fee,
+                    billing_frequency=billing_model_in.hybrid_agent_config.billing_frequency,
+                    setup_fee=billing_model_in.hybrid_agent_config.setup_fee or 0.0,
+                    volume_discount_enabled=billing_model_in.hybrid_agent_config.volume_discount_enabled or False,
+                    volume_discount_threshold=billing_model_in.hybrid_agent_config.volume_discount_threshold,
+                    volume_discount_percentage=billing_model_in.hybrid_agent_config.volume_discount_percentage,
+                    agent_tier=billing_model_in.hybrid_agent_config.agent_tier or "professional",
                 )
-                db.add(seat_cfg)
+                db.add(agent_cfg)
                 
             # Create activity configs if provided
             if billing_model_in.hybrid_activity_configs:
@@ -335,12 +357,21 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
         # If no model_type available, skip validation (shouldn't happen in normal flow)
         return
     
-    if model_type == "seat":
-        if billing_model_in.seat_price_per_seat is None or billing_model_in.seat_price_per_seat <= 0:
-            raise ValueError("Seat-based billing model must include a positive 'seat_price_per_seat'")
+    if model_type == "agent":
+        if billing_model_in.agent_base_agent_fee is None or billing_model_in.agent_base_agent_fee <= 0:
+            raise ValueError("Agent-based billing model must include a positive 'agent_base_agent_fee'")
         
-        if billing_model_in.seat_billing_frequency and billing_model_in.seat_billing_frequency not in ["monthly", "quarterly", "yearly"]:
-            raise ValueError("'seat_billing_frequency' must be one of: monthly, quarterly, yearly")
+        if billing_model_in.agent_billing_frequency and billing_model_in.agent_billing_frequency not in ["monthly", "yearly"]:
+            raise ValueError("'agent_billing_frequency' must be one of: monthly, yearly")
+        
+        if billing_model_in.agent_volume_discount_enabled:
+            if billing_model_in.agent_volume_discount_threshold is None or billing_model_in.agent_volume_discount_threshold <= 0:
+                raise ValueError("Volume discount requires a positive 'agent_volume_discount_threshold'")
+            if billing_model_in.agent_volume_discount_percentage is None or billing_model_in.agent_volume_discount_percentage <= 0:
+                raise ValueError("Volume discount requires a positive 'agent_volume_discount_percentage'")
+        
+        if billing_model_in.agent_tier and billing_model_in.agent_tier not in ["starter", "professional", "enterprise"]:
+            raise ValueError("'agent_tier' must be one of: starter, professional, enterprise")
         
     elif model_type == "activity":
         if billing_model_in.activity_price_per_action is None or billing_model_in.activity_price_per_action <= 0:
@@ -359,17 +390,24 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
     elif model_type == "hybrid":
         # Hybrid must have at least one billing component
         has_base_fee = billing_model_in.hybrid_base_fee is not None and billing_model_in.hybrid_base_fee >= 0
-        has_seat = billing_model_in.hybrid_seat_config is not None
+        has_agent = billing_model_in.hybrid_agent_config is not None
         has_activity = billing_model_in.hybrid_activity_configs is not None and len(billing_model_in.hybrid_activity_configs) > 0
         has_outcome = billing_model_in.hybrid_outcome_configs is not None and len(billing_model_in.hybrid_outcome_configs) > 0
         
-        if not any([has_base_fee, has_seat, has_activity, has_outcome]):
+        if not any([has_base_fee, has_agent, has_activity, has_outcome]):
             raise ValueError("Hybrid billing model must include at least one billing component")
         
         # Validate each component if present
-        if has_seat:
-            if billing_model_in.hybrid_seat_config.price_per_seat <= 0:
-                raise ValueError("Seat configuration must include a positive 'price_per_seat'")
+        if has_agent:
+            if billing_model_in.hybrid_agent_config.base_agent_fee <= 0:
+                raise ValueError("Agent configuration must include a positive 'base_agent_fee'")
+            if billing_model_in.hybrid_agent_config.volume_discount_enabled:
+                if (billing_model_in.hybrid_agent_config.volume_discount_threshold is None or 
+                    billing_model_in.hybrid_agent_config.volume_discount_threshold <= 0):
+                    raise ValueError("Volume discount requires a positive 'volume_discount_threshold'")
+                if (billing_model_in.hybrid_agent_config.volume_discount_percentage is None or 
+                    billing_model_in.hybrid_agent_config.volume_discount_percentage <= 0):
+                    raise ValueError("Volume discount requires a positive 'volume_discount_percentage'")
         
         if has_activity:
             for activity in billing_model_in.hybrid_activity_configs:
@@ -390,12 +428,25 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
     total_cost = 0.0
     current_model_type = str(billing_model.model_type)
     
-    if current_model_type == "seat":
-        # Expect one SeatBasedConfig row
-        if billing_model.seat_config:
-            cfg = billing_model.seat_config
-            seats = usage_data.get("seats", 0)
-            total_cost = cfg.price_per_seat * seats
+    if current_model_type == "agent":
+        # Expect one AgentBasedConfig row
+        if billing_model.agent_config:
+            cfg = billing_model.agent_config
+            agents = usage_data.get("agents", 1)  # Default to 1 agent
+            
+            # Calculate base cost
+            base_cost = cfg.base_agent_fee * agents
+            
+            # Add setup fee (one-time, so only if usage_data indicates this is initial billing)
+            if usage_data.get("include_setup_fee", False):
+                base_cost += cfg.setup_fee
+            
+            # Apply volume discount if enabled and threshold met
+            if cfg.volume_discount_enabled and agents >= (cfg.volume_discount_threshold or 0):
+                discount = base_cost * (cfg.volume_discount_percentage or 0) / 100.0
+                base_cost -= discount
+            
+            total_cost = base_cost
     elif current_model_type == "activity":
         # Expect one or more ActivityBasedConfig rows
         actions = usage_data.get("actions", 0)
@@ -412,11 +463,24 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
         # Base fee from HybridConfig
         if billing_model.hybrid_config:
             total_cost += billing_model.hybrid_config.base_fee
-        # Seat
-        if hasattr(billing_model, "seat_config") and billing_model.seat_config:
-            seats = usage_data.get("seats", 0)
-            cfg = billing_model.seat_config
-            total_cost += cfg.price_per_seat * seats
+        # Agent
+        if hasattr(billing_model, "agent_config") and billing_model.agent_config:
+            agents = usage_data.get("agents", 1)
+            cfg = billing_model.agent_config
+            
+            # Calculate base cost
+            agent_cost = cfg.base_agent_fee * agents
+            
+            # Add setup fee if applicable
+            if usage_data.get("include_setup_fee", False):
+                agent_cost += cfg.setup_fee
+            
+            # Apply volume discount if enabled and threshold met
+            if cfg.volume_discount_enabled and agents >= (cfg.volume_discount_threshold or 0):
+                discount = agent_cost * (cfg.volume_discount_percentage or 0) / 100.0
+                agent_cost -= discount
+            
+            total_cost += agent_cost
         # Activity
         activities = usage_data.get("actions", 0)
         for cfg in billing_model.activity_config:
