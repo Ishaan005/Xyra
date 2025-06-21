@@ -18,12 +18,16 @@ This guide provides step-by-step instructions on how to set up, configure, and r
 
 Before you begin, ensure you have the following installed:
 
-- Python 3.8 or higher
+- Python 3.11 or higher (recommended for optimal performance)
+- Node.js 18 or higher
 - PostgreSQL 13 or higher
 - pip (Python package manager)
+- npm (Node.js package manager)
 - A virtual environment tool (optional but recommended, e.g., venv, virtualenv, or conda)
 
 ## Installation
+
+### Option A: Automated Setup (Recommended)
 
 1. **Clone the Repository**
 
@@ -34,10 +38,49 @@ Before you begin, ensure you have the following installed:
    cd Xyra
    ```
 
-2. **Create a Virtual Environment**
+2. **Run the Setup Script**
+
+   For a quick and automated setup, use the provided setup script:
 
    ```bash
-   # Using venv
+   chmod +x scripts/setup-dev.sh
+   ./scripts/setup-dev.sh
+   ```
+
+   This script will:
+   - Check all prerequisites
+   - Set up Python virtual environment
+   - Install backend dependencies
+   - Install frontend dependencies
+   - Create `.env` file from template
+   - Provide next steps instructions
+
+### Option B: Manual Setup
+
+1. **Clone the Repository**
+
+   ```bash
+   git clone <repository-url>
+   cd Xyra
+   ```
+
+2. **Install All Dependencies Using npm**
+
+   From the project root:
+
+   ```bash
+   npm run install:all
+   ```
+
+   This command will install both backend and frontend dependencies automatically.
+
+3. **Manual Installation (Alternative)**
+
+   If you prefer to install dependencies step by step:
+
+   ```bash
+   # Backend dependencies
+   cd backend
    python -m venv venv
    
    # Activate the virtual environment
@@ -46,51 +89,98 @@ Before you begin, ensure you have the following installed:
    
    # On macOS/Linux
    source venv/bin/activate
-   ```
-
-3. **Install Dependencies**
-
-   ```bash
-   cd backend
+   
    pip install -r requirements.txt
+   cd ..
+   
+   # Frontend dependencies
+   cd frontend
+   npm install
+   cd ..
    ```
+
+### Option C: Using Make Commands
+
+If you prefer using Make commands:
+
+```bash
+# Show all available commands
+make help
+
+# Install all dependencies
+make install
+
+# Install only backend dependencies
+make install-backend
+
+# Install only frontend dependencies
+make install-frontend
+```
 
 ## Configuration
 
-Xyra uses environment variables for configuration. Create a `.env` file in the backend directory with the following settings:
+Xyra uses environment variables for configuration. The easiest way to set up your configuration is to use the provided template:
 
-```
+### Backend Configuration
+
+1. **Copy the Environment Template**
+
+   ```bash
+   cd backend
+   cp .env.example .env
+   ```
+
+2. **Edit the Configuration**
+
+   Open the `.env` file and customize the values according to your environment:
+
+```bash
 # API Settings
 API_V1_STR=/api/v1
 PROJECT_NAME=Xyra
 
 # Security
-SECRET_KEY=your-secret-key  # Use a secure random string in production
-ACCESS_TOKEN_EXPIRE_MINUTES=11520  # 8 days
+SECRET_KEY=your-secret-key-here-generate-with-openssl-rand-hex-32
+ACCESS_TOKEN_EXPIRE_MINUTES=11520
 
 # CORS
 CORS_ORIGINS=http://localhost,http://localhost:3000,http://localhost:8080
 
-# Database
+# Database Configuration
 POSTGRES_SERVER=localhost
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your-password
+POSTGRES_PASSWORD=your-postgres-password
 POSTGRES_DB=xyra_db
 
-# Stripe API (if you're using Stripe for payments)
-STRIPE_API_KEY=your-stripe-api-key
-
-# Azure Integration (optional)
-AZURE_TENANT_ID=your-tenant-id
-AZURE_CLIENT_ID=your-client-id
-AZURE_KEY_VAULT_URL=your-key-vault-url
-
-# Default Admin User
+# Default Admin User (for development)
 FIRST_SUPERUSER=admin@example.com
-FIRST_SUPERUSER_PASSWORD=admin  # Change this in production
+FIRST_SUPERUSER_PASSWORD=changeme
+
+# Optional: Azure Integration
+# AZURE_CLIENT_ID=your-azure-client-id
+# AZURE_CLIENT_SECRET=your-azure-client-secret
+# AZURE_TENANT_ID=your-azure-tenant-id
+
+# Optional: Stripe Integration
+# STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+# STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
+
+# Optional: Redis Configuration (for caching)
+# REDIS_URL=redis://localhost:6379/0
+
+# Development Settings
+DEBUG=true
+LOG_LEVEL=INFO
 ```
 
-Customize these values according to your environment. For production, ensure you use secure passwords and keys.
+**Important Security Notes:**
+- Generate a secure SECRET_KEY for production: `openssl rand -hex 32`
+- Change the default FIRST_SUPERUSER_PASSWORD
+- Use secure passwords and keys for all services
+
+### Frontend Configuration
+
+The frontend automatically uses the backend API configuration. If you need custom frontend environment variables, create a `.env.local` file in the `frontend` directory.
 
 ## Database Setup
 
@@ -109,50 +199,134 @@ Customize these values according to your environment. For production, ensure you
 
 2. **Initialize Database Models**
 
-   Create a script to initialize the database models. Save this as `init_db.py` in the backend directory:
+   The Xyra project includes an `init_db.py` script that handles database initialization. This script:
+   - Creates all database tables
+   - Sets up proper Azure PostgreSQL connection handling
+   - Creates the initial superuser if specified in environment variables
+   - Includes retry logic and proper error handling
 
-   ```python
-   from app.db.session import engine
-   from app.models.base import Base
-   from app.models.user import User
-   from app.models.organization import Organization
-   from app.models.agent import Agent, AgentActivity, AgentCost, AgentOutcome
-   from app.models.billing_model import BillingModel, SeatBasedConfig, ActivityBasedConfig, OutcomeBasedConfig
-   from app.models.invoice import Invoice, InvoiceLineItem
-   
-   # Import all models here to ensure they are registered with the Base metadata
-   
-   def init_db():
-       Base.metadata.create_all(bind=engine)
-       print("Database tables created successfully.")
-   
-   if __name__ == "__main__":
-       init_db()
-   ```
+3. **Run Database Migrations (Recommended)**
 
-3. **Run the Initialization Script**
+   For production environments, use Alembic migrations instead of the init script:
 
    ```bash
+   cd backend
+   # Apply all migrations
+   alembic upgrade head
+   ```
+
+   The project includes comprehensive migration files that handle schema changes and data updates.
+
+4. **Alternative: Run the Initialization Script**
+
+   For development or initial setup:
+
+   ```bash
+   cd backend
    python init_db.py
    ```
 
 ## Running the Application
 
-1. **Start the Development Server**
+Xyra provides multiple convenient ways to run the application:
 
+### Option A: Using npm Scripts (Recommended)
+
+   From the project root directory:
    ```bash
-   # From the backend directory
-   python main.py
+   # Start both backend and frontend simultaneously
+   npm run dev
+   
+   # Or start them separately
+   npm run dev:backend  # Backend only (port 8000)
+   npm run dev:frontend # Frontend only (port 3000)
+   
+   # For production builds
+   npm run build        # Build frontend
+   npm run start        # Start both in production mode
    ```
 
-   The API will be available at `http://localhost:8000`.
+### Option B: Using Make Commands
 
-2. **Access the API Documentation**
-
-   The FastAPI automatic documentation is available at:
+   ```bash
+   # Start development servers (both backend and frontend)
+   make dev
    
-   - Swagger UI: `http://localhost:8000/docs`
-   - ReDoc: `http://localhost:8000/redoc`
+   # Start only backend
+   make dev-backend
+   
+   # Start only frontend  
+   make dev-frontend
+   
+   # Build the application
+   make build
+   ```
+
+### Option C: Manual Startup
+
+   **Backend:**
+   ```bash
+   cd backend
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python main.py
+   # or
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+   **Frontend (in another terminal):**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+### Access Points
+
+- **API Backend**: `http://localhost:8000`
+- **Frontend Application**: `http://localhost:3000`
+- **API Documentation**: 
+  - Swagger UI: `http://localhost:8000/docs`
+  - ReDoc: `http://localhost:8000/redoc`
+
+## Testing
+
+Xyra includes comprehensive test suites for both backend and frontend:
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test
+
+# Run backend tests only
+npm run test
+# or
+make test-backend
+cd backend && python -m pytest
+
+# Run frontend tests only
+npm run test:frontend
+# or
+make test-frontend
+
+# Run linting
+npm run lint
+# or
+make lint
+```
+
+### Test Coverage
+
+The backend tests cover:
+- API endpoints and authentication
+- Database models and operations
+- Business logic and validations
+- Integration with external services
+
+The frontend tests include:
+- Component functionality
+- User interactions
+- API integration
+- UI/UX behavior
 
 ## Authentication
 
@@ -192,7 +366,36 @@ Xyra uses JWT (JSON Web Tokens) for authentication.
 
 ## Using the API
 
-Xyra provides several API endpoints to manage organizations, users, agents, billing models, and invoices.
+Xyra provides several ways to interact with the API:
+
+### Python SDK (xyra_client)
+
+For Python applications, use the official Xyra Python SDK:
+
+```bash
+# Install the Xyra client SDK
+cd xyra_client
+pip install -e .
+```
+
+Example usage:
+```python
+from xyra_client import XyraClient
+
+# Initialize the client
+client = XyraClient(
+    base_url="http://localhost:8000",
+    api_key="your-api-key"
+)
+
+# Use the client to interact with the API
+organizations = client.organizations.list()
+agents = client.agents.list(org_id="your-org-id")
+```
+
+### Direct API Access
+
+You can also interact directly with the REST API using curl, Postman, or any HTTP client.
 
 ### Key Endpoints
 
@@ -248,6 +451,12 @@ Xyra provides several API endpoints to manage organizations, users, agents, bill
   - Get top agents: `GET /api/v1/analytics/organization/{org_id}/top-agents`
   - Get activity breakdown: `GET /api/v1/analytics/organization/{org_id}/activity-breakdown`
 
+- **Integration**: `/api/v1/integration/*`
+  - Webhook management and processing
+  - Data connectors and external system integration
+  - Batch data import/export functionality
+  - Real-time streaming integration
+
 ### Example Workflow
 
 Here's a common workflow for setting up a new organization with agents and billing:
@@ -264,71 +473,38 @@ Here's a common workflow for setting up a new organization with agents and billi
 
 ### Docker Deployment
 
-1. **Create a Dockerfile**
+1. **Using the Production Multi-Stage Dockerfile**
 
-   Create a `Dockerfile` in the backend directory:
-
-   ```dockerfile
-   FROM python:3.9-slim
-
-   WORKDIR /app
-
-   COPY requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-
-   COPY . .
-
-   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-   ```
-
-2. **Build and Run the Docker Container**
+   Xyra includes a production-ready multi-stage Dockerfile that builds both frontend and backend:
 
    ```bash
-   docker build -t xyra-backend .
-   docker run -d -p 8000:8000 --env-file .env --name xyra-backend xyra-backend
+   # Build the Docker image (from project root)
+   docker build -t xyra .
+   
+   # Run the container with environment file
+   docker run -d -p 3000:3000 --env-file backend/.env --name xyra-app xyra
    ```
 
-### Azure App Service Deployment
+   The container runs both the Next.js frontend (port 3000) and FastAPI backend (port 8000) using supervisord for process management.
 
-For deploying to Azure App Service, you can:
+2. **Using Docker Compose (Development)**
 
-1. Use the Azure CLI:
+   For development with external services, use the included docker-compose.yml:
 
    ```bash
-   # Login to Azure
-   az login
-
-   # Create a resource group
-   az group create --name xyra-rg --location eastus
-
-   # Create an App Service Plan
-   az appservice plan create --name xyra-plan --resource-group xyra-rg --sku B1 --is-linux
-
-   # Create a Web App
-   az webapp create --resource-group xyra-rg --plan xyra-plan --name xyra-backend --runtime "PYTHON|3.9"
-
-   # Configure environment variables
-   az webapp config appsettings set --resource-group xyra-rg --name xyra-backend --settings \
-     WEBSITES_PORT=8000 \
-     SCM_DO_BUILD_DURING_DEPLOYMENT=true \
-     API_V1_STR=/api/v1 \
-     PROJECT_NAME=Xyra \
-     POSTGRES_SERVER=your-postgres-server \
-     POSTGRES_USER=your-postgres-user \
-     POSTGRES_PASSWORD=your-postgres-password \
-     POSTGRES_DB=your-postgres-db
-
-   # Deploy the code
-   az webapp deployment source config-local-git --resource-group xyra-rg --name xyra-backend
-
-   # Add a remote to your local git repository
-   git remote add azure <git-url-from-previous-command>
-
-   # Push your code
-   git push azure main
+   # Start all services
+   docker-compose up -d
+   
+   # View logs
+   docker-compose logs -f
+   
+   # Stop services
+   docker-compose down
    ```
 
-2. Create an `azure-pipelines.yml` file for CI/CD with Azure DevOps
+3. **Environment Variables for Docker**
+
+   Make sure your backend `.env` file is properly configured before running Docker containers. The Docker setup will automatically use the environment variables from your `.env` file.
 
 ## Azure Integration
 
@@ -416,8 +592,9 @@ Xyra integrates with Azure services for enhanced security and scalability:
    - Make sure the database has been created
 
    ```bash
-   # Check PostgreSQL status
-   systemctl status postgresql
+   # Check PostgreSQL status (Linux/macOS)
+   brew services list | grep postgresql  # macOS with Homebrew
+   systemctl status postgresql           # Linux
    
    # Check if you can connect to the database
    psql -U postgres -h localhost -d xyra_db
@@ -425,8 +602,9 @@ Xyra integrates with Azure services for enhanced security and scalability:
 
 2. **JWT Authentication Issues**
 
-   - Ensure your SECRET_KEY is set correctly
+   - Ensure your SECRET_KEY is set correctly and is sufficiently secure
    - Check the token expiration time
+   - Regenerate the secret key: `openssl rand -hex 32`
 
 3. **API Not Starting**
 
@@ -436,7 +614,8 @@ Xyra integrates with Azure services for enhanced security and scalability:
 
    ```bash
    # Check if port 8000 is already in use
-   netstat -tuln | grep 8000
+   netstat -tuln | grep 8000      # Linux
+   lsof -i :8000                  # macOS
    ```
 
 4. **Missing Dependencies**
@@ -444,7 +623,37 @@ Xyra integrates with Azure services for enhanced security and scalability:
    - Reinstall dependencies
 
    ```bash
-   pip install -r requirements.txt
+   # Backend dependencies
+   cd backend && pip install -r requirements.txt
+   
+   # Frontend dependencies  
+   cd frontend && npm install
+   
+   # Or use convenience commands
+   npm run install:all
+   make install
+   ```
+
+5. **Build Issues**
+
+   - Clean build artifacts and caches
+
+   ```bash
+   # Using Make
+   make clean
+   
+   # Manual cleanup
+   find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+   find . -type f -name "*.pyc" -delete 2>/dev/null || true
+   cd frontend && rm -rf .next/ out/ 2>/dev/null || true
+   ```
+
+6. **Permission Issues (macOS/Linux)**
+
+   - Make sure the setup script is executable:
+   
+   ```bash
+   chmod +x scripts/setup-dev.sh
    ```
 
 ### Logging
@@ -480,3 +689,49 @@ Xyra includes comprehensive logging:
    ```
 
 For more information about Xyra's API and features, please refer to the [code documentation](./code_explanation.md) in this repository.
+
+## Quick Reference
+
+### Development Commands
+
+```bash
+# Setup and Installation
+./scripts/setup-dev.sh         # Automated setup
+npm run install:all            # Install all dependencies
+make install                   # Install using Make
+
+# Development
+npm run dev                    # Start both backend and frontend  
+npm run dev:backend           # Start backend only
+npm run dev:frontend          # Start frontend only
+make dev                      # Start development servers
+
+# Testing
+npm run test                  # Run all tests
+npm run test:frontend         # Run frontend tests
+make test-backend             # Run backend tests
+npm run lint                  # Run linting
+
+# Building and Deployment
+npm run build                 # Build frontend
+docker build -t xyra .        # Build Docker image
+docker-compose up -d          # Start with Docker Compose
+
+# Maintenance
+make clean                    # Clean build artifacts
+make help                     # Show all Make commands
+```
+
+### Important URLs
+
+- **Frontend**: http://localhost:3000
+- **API Backend**: http://localhost:8000  
+- **API Docs (Swagger)**: http://localhost:8000/docs
+- **API Docs (ReDoc)**: http://localhost:8000/redoc
+
+### Configuration Files
+
+- **Backend Environment**: `backend/.env` (copy from `backend/.env.example`)
+- **Frontend Environment**: `frontend/.env.local` (optional)
+- **Docker Compose**: `docker-compose.yml`
+- **Database Migrations**: `backend/alembic/`
