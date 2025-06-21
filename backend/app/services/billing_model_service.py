@@ -103,8 +103,20 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
     elif billing_model_in.model_type == "activity":
         act_cfg = ActivityBasedConfig(
             billing_model_id=billing_model.id,
-            price_per_action=billing_model_in.activity_price_per_action,
-            action_type=billing_model_in.activity_action_type,
+            price_per_unit=billing_model_in.activity_price_per_unit,
+            activity_type=billing_model_in.activity_activity_type,
+            unit_type=billing_model_in.activity_unit_type or "action",
+            base_agent_fee=billing_model_in.activity_base_agent_fee or 0.0,
+            volume_pricing_enabled=billing_model_in.activity_volume_pricing_enabled or False,
+            volume_tier_1_threshold=billing_model_in.activity_volume_tier_1_threshold,
+            volume_tier_1_price=billing_model_in.activity_volume_tier_1_price,
+            volume_tier_2_threshold=billing_model_in.activity_volume_tier_2_threshold,
+            volume_tier_2_price=billing_model_in.activity_volume_tier_2_price,
+            volume_tier_3_threshold=billing_model_in.activity_volume_tier_3_threshold,
+            volume_tier_3_price=billing_model_in.activity_volume_tier_3_price,
+            minimum_charge=billing_model_in.activity_minimum_charge or 0.0,
+            billing_frequency=billing_model_in.activity_billing_frequency or "monthly",
+            is_active=billing_model_in.activity_is_active or True,
         )
         db.add(act_cfg)
     elif billing_model_in.model_type == "outcome":
@@ -142,8 +154,20 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
             for ac in billing_model_in.hybrid_activity_configs:
                 act_cfg = ActivityBasedConfig(
                     billing_model_id=billing_model.id,
-                    price_per_action=ac.price_per_action,
-                    action_type=ac.action_type,
+                    price_per_unit=ac.price_per_unit,
+                    activity_type=ac.activity_type,
+                    unit_type=ac.unit_type or "action",
+                    base_agent_fee=ac.base_agent_fee or 0.0,
+                    volume_pricing_enabled=ac.volume_pricing_enabled or False,
+                    volume_tier_1_threshold=ac.volume_tier_1_threshold,
+                    volume_tier_1_price=ac.volume_tier_1_price,
+                    volume_tier_2_threshold=ac.volume_tier_2_threshold,
+                    volume_tier_2_price=ac.volume_tier_2_price,
+                    volume_tier_3_threshold=ac.volume_tier_3_threshold,
+                    volume_tier_3_price=ac.volume_tier_3_price,
+                    minimum_charge=ac.minimum_charge or 0.0,
+                    billing_frequency=ac.billing_frequency or "monthly",
+                    is_active=ac.is_active or True,
                 )
                 db.add(act_cfg)
                 
@@ -194,7 +218,10 @@ def update_billing_model(
     if any(field in update_data for field in [
         "agent_base_agent_fee", "agent_billing_frequency", "agent_setup_fee", 
         "agent_volume_discount_enabled", "agent_volume_discount_threshold", "agent_volume_discount_percentage", "agent_tier",
-        "activity_price_per_action", "activity_action_type", 
+        "activity_price_per_unit", "activity_activity_type", "activity_unit_type", "activity_base_agent_fee",
+        "activity_volume_pricing_enabled", "activity_volume_tier_1_threshold", "activity_volume_tier_1_price",
+        "activity_volume_tier_2_threshold", "activity_volume_tier_2_price", "activity_volume_tier_3_threshold", 
+        "activity_volume_tier_3_price", "activity_minimum_charge", "activity_billing_frequency", "activity_is_active",
         "outcome_outcome_type", "outcome_percentage",
         "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs"
     ]):
@@ -205,7 +232,10 @@ def update_billing_model(
     config_updated = any(field in update_data for field in [
         "agent_base_agent_fee", "agent_billing_frequency", "agent_setup_fee", 
         "agent_volume_discount_enabled", "agent_volume_discount_threshold", "agent_volume_discount_percentage", "agent_tier",
-        "activity_price_per_action", "activity_action_type", 
+        "activity_price_per_unit", "activity_activity_type", "activity_unit_type", "activity_base_agent_fee",
+        "activity_volume_pricing_enabled", "activity_volume_tier_1_threshold", "activity_volume_tier_1_price",
+        "activity_volume_tier_2_threshold", "activity_volume_tier_2_price", "activity_volume_tier_3_threshold", 
+        "activity_volume_tier_3_price", "activity_minimum_charge", "activity_billing_frequency", "activity_is_active",
         "outcome_outcome_type", "outcome_percentage",
         "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs"
     ])
@@ -244,11 +274,23 @@ def update_billing_model(
                 )
                 db.add(agent_cfg)
         elif new_model_type == "activity":
-            if billing_model_in.activity_price_per_action is not None:
+            if billing_model_in.activity_price_per_unit is not None:
                 act_cfg = ActivityBasedConfig(
                     billing_model_id=model_id,
-                    price_per_action=billing_model_in.activity_price_per_action,
-                    action_type=billing_model_in.activity_action_type,
+                    price_per_unit=billing_model_in.activity_price_per_unit,
+                    activity_type=billing_model_in.activity_activity_type,
+                    unit_type=billing_model_in.activity_unit_type or "action",
+                    base_agent_fee=billing_model_in.activity_base_agent_fee or 0.0,
+                    volume_pricing_enabled=billing_model_in.activity_volume_pricing_enabled or False,
+                    volume_tier_1_threshold=billing_model_in.activity_volume_tier_1_threshold,
+                    volume_tier_1_price=billing_model_in.activity_volume_tier_1_price,
+                    volume_tier_2_threshold=billing_model_in.activity_volume_tier_2_threshold,
+                    volume_tier_2_price=billing_model_in.activity_volume_tier_2_price,
+                    volume_tier_3_threshold=billing_model_in.activity_volume_tier_3_threshold,
+                    volume_tier_3_price=billing_model_in.activity_volume_tier_3_price,
+                    minimum_charge=billing_model_in.activity_minimum_charge or 0.0,
+                    billing_frequency=billing_model_in.activity_billing_frequency or "monthly",
+                    is_active=billing_model_in.activity_is_active or True,
                 )
                 db.add(act_cfg)
         elif new_model_type == "outcome":
@@ -287,8 +329,20 @@ def update_billing_model(
                 for ac in billing_model_in.hybrid_activity_configs:
                     act_cfg = ActivityBasedConfig(
                         billing_model_id=model_id,
-                        price_per_action=ac.price_per_action,
-                        action_type=ac.action_type,
+                        price_per_unit=ac.price_per_unit,
+                        activity_type=ac.activity_type,
+                        unit_type=ac.unit_type or "action",
+                        base_agent_fee=ac.base_agent_fee or 0.0,
+                        volume_pricing_enabled=ac.volume_pricing_enabled or False,
+                        volume_tier_1_threshold=ac.volume_tier_1_threshold,
+                        volume_tier_1_price=ac.volume_tier_1_price,
+                        volume_tier_2_threshold=ac.volume_tier_2_threshold,
+                        volume_tier_2_price=ac.volume_tier_2_price,
+                        volume_tier_3_threshold=ac.volume_tier_3_threshold,
+                        volume_tier_3_price=ac.volume_tier_3_price,
+                        minimum_charge=ac.minimum_charge or 0.0,
+                        billing_frequency=ac.billing_frequency or "monthly",
+                        is_active=ac.is_active or True,
                     )
                     db.add(act_cfg)
                     
@@ -374,11 +428,40 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
             raise ValueError("'agent_tier' must be one of: starter, professional, enterprise")
         
     elif model_type == "activity":
-        if billing_model_in.activity_price_per_action is None or billing_model_in.activity_price_per_action <= 0:
-            raise ValueError("Activity-based billing model must include a positive 'activity_price_per_action'")
+        if billing_model_in.activity_price_per_unit is None or billing_model_in.activity_price_per_unit <= 0:
+            raise ValueError("Activity-based billing model must include a positive 'activity_price_per_unit'")
         
-        if not billing_model_in.activity_action_type:
-            raise ValueError("Activity-based billing model must include 'activity_action_type'")
+        if not billing_model_in.activity_activity_type:
+            raise ValueError("Activity-based billing model must include 'activity_activity_type'")
+        
+        if billing_model_in.activity_unit_type and billing_model_in.activity_unit_type not in ["action", "token", "minute", "request", "query", "completion"]:
+            raise ValueError("'activity_unit_type' must be one of: action, token, minute, request, query, completion")
+        
+        if billing_model_in.activity_billing_frequency and billing_model_in.activity_billing_frequency not in ["monthly", "daily", "per_use"]:
+            raise ValueError("'activity_billing_frequency' must be one of: monthly, daily, per_use")
+        
+        # Validate volume pricing tiers if enabled
+        if billing_model_in.activity_volume_pricing_enabled:
+            tier_configs = [
+                (billing_model_in.activity_volume_tier_1_threshold, billing_model_in.activity_volume_tier_1_price, "tier 1"),
+                (billing_model_in.activity_volume_tier_2_threshold, billing_model_in.activity_volume_tier_2_price, "tier 2"),
+                (billing_model_in.activity_volume_tier_3_threshold, billing_model_in.activity_volume_tier_3_price, "tier 3"),
+            ]
+            
+            # Check that at least one tier is configured
+            has_any_tier = any(threshold is not None and price is not None for threshold, price, _ in tier_configs)
+            if not has_any_tier:
+                raise ValueError("Volume pricing enabled but no valid pricing tiers configured")
+            
+            # Validate each configured tier
+            previous_threshold = 0
+            for threshold, price, tier_name in tier_configs:
+                if threshold is not None and price is not None:
+                    if threshold <= previous_threshold:
+                        raise ValueError(f"Volume pricing {tier_name} threshold must be greater than previous tier")
+                    if price < 0:
+                        raise ValueError(f"Volume pricing {tier_name} price must be non-negative")
+                    previous_threshold = threshold
     
     elif model_type == "outcome":
         if not billing_model_in.outcome_outcome_type:
@@ -411,8 +494,8 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
         
         if has_activity:
             for activity in billing_model_in.hybrid_activity_configs:
-                if activity.price_per_action <= 0 or not activity.action_type:
-                    raise ValueError("Each activity configuration must include positive 'price_per_action' and 'action_type'")
+                if activity.price_per_unit <= 0 or not activity.activity_type:
+                    raise ValueError("Each activity configuration must include positive 'price_per_unit' and 'activity_type'")
         
         if has_outcome:
             for outcome in billing_model_in.hybrid_outcome_configs:
@@ -448,11 +531,61 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
             
             total_cost = base_cost
     elif current_model_type == "activity":
-        # Expect one or more ActivityBasedConfig rows
-        actions = usage_data.get("actions", 0)
-        # if multiple action_types, sum matching
+        # Enhanced activity-based billing with volume pricing and base agent fees
+        units_used = usage_data.get("units", 0)  # Generic units (actions, tokens, etc.)
+        agents = usage_data.get("agents", 1)  # Number of agents for base fee calculation
+        
         for cfg in billing_model.activity_config:
-            total_cost += cfg.price_per_action * actions
+            if not cfg.is_active:
+                continue
+                
+            activity_cost = 0.0
+            
+            # Add base agent fee if configured
+            if cfg.base_agent_fee > 0:
+                activity_cost += cfg.base_agent_fee * agents
+            
+            # Calculate unit-based cost with volume pricing
+            if cfg.volume_pricing_enabled and units_used > 0:
+                # Apply tiered pricing
+                remaining_units = units_used
+                
+                # Tier 1
+                if cfg.volume_tier_1_threshold and cfg.volume_tier_1_price is not None and remaining_units > 0:
+                    tier_1_units = min(remaining_units, cfg.volume_tier_1_threshold)
+                    if tier_1_units > 0:
+                        activity_cost += tier_1_units * cfg.volume_tier_1_price
+                        remaining_units -= tier_1_units
+                
+                # Tier 2
+                if (cfg.volume_tier_2_threshold and cfg.volume_tier_2_price is not None and 
+                    remaining_units > 0 and cfg.volume_tier_1_threshold):
+                    tier_2_units = min(remaining_units, cfg.volume_tier_2_threshold - cfg.volume_tier_1_threshold)
+                    if tier_2_units > 0:
+                        activity_cost += tier_2_units * cfg.volume_tier_2_price
+                        remaining_units -= tier_2_units
+                
+                # Tier 3
+                if (cfg.volume_tier_3_threshold and cfg.volume_tier_3_price is not None and 
+                    remaining_units > 0 and cfg.volume_tier_2_threshold):
+                    tier_3_units = min(remaining_units, cfg.volume_tier_3_threshold - cfg.volume_tier_2_threshold)
+                    if tier_3_units > 0:
+                        activity_cost += tier_3_units * cfg.volume_tier_3_price
+                        remaining_units -= tier_3_units
+                
+                # Any remaining units use the highest tier price or base price
+                if remaining_units > 0:
+                    final_price = cfg.volume_tier_3_price if cfg.volume_tier_3_price is not None else cfg.price_per_unit
+                    activity_cost += remaining_units * final_price
+            else:
+                # Simple unit-based pricing
+                activity_cost += cfg.price_per_unit * units_used
+            
+            # Apply minimum charge if configured
+            if cfg.minimum_charge > 0:
+                activity_cost = max(activity_cost, cfg.minimum_charge)
+                
+            total_cost += activity_cost
     elif current_model_type == "outcome":
         # Outcome-based billing: percentage of outcome_value
         outcome_value = usage_data.get("outcome_value", 0)
@@ -481,10 +614,61 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
                 agent_cost -= discount
             
             total_cost += agent_cost
-        # Activity
-        activities = usage_data.get("actions", 0)
+        # Activity - use the same enhanced logic as pure activity model
+        units_used = usage_data.get("units", 0)
+        agents = usage_data.get("agents", 1)
+        
         for cfg in billing_model.activity_config:
-            total_cost += cfg.price_per_action * activities
+            if not cfg.is_active:
+                continue
+                
+            activity_cost = 0.0
+            
+            # Add base agent fee if configured
+            if cfg.base_agent_fee > 0:
+                activity_cost += cfg.base_agent_fee * agents
+            
+            # Calculate unit-based cost with volume pricing
+            if cfg.volume_pricing_enabled and units_used > 0:
+                # Apply tiered pricing
+                remaining_units = units_used
+                
+                # Tier 1
+                if cfg.volume_tier_1_threshold and cfg.volume_tier_1_price is not None and remaining_units > 0:
+                    tier_1_units = min(remaining_units, cfg.volume_tier_1_threshold)
+                    if tier_1_units > 0:
+                        activity_cost += tier_1_units * cfg.volume_tier_1_price
+                        remaining_units -= tier_1_units
+                
+                # Tier 2
+                if (cfg.volume_tier_2_threshold and cfg.volume_tier_2_price is not None and 
+                    remaining_units > 0 and cfg.volume_tier_1_threshold):
+                    tier_2_units = min(remaining_units, cfg.volume_tier_2_threshold - cfg.volume_tier_1_threshold)
+                    if tier_2_units > 0:
+                        activity_cost += tier_2_units * cfg.volume_tier_2_price
+                        remaining_units -= tier_2_units
+                
+                # Tier 3
+                if (cfg.volume_tier_3_threshold and cfg.volume_tier_3_price is not None and 
+                    remaining_units > 0 and cfg.volume_tier_2_threshold):
+                    tier_3_units = min(remaining_units, cfg.volume_tier_3_threshold - cfg.volume_tier_2_threshold)
+                    if tier_3_units > 0:
+                        activity_cost += tier_3_units * cfg.volume_tier_3_price
+                        remaining_units -= tier_3_units
+                
+                # Any remaining units use the highest tier price or base price
+                if remaining_units > 0:
+                    final_price = cfg.volume_tier_3_price if cfg.volume_tier_3_price is not None else cfg.price_per_unit
+                    activity_cost += remaining_units * final_price
+            else:
+                # Simple unit-based pricing
+                activity_cost += cfg.price_per_unit * units_used
+            
+            # Apply minimum charge if configured
+            if cfg.minimum_charge > 0:
+                activity_cost = max(activity_cost, cfg.minimum_charge)
+                
+            total_cost += activity_cost
         # Outcome
         outcome_value = usage_data.get("outcome_value", 0)
         for cfg in billing_model.outcome_config:

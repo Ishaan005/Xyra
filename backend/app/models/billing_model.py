@@ -73,11 +73,35 @@ class AgentBasedConfig(BaseModel):
 
 class ActivityBasedConfig(BaseModel):
     """
-    Configuration for activity-based billing
+    Configuration for activity-based billing with enhanced features
     """
     billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
-    price_per_action = Column(Float, nullable=False)
-    action_type = Column(String, nullable=False)  # api_call, query, task, etc.
+    
+    # Basic pricing configuration
+    price_per_unit = Column(Float, nullable=False)  # Price per unit of activity
+    activity_type = Column(String, nullable=False)  # api_call, query, completion, tokens, etc.
+    unit_type = Column(String, nullable=False, default="action")  # action, token, minute, request, etc.
+    
+    # Optional base agent fee for this activity type
+    base_agent_fee = Column(Float, nullable=True, default=0.0)  # Optional base fee per agent
+    
+    # Volume pricing configuration
+    volume_pricing_enabled = Column(Boolean, default=False)
+    volume_tier_1_threshold = Column(Integer, nullable=True)  # Units for tier 1 discount
+    volume_tier_1_price = Column(Float, nullable=True)  # Price per unit for tier 1
+    volume_tier_2_threshold = Column(Integer, nullable=True)  # Units for tier 2 discount
+    volume_tier_2_price = Column(Float, nullable=True)  # Price per unit for tier 2
+    volume_tier_3_threshold = Column(Integer, nullable=True)  # Units for tier 3 discount
+    volume_tier_3_price = Column(Float, nullable=True)  # Price per unit for tier 3
+    
+    # Minimum billing configuration
+    minimum_charge = Column(Float, nullable=True, default=0.0)  # Minimum charge per billing period
+    
+    # Billing frequency for this activity type
+    billing_frequency = Column(String, nullable=False, default="monthly")  # monthly, daily, per_use
+    
+    # Whether this activity config is active
+    is_active = Column(Boolean, default=True)
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="activity_config")

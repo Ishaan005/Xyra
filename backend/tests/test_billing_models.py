@@ -4,11 +4,15 @@ from datetime import datetime
 BM_DATA = {
     "name": "BM1",
     "description": "Test billing model",
-    "model_type": "seat",
-    "seat_price_per_seat": 10.0,
-    "seat_billing_frequency": "monthly",
+    "model_type": "agent",
+    "agent_price_per_agent": 10.0,
+    "agent_billing_frequency": "monthly",
+    "agent_base_agent_fee": 5.0,  # Added required field
 }
 UPDATED_NAME = "BM1 Updated"
+
+# Global variable to store billing model ID across tests
+bm_id = None
 
 
 @pytest.fixture()
@@ -39,6 +43,7 @@ def test_read_billing_models_empty(client, token, setup_org):
 
 
 def test_create_billing_model(client, token, setup_org):
+    global bm_id
     headers = {"Authorization": f"Bearer {token}"}
     data = {**BM_DATA, "organization_id": setup_org}
     response = client.post(
@@ -49,7 +54,6 @@ def test_create_billing_model(client, token, setup_org):
     assert response.status_code == 200
     bm = response.json()
     assert bm["name"] == BM_DATA["name"]
-    global bm_id
     bm_id = bm["id"]
 
 
@@ -75,7 +79,7 @@ def test_update_billing_model(client, token):
 
 def test_calculate_billing_cost(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    usage_data = {"seats": 5}
+    usage_data = {"agents": 5}  # Changed from "seats" to "agents"
     response = client.post(
         f"/api/v1/billing-models/{bm_id}/calculate",
         json=usage_data,

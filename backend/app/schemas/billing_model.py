@@ -26,8 +26,20 @@ class BillingModelCreate(BillingModelBase):
     agent_tier: Optional[str] = "professional"
     
     # Activity-based config fields
-    activity_price_per_action: Optional[float] = None
-    activity_action_type: Optional[str] = None
+    activity_price_per_unit: Optional[float] = None
+    activity_activity_type: Optional[str] = None
+    activity_unit_type: Optional[str] = "action"
+    activity_base_agent_fee: Optional[float] = 0.0
+    activity_volume_pricing_enabled: Optional[bool] = False
+    activity_volume_tier_1_threshold: Optional[int] = None
+    activity_volume_tier_1_price: Optional[float] = None
+    activity_volume_tier_2_threshold: Optional[int] = None
+    activity_volume_tier_2_price: Optional[float] = None
+    activity_volume_tier_3_threshold: Optional[int] = None
+    activity_volume_tier_3_price: Optional[float] = None
+    activity_minimum_charge: Optional[float] = 0.0
+    activity_billing_frequency: Optional[str] = "monthly"
+    activity_is_active: Optional[bool] = True
     
     # Outcome-based config fields
     outcome_outcome_type: Optional[str] = None
@@ -57,8 +69,20 @@ class BillingModelUpdate(BaseModel):
     agent_tier: Optional[str] = None
     
     # Activity-based config fields
-    activity_price_per_action: Optional[float] = None
-    activity_action_type: Optional[str] = None
+    activity_price_per_unit: Optional[float] = None
+    activity_activity_type: Optional[str] = None
+    activity_unit_type: Optional[str] = None
+    activity_base_agent_fee: Optional[float] = None
+    activity_volume_pricing_enabled: Optional[bool] = None
+    activity_volume_tier_1_threshold: Optional[int] = None
+    activity_volume_tier_1_price: Optional[float] = None
+    activity_volume_tier_2_threshold: Optional[int] = None
+    activity_volume_tier_2_price: Optional[float] = None
+    activity_volume_tier_3_threshold: Optional[int] = None
+    activity_volume_tier_3_price: Optional[float] = None
+    activity_minimum_charge: Optional[float] = None
+    activity_billing_frequency: Optional[str] = None
+    activity_is_active: Optional[bool] = None
     
     # Outcome-based config fields
     outcome_outcome_type: Optional[str] = None
@@ -105,9 +129,21 @@ class AgentBasedConfigSchema(BaseModel):
 
 
 class ActivityBasedConfigSchema(BaseModel):
-    """Configuration schema for activity-based billing"""
-    price_per_action: float
-    action_type: str  # api_call, query, completion, etc.
+    """Configuration schema for enhanced activity-based billing"""
+    price_per_unit: float
+    activity_type: str  # api_call, query, completion, tokens, etc.
+    unit_type: str = "action"  # action, token, minute, request, etc.
+    base_agent_fee: float = 0.0  # Optional base fee per agent
+    volume_pricing_enabled: bool = False
+    volume_tier_1_threshold: Optional[int] = None
+    volume_tier_1_price: Optional[float] = None
+    volume_tier_2_threshold: Optional[int] = None
+    volume_tier_2_price: Optional[float] = None
+    volume_tier_3_threshold: Optional[int] = None
+    volume_tier_3_price: Optional[float] = None
+    minimum_charge: float = 0.0
+    billing_frequency: str = "monthly"  # monthly, daily, per_use
+    is_active: bool = True
 
 
 class OutcomeBasedConfigSchema(BaseModel):
