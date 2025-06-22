@@ -20,7 +20,10 @@ def get_billing_model(db: Session, model_id: int) -> Optional[BillingModel]:
             joinedload(BillingModel.agent_config),
             joinedload(BillingModel.activity_config),
             joinedload(BillingModel.outcome_config),
-            joinedload(BillingModel.hybrid_config)
+            joinedload(BillingModel.hybrid_config),
+            joinedload(BillingModel.workflow_config),
+            joinedload(BillingModel.workflow_types),
+            joinedload(BillingModel.commitment_tiers)
         )
         .filter(BillingModel.id == model_id)
         .first()
@@ -39,7 +42,10 @@ def get_billing_models_by_organization(
             joinedload(BillingModel.agent_config),
             joinedload(BillingModel.activity_config),
             joinedload(BillingModel.outcome_config),
-            joinedload(BillingModel.hybrid_config)
+            joinedload(BillingModel.hybrid_config),
+            joinedload(BillingModel.workflow_config),
+            joinedload(BillingModel.workflow_types),
+            joinedload(BillingModel.commitment_tiers)
         )
         .filter(BillingModel.organization_id == org_id)
         .offset(skip)
@@ -61,7 +67,7 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
         raise ValueError(f"Organization with ID {billing_model_in.organization_id} not found")
     
     # Validate billing model type
-    valid_types = ["agent", "activity", "outcome", "hybrid"]
+    valid_types = ["agent", "activity", "outcome", "hybrid", "workflow"]
     if billing_model_in.model_type not in valid_types:
         raise ValueError(
             f"Invalid billing model type: {billing_model_in.model_type}. "
@@ -86,7 +92,7 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
     db.refresh(billing_model)
 
     # Persist config into dedicated tables
-    from app.models.billing_model import AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig
+    from app.models.billing_model import AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig, WorkflowBasedConfig, WorkflowType, CommitmentTier
     
     if billing_model_in.model_type == "agent":
         agent_cfg = AgentBasedConfig(
@@ -180,6 +186,70 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
                     percentage=oc.percentage,
                 )
                 db.add(out_cfg)
+    elif billing_model_in.model_type == "workflow":
+        # Create workflow base config
+        from app.models.billing_model import WorkflowBasedConfig, WorkflowType, CommitmentTier
+        
+        workflow_cfg = WorkflowBasedConfig(
+            billing_model_id=billing_model.id,
+            base_platform_fee=billing_model_in.workflow_base_platform_fee or 0.0,
+            platform_fee_frequency=billing_model_in.workflow_platform_fee_frequency or "monthly",
+            default_billing_frequency=billing_model_in.workflow_default_billing_frequency or "monthly",
+            volume_discount_enabled=billing_model_in.workflow_volume_discount_enabled or False,
+            volume_discount_threshold=billing_model_in.workflow_volume_discount_threshold,
+            volume_discount_percentage=billing_model_in.workflow_volume_discount_percentage,
+            overage_multiplier=billing_model_in.workflow_overage_multiplier or 1.0,
+            currency=billing_model_in.workflow_currency or "USD",
+            is_active=billing_model_in.workflow_is_active or True,
+        )
+        db.add(workflow_cfg)
+        
+        # Create workflow types if provided
+        if billing_model_in.workflow_types:
+            for wt in billing_model_in.workflow_types:
+                workflow_type = WorkflowType(
+                    billing_model_id=billing_model.id,
+                    workflow_name=wt.workflow_name,
+                    workflow_type=wt.workflow_type,
+                    description=wt.description,
+                    price_per_workflow=wt.price_per_workflow,
+                    estimated_compute_cost=wt.estimated_compute_cost or 0.0,
+                    estimated_duration_minutes=wt.estimated_duration_minutes,
+                    complexity_level=wt.complexity_level or "medium",
+                    expected_roi_multiplier=wt.expected_roi_multiplier,
+                    business_value_category=wt.business_value_category,
+                    volume_tier_1_threshold=wt.volume_tier_1_threshold,
+                    volume_tier_1_price=wt.volume_tier_1_price,
+                    volume_tier_2_threshold=wt.volume_tier_2_threshold,
+                    volume_tier_2_price=wt.volume_tier_2_price,
+                    volume_tier_3_threshold=wt.volume_tier_3_threshold,
+                    volume_tier_3_price=wt.volume_tier_3_price,
+                    billing_frequency=wt.billing_frequency,
+                    minimum_charge=wt.minimum_charge or 0.0,
+                    is_active=wt.is_active or True,
+                )
+                db.add(workflow_type)
+        
+        # Create commitment tiers if provided
+        if billing_model_in.commitment_tiers:
+            for ct in billing_model_in.commitment_tiers:
+                commitment_tier = CommitmentTier(
+                    billing_model_id=billing_model.id,
+                    tier_name=ct.tier_name,
+                    tier_level=ct.tier_level,
+                    description=ct.description,
+                    minimum_workflows_per_month=ct.minimum_workflows_per_month,
+                    minimum_monthly_revenue=ct.minimum_monthly_revenue,
+                    included_workflows=ct.included_workflows or 0,
+                    included_workflow_types=ct.included_workflow_types,
+                    discount_percentage=ct.discount_percentage or 0.0,
+                    platform_fee_discount=ct.platform_fee_discount or 0.0,
+                    commitment_period_months=ct.commitment_period_months or 12,
+                    overage_rate_multiplier=ct.overage_rate_multiplier or 1.0,
+                    is_active=ct.is_active or True,
+                    is_popular=ct.is_popular or False,
+                )
+                db.add(commitment_tier)
     db.commit()
     
     # Re-fetch with eager loading to ensure relationships are available
@@ -207,7 +277,7 @@ def update_billing_model(
     
     # Validate billing model type if being updated
     if "model_type" in update_data:
-        valid_types = ["agent", "activity", "outcome", "hybrid"]
+        valid_types = ["agent", "activity", "outcome", "hybrid", "workflow"]
         if update_data["model_type"] not in valid_types:
             raise ValueError(
                 f"Invalid billing model type: {update_data['model_type']}. "
@@ -223,7 +293,10 @@ def update_billing_model(
         "activity_volume_tier_2_threshold", "activity_volume_tier_2_price", "activity_volume_tier_3_threshold", 
         "activity_volume_tier_3_price", "activity_minimum_charge", "activity_billing_frequency", "activity_is_active",
         "outcome_outcome_type", "outcome_percentage",
-        "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs"
+        "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs",
+        "workflow_base_platform_fee", "workflow_platform_fee_frequency", "workflow_default_billing_frequency",
+        "workflow_volume_discount_enabled", "workflow_volume_discount_threshold", "workflow_volume_discount_percentage",
+        "workflow_overage_multiplier", "workflow_currency", "workflow_is_active", "workflow_types", "commitment_tiers"
     ]):
         current_model_type = str(billing_model.model_type)
         validate_billing_config_from_schema(billing_model_in, current_model_type)
@@ -237,11 +310,14 @@ def update_billing_model(
         "activity_volume_tier_2_threshold", "activity_volume_tier_2_price", "activity_volume_tier_3_threshold", 
         "activity_volume_tier_3_price", "activity_minimum_charge", "activity_billing_frequency", "activity_is_active",
         "outcome_outcome_type", "outcome_percentage",
-        "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs"
+        "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs",
+        "workflow_base_platform_fee", "workflow_platform_fee_frequency", "workflow_default_billing_frequency",
+        "workflow_volume_discount_enabled", "workflow_volume_discount_threshold", "workflow_volume_discount_percentage",
+        "workflow_overage_multiplier", "workflow_currency", "workflow_is_active", "workflow_types", "commitment_tiers"
     ])
     
     if config_updated:
-        from app.models.billing_model import AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig
+        from app.models.billing_model import AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig, WorkflowBasedConfig, WorkflowType, CommitmentTier
         
         # Get the current model type as a string value
         current_model_type = str(billing_model.model_type)
@@ -257,6 +333,10 @@ def update_billing_model(
             db.query(OutcomeBasedConfig).filter(OutcomeBasedConfig.billing_model_id == model_id).delete()
         if current_model_type == "hybrid" or model_type_changing:
             db.query(HybridConfig).filter(HybridConfig.billing_model_id == model_id).delete()
+        if current_model_type == "workflow" or model_type_changing:
+            db.query(WorkflowBasedConfig).filter(WorkflowBasedConfig.billing_model_id == model_id).delete()
+            db.query(WorkflowType).filter(WorkflowType.billing_model_id == model_id).delete()
+            db.query(CommitmentTier).filter(CommitmentTier.billing_model_id == model_id).delete()
         db.flush()
         
         # Recreate configs based on new values and model type
@@ -355,6 +435,68 @@ def update_billing_model(
                         percentage=oc.percentage,
                     )
                     db.add(out_cfg)
+        elif new_model_type == "workflow":
+            # Create workflow base config
+            workflow_cfg = WorkflowBasedConfig(
+                billing_model_id=model_id,
+                base_platform_fee=billing_model_in.workflow_base_platform_fee or 0.0,
+                platform_fee_frequency=billing_model_in.workflow_platform_fee_frequency or "monthly",
+                default_billing_frequency=billing_model_in.workflow_default_billing_frequency or "monthly",
+                volume_discount_enabled=billing_model_in.workflow_volume_discount_enabled or False,
+                volume_discount_threshold=billing_model_in.workflow_volume_discount_threshold,
+                volume_discount_percentage=billing_model_in.workflow_volume_discount_percentage,
+                overage_multiplier=billing_model_in.workflow_overage_multiplier or 1.0,
+                currency=billing_model_in.workflow_currency or "USD",
+                is_active=billing_model_in.workflow_is_active or True,
+            )
+            db.add(workflow_cfg)
+            
+            # Create workflow types if provided
+            if billing_model_in.workflow_types:
+                for wt in billing_model_in.workflow_types:
+                    workflow_type = WorkflowType(
+                        billing_model_id=model_id,
+                        workflow_name=wt.workflow_name,
+                        workflow_type=wt.workflow_type,
+                        description=wt.description,
+                        price_per_workflow=wt.price_per_workflow,
+                        estimated_compute_cost=wt.estimated_compute_cost or 0.0,
+                        estimated_duration_minutes=wt.estimated_duration_minutes,
+                        complexity_level=wt.complexity_level or "medium",
+                        expected_roi_multiplier=wt.expected_roi_multiplier,
+                        business_value_category=wt.business_value_category,
+                        volume_tier_1_threshold=wt.volume_tier_1_threshold,
+                        volume_tier_1_price=wt.volume_tier_1_price,
+                        volume_tier_2_threshold=wt.volume_tier_2_threshold,
+                        volume_tier_2_price=wt.volume_tier_2_price,
+                        volume_tier_3_threshold=wt.volume_tier_3_threshold,
+                        volume_tier_3_price=wt.volume_tier_3_price,
+                        billing_frequency=wt.billing_frequency,
+                        minimum_charge=wt.minimum_charge or 0.0,
+                        is_active=wt.is_active or True,
+                    )
+                    db.add(workflow_type)
+            
+            # Create commitment tiers if provided
+            if billing_model_in.commitment_tiers:
+                for ct in billing_model_in.commitment_tiers:
+                    commitment_tier = CommitmentTier(
+                        billing_model_id=model_id,
+                        tier_name=ct.tier_name,
+                        tier_level=ct.tier_level,
+                        description=ct.description,
+                        minimum_workflows_per_month=ct.minimum_workflows_per_month,
+                        minimum_monthly_revenue=ct.minimum_monthly_revenue,
+                        included_workflows=ct.included_workflows or 0,
+                        included_workflow_types=ct.included_workflow_types,
+                        discount_percentage=ct.discount_percentage or 0.0,
+                        platform_fee_discount=ct.platform_fee_discount or 0.0,
+                        commitment_period_months=ct.commitment_period_months or 12,
+                        overage_rate_multiplier=ct.overage_rate_multiplier or 1.0,
+                        is_active=ct.is_active or True,
+                        is_popular=ct.is_popular or False,
+                    )
+                    db.add(commitment_tier)
     
     # Update billing model attributes
     for field, value in update_data.items():
@@ -501,6 +643,22 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
             for outcome in billing_model_in.hybrid_outcome_configs:
                 if not outcome.outcome_type or outcome.percentage <= 0:
                     raise ValueError("Each outcome configuration must include 'outcome_type' and positive 'percentage'")
+    
+    elif model_type == "workflow":
+        # Workflow must have at least a base config or one workflow type
+        has_base_config = billing_model_in.workflow_base_platform_fee is not None and billing_model_in.workflow_base_platform_fee >= 0
+        has_workflow_types = billing_model_in.workflow_types is not None and len(billing_model_in.workflow_types) > 0
+        
+        if not (has_base_config or has_workflow_types):
+            raise ValueError("Workflow billing model must include at least a base config or one workflow type")
+        
+        # Validate workflow types if present
+        if has_workflow_types:
+            for workflow_type in billing_model_in.workflow_types:
+                if workflow_type.price_per_workflow <= 0 or not workflow_type.workflow_name:
+                    raise ValueError("Each workflow type configuration must include positive 'price_per_workflow' and 'workflow_name'")
+    
+    return
 
 
 def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> float:
@@ -673,4 +831,77 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
         outcome_value = usage_data.get("outcome_value", 0)
         for cfg in billing_model.outcome_config:
             total_cost += (cfg.percentage / 100.0) * outcome_value
+    elif current_model_type == "workflow":
+        # Workflow-based billing: base platform fee plus individual workflow pricing
+        if billing_model.workflow_config:
+            cfg = billing_model.workflow_config
+            
+            # Add base platform fee (subscription component)
+            total_cost += cfg.base_platform_fee
+            
+            # Process each workflow type
+            workflow_usage = usage_data.get("workflows", {})  # Expected format: {"lead_research": 10, "financial_forecast": 5}
+            
+            for workflow_type in billing_model.workflow_types:
+                if not workflow_type.is_active:
+                    continue
+                
+                workflow_count = workflow_usage.get(workflow_type.workflow_type, 0)
+                if workflow_count <= 0:
+                    continue
+                
+                workflow_cost = 0.0
+                
+                # Apply volume pricing if configured for this workflow type
+                if (workflow_type.volume_tier_1_threshold and workflow_type.volume_tier_1_price is not None and 
+                    workflow_count > 0):
+                    remaining_workflows = workflow_count
+                    
+                    # Tier 1 - first workflows up to tier 1 threshold get tier 1 price
+                    tier_1_workflows = min(remaining_workflows, workflow_type.volume_tier_1_threshold)
+                    workflow_cost += tier_1_workflows * workflow_type.volume_tier_1_price
+                    remaining_workflows -= tier_1_workflows
+                    
+                    # Tier 2
+                    if (workflow_type.volume_tier_2_threshold and workflow_type.volume_tier_2_price is not None and 
+                        remaining_workflows > 0):
+                        tier_2_workflows = min(remaining_workflows, 
+                                             workflow_type.volume_tier_2_threshold - workflow_type.volume_tier_1_threshold)
+                        workflow_cost += tier_2_workflows * workflow_type.volume_tier_2_price
+                        remaining_workflows -= tier_2_workflows
+                    
+                    # Tier 3
+                    if (workflow_type.volume_tier_3_threshold and workflow_type.volume_tier_3_price is not None and 
+                        remaining_workflows > 0):
+                        tier_3_workflows = min(remaining_workflows, 
+                                             workflow_type.volume_tier_3_threshold - workflow_type.volume_tier_2_threshold)
+                        workflow_cost += tier_3_workflows * workflow_type.volume_tier_3_price
+                        remaining_workflows -= tier_3_workflows
+                    
+                    # Any remaining workflows use the highest tier price or base price
+                    if remaining_workflows > 0:
+                        final_price = (workflow_type.volume_tier_3_price if workflow_type.volume_tier_3_price is not None 
+                                     else workflow_type.price_per_workflow)
+                        workflow_cost += remaining_workflows * final_price
+                else:
+                    # Simple per-workflow pricing
+                    workflow_cost = workflow_type.price_per_workflow * workflow_count
+                
+                # Apply minimum charge if configured
+                if workflow_type.minimum_charge and workflow_type.minimum_charge > 0:
+                    workflow_cost = max(workflow_cost, workflow_type.minimum_charge)
+                
+                # Apply overage multiplier if this is beyond commitment
+                commitment_exceeded = usage_data.get("commitment_exceeded", False)
+                if commitment_exceeded and cfg.overage_multiplier > 1.0:
+                    workflow_cost *= cfg.overage_multiplier
+                
+                total_cost += workflow_cost
+            
+            # Apply global volume discount if enabled
+            total_workflows = sum(workflow_usage.values())
+            if (cfg.volume_discount_enabled and total_workflows >= (cfg.volume_discount_threshold or 0) and 
+                cfg.volume_discount_percentage):
+                discount = total_cost * (cfg.volume_discount_percentage / 100.0)
+                total_cost -= discount
     return total_cost

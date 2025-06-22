@@ -11,7 +11,7 @@ class BillingModel(BaseModel):
     description = Column(String, nullable=True)
     organization_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
     
-    # Billing model type: 'agent', 'activity', 'outcome', 'hybrid'
+    # Billing model type: 'agent', 'activity', 'outcome', 'hybrid', 'workflow'
     model_type = Column(String, nullable=False)
     
     # Whether this billing model is active
@@ -43,6 +43,25 @@ class BillingModel(BaseModel):
     hybrid_config = relationship(
         "HybridConfig",
         uselist=False,
+        back_populates="billing_model",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True
+    )
+    workflow_config = relationship(
+        "WorkflowBasedConfig",
+        uselist=False,
+        back_populates="billing_model",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True
+    )
+    workflow_types = relationship(
+        "WorkflowType",
+        back_populates="billing_model",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True
+    )
+    commitment_tiers = relationship(
+        "CommitmentTier",
         back_populates="billing_model",
         cascade="all, delete, delete-orphan",
         passive_deletes=True
@@ -126,3 +145,111 @@ class HybridConfig(BaseModel):
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="hybrid_config")
+
+
+class WorkflowBasedConfig(BaseModel):
+    """
+    Configuration for workflow-based billing
+    """
+    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
+    
+    # Base platform fee (monthly/yearly subscription component)
+    base_platform_fee = Column(Float, nullable=False, default=0.0)
+    platform_fee_frequency = Column(String, nullable=False, default="monthly")  # monthly, yearly
+    
+    # Default billing frequency for workflows (can be overridden per workflow type)
+    default_billing_frequency = Column(String, nullable=False, default="monthly")
+    
+    # Volume discount configuration
+    volume_discount_enabled = Column(Boolean, default=False)
+    volume_discount_threshold = Column(Integer, nullable=True)  # Number of workflows to qualify
+    volume_discount_percentage = Column(Float, nullable=True)  # Discount percentage
+    
+    # Overage pricing for workflows beyond commitment
+    overage_multiplier = Column(Float, nullable=False, default=1.0)  # 1.0 = normal price, 1.5 = 150% of normal
+    
+    # Currency for all pricing
+    currency = Column(String, nullable=False, default="USD")
+    
+    # Whether this workflow config is active
+    is_active = Column(Boolean, default=True)
+    
+    # Relationship
+    billing_model = relationship("BillingModel", back_populates="workflow_config")
+
+
+class WorkflowType(BaseModel):
+    """
+    Individual workflow types with their pricing and configuration
+    """
+    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
+    
+    # Workflow identification
+    workflow_name = Column(String, nullable=False)  # e.g., "Lead Research", "Cash Flow Forecast"
+    workflow_type = Column(String, nullable=False)  # e.g., "lead_research", "financial_forecast"
+    description = Column(String, nullable=True)
+    
+    # Pricing configuration
+    price_per_workflow = Column(Float, nullable=False)  # Price per complete workflow execution
+    
+    # Resource estimation (for cost monitoring)
+    estimated_compute_cost = Column(Float, nullable=True, default=0.0)  # Internal cost tracking
+    estimated_duration_minutes = Column(Integer, nullable=True)  # Expected duration
+    complexity_level = Column(String, nullable=False, default="medium")  # simple, medium, complex
+    
+    # Business value metrics
+    expected_roi_multiplier = Column(Float, nullable=True)  # Expected ROI multiple for customers
+    business_value_category = Column(String, nullable=True)  # lead_generation, cost_savings, revenue_growth
+    
+    # Volume pricing tiers (optional per workflow type)
+    volume_tier_1_threshold = Column(Integer, nullable=True)
+    volume_tier_1_price = Column(Float, nullable=True)
+    volume_tier_2_threshold = Column(Integer, nullable=True)
+    volume_tier_2_price = Column(Float, nullable=True)
+    volume_tier_3_threshold = Column(Integer, nullable=True)
+    volume_tier_3_price = Column(Float, nullable=True)
+    
+    # Billing configuration
+    billing_frequency = Column(String, nullable=True)  # If null, uses default from WorkflowBasedConfig
+    minimum_charge = Column(Float, nullable=True, default=0.0)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    
+    # Relationship
+    billing_model = relationship("BillingModel", back_populates="workflow_types")
+
+
+class CommitmentTier(BaseModel):
+    """
+    Commitment tiers for workflow-based billing (e.g., minimum monthly workflows)
+    """
+    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
+    
+    # Tier identification
+    tier_name = Column(String, nullable=False)  # e.g., "Starter", "Growth", "Scale"
+    tier_level = Column(Integer, nullable=False)  # 1, 2, 3... for ordering
+    description = Column(String, nullable=True)
+    
+    # Commitment requirements
+    minimum_workflows_per_month = Column(Integer, nullable=False)  # Total workflows across all types
+    minimum_monthly_revenue = Column(Float, nullable=False)  # Guaranteed minimum revenue
+    
+    # Included quantities (workflows included in base fee)
+    included_workflows = Column(Integer, nullable=False, default=0)
+    included_workflow_types = Column(String, nullable=True)  # JSON string of workflow types included
+    
+    # Pricing benefits
+    discount_percentage = Column(Float, nullable=True, default=0.0)  # Discount on per-workflow pricing
+    platform_fee_discount = Column(Float, nullable=True, default=0.0)  # Discount on platform fee
+    
+    # Contract terms
+    commitment_period_months = Column(Integer, nullable=False, default=12)  # Contract length
+    overage_rate_multiplier = Column(Float, nullable=False, default=1.0)  # Pricing for workflows beyond commitment
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    is_popular = Column(Boolean, default=False)  # For UI highlighting
+    
+    # Relationship
+    billing_model = relationship("BillingModel", back_populates="commitment_tiers")
