@@ -5,27 +5,24 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import api, { setAuthToken } from "../../utils/api"
 import toast from "react-hot-toast"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Input } from "@/components/ui/input"
 import {
   AlertCircle,
-  CheckCircle2,
-  Copy,
-  Edit,
   Plus,
   Settings,
-  Trash2,
   DollarSign,
   Users,
   BarChart,
   Zap,
-  Search,
-  Filter,
 } from "lucide-react"
+import PricingHeader from "@/app/pricing/components/PricingHeader"
+import PricingTabs from "@/app/pricing/components/PricingTabs"
+import PricingCreateForm from "@/app/pricing/components/PricingCreateForm"
+import PricingEmptyState from "@/app/pricing/components/PricingEmptyState"
+import PricingModelsGrid from "@/app/pricing/components/PricingModelsGrid"
+import ActivityCostPreview from "@/app/pricing/components/ActivityCostPreview"
+import WorkflowModelDetail from "@/app/pricing/components/workflow-model-detail"
+import PricingLoadingSkeleton from "@/app/pricing/components/PricingLoadingSkeleton"
 
 export default function PricingPage() {
   const router = useRouter()
@@ -77,7 +74,18 @@ export default function PricingPage() {
     include_agent: false,
     include_activity: false,
     include_outcome: false,
+    // Workflow
+    workflow_base_platform_fee: "",
+    workflow_platform_fee_frequency: "monthly",
+    workflow_volume_discount_enabled: false,
+    workflow_volume_discount_threshold: "",
+    workflow_volume_discount_percentage: "",
+    workflow_overage_multiplier: "1.0",
+    workflow_currency: "USD",
+    workflow_types: [] as any[],
+    commitment_tiers: [] as any[],
   })
+  const [editingModel, setEditingModel] = useState<any | null>(null)
 
   useEffect(() => {
     if (status !== 'authenticated') return
@@ -183,6 +191,21 @@ export default function PricingPage() {
           ]
         }
         break
+      case "workflow":
+        payload.workflow_base_platform_fee = Number.parseFloat(newModel.workflow_base_platform_fee) || 0
+        payload.workflow_platform_fee_frequency = newModel.workflow_platform_fee_frequency
+        payload.workflow_default_billing_frequency = "monthly"
+        payload.workflow_volume_discount_enabled = newModel.workflow_volume_discount_enabled
+        if (newModel.workflow_volume_discount_enabled) {
+          payload.workflow_volume_discount_threshold = Number.parseInt(newModel.workflow_volume_discount_threshold) || null
+          payload.workflow_volume_discount_percentage = Number.parseFloat(newModel.workflow_volume_discount_percentage) || null
+        }
+        payload.workflow_overage_multiplier = Number.parseFloat(newModel.workflow_overage_multiplier) || 1.0
+        payload.workflow_currency = newModel.workflow_currency
+        payload.workflow_is_active = true
+        payload.workflow_types = newModel.workflow_types
+        payload.commitment_tiers = newModel.commitment_tiers
+        break
     }
 
     try {
@@ -225,6 +248,16 @@ export default function PricingPage() {
         include_agent: false,
         include_activity: false,
         include_outcome: false,
+        // Workflow
+        workflow_base_platform_fee: "",
+        workflow_platform_fee_frequency: "monthly",
+        workflow_volume_discount_enabled: false,
+        workflow_volume_discount_threshold: "",
+        workflow_volume_discount_percentage: "",
+        workflow_overage_multiplier: "1.0",
+        workflow_currency: "USD",
+        workflow_types: [] as any[],
+        commitment_tiers: [] as any[],
       })
       toast.success("Pricing model created successfully")
     } catch (err: any) {
@@ -280,6 +313,8 @@ export default function PricingPage() {
         return <Zap className="h-5 w-5" />
       case "outcome":
         return <DollarSign className="h-5 w-5" />
+      case "workflow":
+        return <Settings className="h-5 w-5" />
       default:
         return <DollarSign className="h-5 w-5" />
     }
@@ -295,6 +330,8 @@ export default function PricingPage() {
         return "bg-gold/10 text-gold-dark border-gold/8"
       case "outcome":
         return "bg-green/10 text-green border-green/8"
+      case "workflow":
+        return "bg-orange/10 text-orange border-orange/8"
       default:
         return "bg-teal/10 text-teal border-teal/8"
     }
@@ -312,32 +349,11 @@ export default function PricingPage() {
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-background to-muted/20 p-6 rounded-xl border border-border/8 shadow-sm ring-1 ring-border/5 hover:ring-border/10 transition-all duration-300">
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-gold/10 p-2">
-            <DollarSign className="h-6 w-6 text-gold" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold">Pricing Models</h1>
-            <p className="text-muted-foreground">Manage your pricing strategies and billing configurations</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-grow w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search pricing models..."
-              className="pl-9 w-full"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button onClick={() => window.location.reload()} variant="outline" size="icon" className="flex-shrink-0">
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <PricingHeader
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onReload={() => window.location.reload()}
+      />
 
       {error && (
         <div className="bg-destructive/10 text-destructive rounded-lg p-4 flex items-start gap-3">
@@ -351,15 +367,7 @@ export default function PricingPage() {
 
       {/* Tabs and Create Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-          <TabsList className="grid grid-cols-4 w-full sm:w-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="agent">Agent</TabsTrigger>
-            <TabsTrigger value="hybrid">Hybrid</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
+        <PricingTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         <Button className="gap-2 w-full sm:w-auto" onClick={() => setShowCreateForm(!showCreateForm)}>
           <Plus className="h-4 w-4" />
           Create New Model
@@ -367,712 +375,82 @@ export default function PricingPage() {
       </div>
 
       {/* Create Form */}
-      {showCreateForm && (
-        <Card className="border-border/8 ring-1 ring-border/5 shadow-sm overflow-hidden hover:ring-border/10 transition-all duration-300">
-          <CardHeader className="bg-gradient-to-r from-gold/5 to-transparent">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Plus className="h-4 w-4 text-gold" />
-                <CardTitle>Create New Pricing Model</CardTitle>
-              </div>
-              <Badge variant="outline" className="bg-gold/10 text-gold-dark border-gold/8">
-                New
-              </Badge>
-            </div>
-            <CardDescription>Configure a new pricing model for your agents</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="model-name" className="text-sm font-medium">
-                    Model Name
-                  </label>
-                  <Input
-                    id="model-name"
-                    placeholder="Enter model name"
-                    value={newModel.name}
-                    onChange={(e) => setNewModel({ ...newModel, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="model-description" className="text-sm font-medium">
-                    Description
-                  </label>
-                  <Input
-                    id="model-description"
-                    placeholder="Enter description"
-                    value={newModel.description}
-                    onChange={(e) => setNewModel({ ...newModel, description: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="model-type" className="text-sm font-medium">
-                    Model Type
-                  </label>
-                  <select
-                    id="model-type"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={newModel.model_type}
-                    onChange={(e) => setNewModel({ ...newModel, model_type: e.target.value })}
-                  >
-                    <option value="activity">Activity-based</option>
-                    <option value="agent">Agent-based</option>
-                    <option value="hybrid">Hybrid</option>
-                    <option value="outcome">Outcome-based</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {/* Render config fields by model_type */}
-                {newModel.model_type === "activity" && (
-                  <>
-                    {/* Enhanced Activity-based */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Price per unit</label>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          placeholder="0.001"
-                          value={newModel.price_per_unit}
-                          onChange={(e) => setNewModel({ ...newModel, price_per_unit: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Activity type</label>
-                        <Input
-                          placeholder="tokens, api_calls, queries..."
-                          value={newModel.activity_type}
-                          onChange={(e) => setNewModel({ ...newModel, activity_type: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Unit type</label>
-                        <select
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={newModel.unit_type}
-                          onChange={(e) => setNewModel({ ...newModel, unit_type: e.target.value })}
-                        >
-                          <option value="action">Action</option>
-                          <option value="token">Token</option>
-                          <option value="minute">Minute</option>
-                          <option value="request">Request</option>
-                          <option value="query">Query</option>
-                          <option value="completion">Completion</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Base agent fee (optional)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={newModel.base_agent_fee}
-                          onChange={(e) => setNewModel({ ...newModel, base_agent_fee: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="volume-pricing"
-                          checked={newModel.volume_pricing_enabled}
-                          onChange={(e) => setNewModel({ ...newModel, volume_pricing_enabled: e.target.checked })}
-                        />
-                        <label htmlFor="volume-pricing" className="text-sm font-medium">
-                          Enable volume pricing tiers
-                        </label>
-                      </div>
-                      
-                      {newModel.volume_pricing_enabled && (
-                        <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
-                          <h4 className="font-medium text-sm">Volume Pricing Tiers</h4>
-                          
-                          {/* Tier 1 */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="text-sm">Tier 1 threshold</label>
-                              <Input
-                                type="number"
-                                placeholder="10000"
-                                value={newModel.volume_tier_1_threshold}
-                                onChange={(e) => setNewModel({ ...newModel, volume_tier_1_threshold: e.target.value })}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-sm">Tier 1 price per unit</label>
-                              <Input
-                                type="number"
-                                step="0.0001"
-                                placeholder="0.0008"
-                                value={newModel.volume_tier_1_price}
-                                onChange={(e) => setNewModel({ ...newModel, volume_tier_1_price: e.target.value })}
-                              />
-                            </div>
-                          </div>
-                          
-                          {/* Tier 2 */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="text-sm">Tier 2 threshold</label>
-                              <Input
-                                type="number"
-                                placeholder="50000"
-                                value={newModel.volume_tier_2_threshold}
-                                onChange={(e) => setNewModel({ ...newModel, volume_tier_2_threshold: e.target.value })}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-sm">Tier 2 price per unit</label>
-                              <Input
-                                type="number"
-                                step="0.0001"
-                                placeholder="0.0006"
-                                value={newModel.volume_tier_2_price}
-                                onChange={(e) => setNewModel({ ...newModel, volume_tier_2_price: e.target.value })}
-                              />
-                            </div>
-                          </div>
-                          
-                          {/* Tier 3 */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="text-sm">Tier 3 threshold</label>
-                              <Input
-                                type="number"
-                                placeholder="100000"
-                                value={newModel.volume_tier_3_threshold}
-                                onChange={(e) => setNewModel({ ...newModel, volume_tier_3_threshold: e.target.value })}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-sm">Tier 3 price per unit</label>
-                              <Input
-                                type="number"
-                                step="0.0001"
-                                placeholder="0.0004"
-                                value={newModel.volume_tier_3_price}
-                                onChange={(e) => setNewModel({ ...newModel, volume_tier_3_price: e.target.value })}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Minimum charge</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={newModel.minimum_charge}
-                          onChange={(e) => setNewModel({ ...newModel, minimum_charge: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Billing frequency</label>
-                        <select
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={newModel.billing_frequency}
-                          onChange={(e) => setNewModel({ ...newModel, billing_frequency: e.target.value })}
-                        >
-                          <option value="monthly">Monthly</option>
-                          <option value="daily">Daily</option>
-                          <option value="per_use">Per Use</option>
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                )}
-                {newModel.model_type === "agent" && (
-                  <>
-                    {/* Agent-based */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Base agent fee</label>
-                      <Input
-                        type="number"
-                        value={newModel.agent_base_agent_fee}
-                        onChange={(e) => setNewModel({ ...newModel, agent_base_agent_fee: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Setup fee (optional)</label>
-                      <Input
-                        type="number"
-                        value={newModel.agent_setup_fee}
-                        onChange={(e) => setNewModel({ ...newModel, agent_setup_fee: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Agent tier</label>
-                      <select
-                        className="w-full"
-                        value={newModel.agent_tier}
-                        onChange={(e) => setNewModel({ ...newModel, agent_tier: e.target.value })}
-                      >
-                        <option value="starter">Starter</option>
-                        <option value="professional">Professional</option>
-                        <option value="enterprise">Enterprise</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Billing frequency</label>
-                      <select
-                        className="w-full"
-                        value={newModel.agent_billing_frequency}
-                        onChange={(e) => setNewModel({ ...newModel, agent_billing_frequency: e.target.value })}
-                      >
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={newModel.agent_volume_discount_enabled}
-                        onChange={(e) => setNewModel({ ...newModel, agent_volume_discount_enabled: e.target.checked })}
-                      />
-                      <label className="text-sm">Enable volume discount</label>
-                    </div>
-                    {newModel.agent_volume_discount_enabled && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Volume threshold (number of agents)</label>
-                        <Input
-                          type="number"
-                          value={newModel.agent_volume_discount_threshold}
-                          onChange={(e) => setNewModel({ ...newModel, agent_volume_discount_threshold: e.target.value })}
-                        />
-                        <label className="text-sm font-medium">Discount percentage</label>
-                        <Input
-                          type="number"
-                          value={newModel.agent_volume_discount_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, agent_volume_discount_percentage: e.target.value })}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-                {newModel.model_type === "outcome" && (
-                  <>
-                    {" "}
-                    {/* Outcome-based */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Outcome type</label>
-                      <Input
-                        placeholder="revenue_uplift…"
-                        value={newModel.outcome_type}
-                        onChange={(e) => setNewModel({ ...newModel, outcome_type: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Percentage</label>
-                      <Input
-                        type="number"
-                        value={newModel.percentage}
-                        onChange={(e) => setNewModel({ ...newModel, percentage: e.target.value })}
-                      />
-                    </div>
-                  </>
-                )}
-                {newModel.model_type === "hybrid" && (
-                  <>
-                    {/* Hybrid */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Base fee</label>
-                      <Input
-                        type="number"
-                        value={newModel.hybrid_base_fee}
-                        onChange={(e) => setNewModel({ ...newModel, hybrid_base_fee: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={newModel.include_agent}
-                        onChange={(e) => setNewModel({ ...newModel, include_agent: e.target.checked })}
-                      />
-                      <label className="text-sm">Include agent configuration</label>
-                    </div>
-                    {newModel.include_agent && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Base agent fee</label>
-                        <Input
-                          type="number"
-                          value={newModel.agent_base_agent_fee}
-                          onChange={(e) => setNewModel({ ...newModel, agent_base_agent_fee: e.target.value })}
-                        />
-                        <label className="text-sm font-medium">Setup fee (optional)</label>
-                        <Input
-                          type="number"
-                          value={newModel.agent_setup_fee}
-                          onChange={(e) => setNewModel({ ...newModel, agent_setup_fee: e.target.value })}
-                        />
-                        <label className="text-sm font-medium">Agent tier</label>
-                        <select
-                          className="w-full"
-                          value={newModel.agent_tier}
-                          onChange={(e) => setNewModel({ ...newModel, agent_tier: e.target.value })}
-                        >
-                          <option value="starter">Starter</option>
-                          <option value="professional">Professional</option>
-                          <option value="enterprise">Enterprise</option>
-                        </select>
-                        <label className="text-sm font-medium">Billing frequency</label>
-                        <select
-                          className="w-full"
-                          value={newModel.agent_billing_frequency}
-                          onChange={(e) => setNewModel({ ...newModel, agent_billing_frequency: e.target.value })}
-                        >
-                          <option value="monthly">Monthly</option>
-                          <option value="yearly">Yearly</option>
-                        </select>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={newModel.agent_volume_discount_enabled}
-                            onChange={(e) => setNewModel({ ...newModel, agent_volume_discount_enabled: e.target.checked })}
-                          />
-                          <label className="text-sm">Enable volume discount</label>
-                        </div>
-                        {newModel.agent_volume_discount_enabled && (
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Volume threshold</label>
-                            <Input
-                              type="number"
-                              value={newModel.agent_volume_discount_threshold}
-                              onChange={(e) => setNewModel({ ...newModel, agent_volume_discount_threshold: e.target.value })}
-                            />
-                            <label className="text-sm font-medium">Discount percentage</label>
-                            <Input
-                              type="number"
-                              value={newModel.agent_volume_discount_percentage}
-                              onChange={(e) => setNewModel({ ...newModel, agent_volume_discount_percentage: e.target.value })}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={newModel.include_activity}
-                        onChange={(e) => setNewModel({ ...newModel, include_activity: e.target.checked })}
-                      />
-                      <label className="text-sm">Include activity configuration</label>
-                    </div>
-                    {newModel.include_activity && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Activity type</label>
-                        <Input
-                          placeholder="tokens, api_calls..."
-                          value={newModel.activity_type}
-                          onChange={(e) => setNewModel({ ...newModel, activity_type: e.target.value })}
-                        />
-                        <label className="text-sm font-medium">Price per unit</label>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          value={newModel.price_per_unit}
-                          onChange={(e) => setNewModel({ ...newModel, price_per_unit: e.target.value })}
-                        />
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={newModel.include_outcome}
-                        onChange={(e) => setNewModel({ ...newModel, include_outcome: e.target.checked })}
-                      />
-                      <label className="text-sm">Include outcome configuration</label>
-                    </div>
-                    {newModel.include_outcome && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Outcome type</label>
-                        <Input
-                          placeholder="revenue_uplift…"
-                          value={newModel.outcome_type}
-                          onChange={(e) => setNewModel({ ...newModel, outcome_type: e.target.value })}
-                        />
-                        <label className="text-sm font-medium">Percentage</label>
-                        <Input
-                          type="number"
-                          value={newModel.percentage}
-                          onChange={(e) => setNewModel({ ...newModel, percentage: e.target.value })}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between border-t pt-4">
-            <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateModel}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Model
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
+      <PricingCreateForm
+        show={showCreateForm}
+        newModel={newModel}
+        setNewModel={setNewModel}
+        onCancel={() => setShowCreateForm(false)}
+        onCreate={handleCreateModel}
+      />
 
       {/* Cost Calculator Preview */}
       {newModel.model_type === "activity" && newModel.price_per_unit && (
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-medium text-sm mb-3 text-blue-800">💡 Cost Preview</h4>
+        <ActivityCostPreview
+          pricePerUnit={newModel.price_per_unit}
+          baseAgentFee={newModel.base_agent_fee}
+          minimumCharge={newModel.minimum_charge}
+          unitType={newModel.unit_type}
+          volumePricingEnabled={newModel.volume_pricing_enabled}
+          volumeTier1Threshold={newModel.volume_tier_1_threshold}
+          volumeTier1Price={newModel.volume_tier_1_price}
+          volumeTier2Threshold={newModel.volume_tier_2_threshold}
+          volumeTier2Price={newModel.volume_tier_2_price}
+          volumeTier3Threshold={newModel.volume_tier_3_threshold}
+          volumeTier3Price={newModel.volume_tier_3_price}
+        />
+      )}
+
+      {/* Workflow Cost Preview */}
+      {newModel.model_type === "workflow" && newModel.workflow_types.length > 0 && (
+        <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+          <h4 className="font-medium text-sm mb-3 text-orange-800">💡 Workflow Cost Preview</h4>
+          <p className="text-xs text-orange-600 mb-3">
+            Base platform fee: ${parseFloat(newModel.workflow_base_platform_fee) || 0}/month + per-workflow charges
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-blue-700">Example usage:</label>
-              <input
-                type="number"
-                placeholder="10000"
-                className="w-full mt-1 px-2 py-1 text-sm border rounded"
-                onChange={(e) => {
-                  const units = parseInt(e.target.value) || 0;
-                  const agents = 1;
-                  const basePrice = parseFloat(newModel.price_per_unit) || 0;
-                  const baseFee = parseFloat(newModel.base_agent_fee) || 0;
-                  const minCharge = parseFloat(newModel.minimum_charge) || 0;
-                  
-                  let cost = baseFee * agents;
-                  
-                  if (newModel.volume_pricing_enabled) {
-                    const tier1Threshold = parseInt(newModel.volume_tier_1_threshold) || 0;
-                    const tier1Price = parseFloat(newModel.volume_tier_1_price) || basePrice;
-                    
-                    if (units <= tier1Threshold) {
-                      cost += units * tier1Price;
-                    } else {
-                      cost += tier1Threshold * tier1Price;
-                      const remainingUnits = units - tier1Threshold;
-                      const tier2Threshold = parseInt(newModel.volume_tier_2_threshold) || 0;
-                      const tier2Price = parseFloat(newModel.volume_tier_2_price) || basePrice;
-                      
-                      if (remainingUnits <= (tier2Threshold - tier1Threshold)) {
-                        cost += remainingUnits * tier2Price;
-                      } else {
-                        cost += (tier2Threshold - tier1Threshold) * tier2Price;
-                        const finalUnits = remainingUnits - (tier2Threshold - tier1Threshold);
-                        const tier3Price = parseFloat(newModel.volume_tier_3_price) || basePrice;
-                        cost += finalUnits * tier3Price;
-                      }
-                    }
-                  } else {
-                    cost += units * basePrice;
-                  }
-                  
-                  cost = Math.max(cost, minCharge);
-                  
-                  const preview = document.getElementById('cost-preview');
-                  if (preview) {
-                    preview.textContent = `$${cost.toFixed(2)}`;
-                  }
-                }}
-              />
-              <span className="text-xs text-blue-600">{newModel.unit_type}s</span>
-            </div>
-            <div>
-              <label className="text-xs text-blue-700">Estimated cost:</label>
-              <div id="cost-preview" className="mt-1 px-2 py-1 bg-white border rounded text-sm font-mono">
-                $0.00
+            {newModel.workflow_types.slice(0, 4).map((workflow: any, index: number) => (
+              <div key={index} className="bg-white rounded p-2 border border-orange-200">
+                <div className="text-xs font-medium text-orange-700">{workflow.workflow_name}</div>
+                <div className="text-xs text-orange-600 mt-1">
+                  ${workflow.price_per_workflow?.toFixed(2) || '0.00'} per execution
+                  {workflow.volume_tier_1_threshold && (
+                    <div>Volume: {workflow.volume_tier_1_threshold}+ at ${workflow.volume_tier_1_price?.toFixed(2) || '0.00'}</div>
+                  )}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-          <p className="text-xs text-blue-600 mt-2">
-            * Preview includes base agent fee{newModel.volume_pricing_enabled ? " and volume discounts" : ""}
+          <p className="text-xs text-orange-600 mt-2">
+            * {newModel.workflow_volume_discount_enabled ? 
+              `Global ${newModel.workflow_volume_discount_percentage}% discount when total workflows exceed ${newModel.workflow_volume_discount_threshold}/month` :
+              "Configure volume discounts for additional savings"
+            }
           </p>
         </div>
       )}
 
       {/* Models Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <div className="flex justify-between items-start">
-                  <Skeleton className="h-6 w-24" />
-                  <div className="flex gap-1">
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-6 w-40" />
-                </div>
-                <Skeleton className="h-4 w-full mt-2" />
-              </CardHeader>
-              <CardContent className="pb-4">
-                <Skeleton className="h-[200px] w-full rounded-lg" />
-              </CardContent>
-              <CardFooter className="flex justify-between border-t pt-4">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-8 w-24" />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <PricingLoadingSkeleton />
       ) : filteredModels.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <Settings className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h2 className="text-xl font-bold mb-2">No pricing models found</h2>
-          <p className="text-muted-foreground mb-4">
-            {searchQuery ? "Try a different search term" : "Create your first pricing model to get started"}
-          </p>
-          <Button className="gap-2" onClick={() => setShowCreateForm(true)}>
-            <Plus className="h-4 w-4" />
-            Create New Model
-          </Button>
-        </div>
+        <PricingEmptyState searchQuery={searchQuery} onCreate={() => setShowCreateForm(true)} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredModels.map((model) => (
-            <Card
-              key={model.id}
-              className="overflow-hidden border-border/8 ring-1 ring-border/5 shadow-sm hover:shadow-md transition-shadow duration-300 hover:ring-border/10"
-            >
-              <CardHeader className="pb-4 bg-gradient-to-r from-muted/30 to-transparent">
-                <div className="flex justify-between items-start">
-                  <Badge className={`${getModelTypeColor(model.model_type)} px-2 py-0.5 text-xs font-medium`}>
-                    {model.model_type}
-                  </Badge>
-                  <div className="flex gap-1">
-                    <Button size="icon" className="h-8 w-8 text-blue hover:text-blue hover:border-blue" variant="ghost">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:border-destructive"
-                      variant="ghost"
-                      onClick={() => handleDeleteModel(model.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className={`rounded-full p-2 ${getModelTypeColor(model.model_type)}`}>
-                    {getModelIcon(model.model_type)}
-                  </div>
-                  <CardTitle>{model.name}</CardTitle>
-                </div>
-                <CardDescription>
-                  {model.description || `A ${model.model_type.toLowerCase()} pricing model for your services`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <div className="space-y-3">
-                  {model.model_type === "activity" && model.activity_config && model.activity_config[0] && (
-                    <div className="bg-muted/20 rounded-lg p-3 border border-border/10">
-                      <h4 className="font-medium text-sm mb-2">Activity Configuration</h4>
-                      <div className="grid grid-cols-1 gap-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Price per unit:</span>
-                          <span className="font-mono">${model.activity_config[0].price_per_unit}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Activity type:</span>
-                          <span className="font-mono">{model.activity_config[0].activity_type}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Unit type:</span>
-                          <span className="font-mono">{model.activity_config[0].unit_type}</span>
-                        </div>
-                        {model.activity_config[0].base_agent_fee > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Base agent fee:</span>
-                            <span className="font-mono">${model.activity_config[0].base_agent_fee}</span>
-                          </div>
-                        )}
-                        {model.activity_config[0].volume_pricing_enabled && (
-                          <div className="mt-2">
-                            <span className="text-muted-foreground text-xs">Volume pricing enabled</span>
-                            {model.activity_config[0].volume_tier_1_threshold && (
-                              <div className="flex justify-between text-xs mt-1">
-                                <span>Tier 1 ({model.activity_config[0].volume_tier_1_threshold}+ units):</span>
-                                <span className="font-mono">${model.activity_config[0].volume_tier_1_price}</span>
-                              </div>
-                            )}
-                            {model.activity_config[0].volume_tier_2_threshold && (
-                              <div className="flex justify-between text-xs">
-                                <span>Tier 2 ({model.activity_config[0].volume_tier_2_threshold}+ units):</span>
-                                <span className="font-mono">${model.activity_config[0].volume_tier_2_price}</span>
-                              </div>
-                            )}
-                            {model.activity_config[0].volume_tier_3_threshold && (
-                              <div className="flex justify-between text-xs">
-                                <span>Tier 3 ({model.activity_config[0].volume_tier_3_threshold}+ units):</span>
-                                <span className="font-mono">${model.activity_config[0].volume_tier_3_price}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {model.activity_config[0].minimum_charge > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Minimum charge:</span>
-                            <span className="font-mono">${model.activity_config[0].minimum_charge}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {model.model_type === "agent" && model.agent_config && (
-                    <div className="bg-muted/20 rounded-lg p-3 border border-border/10">
-                      <h4 className="font-medium text-sm mb-2">Agent Configuration</h4>
-                      <div className="grid grid-cols-1 gap-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Base agent fee:</span>
-                          <span className="font-mono">${model.agent_config.base_agent_fee}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Billing frequency:</span>
-                          <span className="font-mono">{model.agent_config.billing_frequency}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Agent tier:</span>
-                          <span className="font-mono">{model.agent_config.agent_tier}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(model.model_type === "outcome" || model.model_type === "hybrid") && (
-                    <div className="bg-muted/20 rounded-lg p-3 border border-border/10">
-                      <h4 className="font-medium text-sm mb-2">Configuration</h4>
-                      <div className="overflow-auto max-h-[120px]">
-                        <pre className="text-xs font-mono">{JSON.stringify(model, null, 2)}</pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between border-t pt-4">
-                <div className="flex items-center text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-success mr-1" />
-                  Active
-                </div>
-                <Button className="gap-1 text-sm" variant="outline" onClick={() => handleDuplicate(model)}>
-                  <Copy className="h-3 w-3" />
-                  Duplicate
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <>
+          <PricingModelsGrid
+            models={filteredModels}
+            onEdit={setEditingModel}
+            onDelete={handleDeleteModel}
+            onDuplicate={handleDuplicate}
+            getModelIcon={getModelIcon}
+            getModelTypeColor={getModelTypeColor}
+          />
+          {editingModel && (
+            <WorkflowModelDetail
+              modelId={editingModel.id}
+              onBack={() => setEditingModel(null)}
+            />
+          )}
+        </>
       )}
     </div>
   )
