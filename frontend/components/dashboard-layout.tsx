@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/custom-sidebar"
 import { SidebarNav } from "@/components/layout/sidebar-nav"
 import { Header } from "@/components/layout/header"
 import { usePathname } from "next/navigation"

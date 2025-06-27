@@ -10,7 +10,7 @@ from app.schemas.agent import (
     AgentCreate, AgentUpdate, 
     AgentActivityCreate, AgentCostCreate, AgentOutcomeCreate
 )
-from app.services.billing_model_service import calculate_cost
+from app.services.billing_model.calculation import calculate_cost
 
 # Configure logging
 logger = logging.getLogger(__name__)

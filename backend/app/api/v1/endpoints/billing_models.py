@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from app import schemas
 from app.api import deps
 from app.services import billing_model_service, organization_service
+from app.services.billing_model.calculation import calculate_cost
 
 router = APIRouter()
 
@@ -235,7 +236,7 @@ def calculate_billing_cost(
     
     # Calculate cost
     try:
-        cost = billing_model_service.calculate_cost(billing_model, usage_data)
+        cost = calculate_cost(billing_model, usage_data)
         return {
             "cost": cost,
             "currency": "USD",  # Default currency
