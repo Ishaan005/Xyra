@@ -18,7 +18,7 @@ CONFIG_FIELDS = [
     # Activity
     "activity_price_per_unit", "activity_activity_type", "activity_unit_type", "activity_base_agent_fee", "activity_volume_pricing_enabled", "activity_volume_tier_1_threshold", "activity_volume_tier_1_price", "activity_volume_tier_2_threshold", "activity_volume_tier_2_price", "activity_volume_tier_3_threshold", "activity_volume_tier_3_price", "activity_minimum_charge", "activity_billing_frequency", "activity_is_active",
     # Outcome
-    "outcome_outcome_type", "outcome_percentage",
+    "outcome_outcome_name", "outcome_outcome_type", "outcome_description", "outcome_base_platform_fee", "outcome_platform_fee_frequency", "outcome_percentage", "outcome_attribution_window_days", "outcome_minimum_attribution_value", "outcome_requires_verification", "outcome_success_rate_assumption", "outcome_risk_premium_percentage", "outcome_monthly_cap_amount", "outcome_success_bonus_threshold", "outcome_success_bonus_percentage", "outcome_tier_1_threshold", "outcome_tier_1_percentage", "outcome_tier_2_threshold", "outcome_tier_2_percentage", "outcome_tier_3_threshold", "outcome_tier_3_percentage", "outcome_billing_frequency", "outcome_currency", "outcome_is_active", "outcome_auto_bill_verified_outcomes",
     # Hybrid
     "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs",
     # Workflow

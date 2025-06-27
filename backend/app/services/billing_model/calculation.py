@@ -85,10 +85,76 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
                 
             total_cost += activity_cost
     elif current_model_type == "outcome":
-        # Outcome-based billing: percentage of outcome_value
+        # Enhanced outcome-based billing with sophisticated pricing
         outcome_value = usage_data.get("outcome_value", 0)
+        
         for cfg in billing_model.outcome_config:
-            total_cost += (cfg.percentage / 100.0) * outcome_value
+            if not cfg.is_active:
+                continue
+                
+            config_cost = 0.0
+            
+            # Add base platform fee (covers operational costs)
+            config_cost += cfg.base_platform_fee
+            
+            # Skip outcome-based charges if no value
+            if outcome_value <= 0:
+                total_cost += config_cost
+                continue
+            
+            # Check minimum attribution value
+            if cfg.minimum_attribution_value and outcome_value < cfg.minimum_attribution_value:
+                total_cost += config_cost  # Only platform fee
+                continue
+            
+            # Calculate outcome-based fee using tiered pricing if configured
+            outcome_fee = 0.0
+            remaining_value = outcome_value
+            
+            # Apply tiered pricing if configured
+            if cfg.tier_1_threshold and cfg.tier_1_percentage:
+                # Tier 1
+                tier_1_value = min(remaining_value, cfg.tier_1_threshold)
+                outcome_fee += tier_1_value * (cfg.tier_1_percentage / 100.0)
+                remaining_value -= tier_1_value
+                
+                # Tier 2
+                if remaining_value > 0 and cfg.tier_2_threshold and cfg.tier_2_percentage:
+                    tier_2_value = min(remaining_value, cfg.tier_2_threshold - cfg.tier_1_threshold)
+                    outcome_fee += tier_2_value * (cfg.tier_2_percentage / 100.0)
+                    remaining_value -= tier_2_value
+                    
+                    # Tier 3
+                    if remaining_value > 0 and cfg.tier_3_threshold and cfg.tier_3_percentage:
+                        tier_3_value = min(remaining_value, cfg.tier_3_threshold - cfg.tier_2_threshold)
+                        outcome_fee += tier_3_value * (cfg.tier_3_percentage / 100.0)
+                        remaining_value -= tier_3_value
+                
+                # Any remaining value uses highest tier percentage or base percentage
+                if remaining_value > 0:
+                    final_percentage = cfg.tier_3_percentage if cfg.tier_3_percentage else cfg.percentage
+                    outcome_fee += remaining_value * (final_percentage / 100.0)
+            else:
+                # Simple percentage-based pricing
+                outcome_fee = outcome_value * (cfg.percentage / 100.0)
+            
+            # Apply risk premium if configured
+            if cfg.risk_premium_percentage > 0:
+                risk_adjustment = outcome_fee * (cfg.risk_premium_percentage / 100.0)
+                outcome_fee += risk_adjustment
+            
+            # Apply success bonus if threshold is met
+            if cfg.success_bonus_threshold and cfg.success_bonus_percentage and outcome_value >= cfg.success_bonus_threshold:
+                bonus = outcome_value * (cfg.success_bonus_percentage / 100.0)
+                outcome_fee += bonus
+            
+            # Apply monthly cap if configured (should apply to total config cost)
+            if cfg.monthly_cap_amount and config_cost + outcome_fee > cfg.monthly_cap_amount:
+                config_cost = cfg.monthly_cap_amount
+            else:
+                config_cost += outcome_fee
+            
+            total_cost += config_cost
     elif current_model_type == "hybrid":
         # Hybrid: base fee from dedicated config table, plus each component
         # Base fee from HybridConfig

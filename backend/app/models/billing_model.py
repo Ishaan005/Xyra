@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Integer, ForeignKey, Boolean
+from sqlalchemy import Column, String, Float, Integer, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModel
@@ -127,11 +127,51 @@ class ActivityBasedConfig(BaseModel):
 
 class OutcomeBasedConfig(BaseModel):
     """
-    Configuration for outcome-based billing
+    Configuration for sophisticated outcome-based billing
     """
     billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
-    outcome_type = Column(String, nullable=False)  # revenue_uplift, cost_savings, etc.
+    
+    # Outcome identification
+    outcome_name = Column(String, nullable=False)  # e.g., "Revenue Uplift", "Cost Savings"
+    outcome_type = Column(String, nullable=False)  # revenue_uplift, cost_savings, lead_generation, etc.
+    description = Column(String, nullable=True)
+    
+    # Base platform fee (covers operational costs even if no success)
+    base_platform_fee = Column(Float, nullable=False, default=0.0)
+    platform_fee_frequency = Column(String, nullable=False, default="monthly")  # monthly, yearly
+    
+    # Primary outcome pricing
     percentage = Column(Float, nullable=False)  # e.g., 5% of revenue uplift
+    
+    # Success attribution settings
+    attribution_window_days = Column(Integer, nullable=False, default=30)  # How long to attribute outcomes
+    minimum_attribution_value = Column(Float, nullable=True)  # Minimum value to qualify for billing
+    requires_verification = Column(Boolean, default=True)  # Whether outcomes need verification
+    
+    # Risk adjustment and caps
+    success_rate_assumption = Column(Float, nullable=True)  # Expected success rate (e.g., 0.70 = 70%)
+    risk_premium_percentage = Column(Float, nullable=False, default=40.0)  # Risk premium (30-50%)
+    
+    # Performance caps and guarantees
+    monthly_cap_amount = Column(Float, nullable=True)  # Maximum billing per month
+    success_bonus_threshold = Column(Float, nullable=True)  # Value threshold for bonus
+    success_bonus_percentage = Column(Float, nullable=True)  # Additional percentage for exceeding threshold
+    
+    # Multi-tier outcome pricing
+    tier_1_threshold = Column(Float, nullable=True)  # First tier threshold
+    tier_1_percentage = Column(Float, nullable=True)  # Percentage for tier 1
+    tier_2_threshold = Column(Float, nullable=True)  # Second tier threshold
+    tier_2_percentage = Column(Float, nullable=True)  # Percentage for tier 2
+    tier_3_threshold = Column(Float, nullable=True)  # Third tier threshold
+    tier_3_percentage = Column(Float, nullable=True)  # Percentage for tier 3
+    
+    # Billing configuration
+    billing_frequency = Column(String, nullable=False, default="monthly")  # monthly, quarterly
+    currency = Column(String, nullable=False, default="USD")
+    
+    # Status and settings
+    is_active = Column(Boolean, default=True)
+    auto_bill_verified_outcomes = Column(Boolean, default=False)  # Auto-bill verified outcomes
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="outcome_config")
@@ -253,3 +293,63 @@ class CommitmentTier(BaseModel):
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="commitment_tiers")
+
+
+class OutcomeMetric(BaseModel):
+    """
+    Individual outcome metrics for tracking and verification
+    """
+    outcome_config_id = Column(Integer, ForeignKey("outcomebasedconfig.id", ondelete="CASCADE"), nullable=False)
+    agent_id = Column(Integer, ForeignKey("agent.id", ondelete="CASCADE"), nullable=False)
+    
+    # Outcome details
+    outcome_value = Column(Float, nullable=False)  # The measured outcome value
+    outcome_currency = Column(String, nullable=False, default="USD")
+    
+    # Attribution and verification
+    attribution_start_date = Column(DateTime, nullable=False)
+    attribution_end_date = Column(DateTime, nullable=False)
+    verification_status = Column(String, nullable=False, default="pending")  # pending, verified, rejected
+    verification_notes = Column(String, nullable=True)
+    verified_by = Column(String, nullable=True)  # User ID or system that verified
+    verified_at = Column(DateTime, nullable=True)
+    
+    # Calculation details
+    calculated_fee = Column(Float, nullable=False)  # Fee calculated for this outcome
+    tier_applied = Column(String, nullable=True)  # Which tier was applied
+    bonus_applied = Column(Float, nullable=True, default=0.0)  # Any bonus applied
+    
+    # Billing status
+    billing_status = Column(String, nullable=False, default="pending")  # pending, billed, disputed
+    billed_at = Column(DateTime, nullable=True)
+    billing_period = Column(String, nullable=True)  # e.g., "2025-01"
+    
+    # Metadata
+    outcome_data = Column(String, nullable=True)  # JSON metadata about the outcome
+    
+    # Relationships
+    outcome_config = relationship("OutcomeBasedConfig", backref="outcome_metrics")
+    agent = relationship("Agent", backref="outcome_metrics")
+
+
+class OutcomeVerificationRule(BaseModel):
+    """
+    Rules for automatic outcome verification
+    """
+    outcome_config_id = Column(Integer, ForeignKey("outcomebasedconfig.id", ondelete="CASCADE"), nullable=False)
+    
+    # Rule identification
+    rule_name = Column(String, nullable=False)
+    rule_type = Column(String, nullable=False)  # api_integration, manual_review, threshold_based
+    
+    # Verification criteria
+    verification_method = Column(String, nullable=False)  # webhook, api_pull, manual, analytics_integration
+    api_endpoint = Column(String, nullable=True)  # For API-based verification
+    verification_threshold = Column(Float, nullable=True)  # Minimum value for auto-verification
+    
+    # Rule configuration
+    rule_config = Column(String, nullable=True)  # JSON configuration for the rule
+    is_active = Column(Boolean, default=True)
+    
+    # Relationship
+    outcome_config = relationship("OutcomeBasedConfig", backref="verification_rules")

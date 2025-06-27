@@ -41,8 +41,30 @@ def create_activity_config(db, billing_model, cfg_in):
 def create_outcome_config(db, billing_model, cfg_in):
     out_cfg = OutcomeBasedConfig(
         billing_model_id=billing_model.id,
+        outcome_name=cfg_in.outcome_outcome_name or "Primary Outcome",
         outcome_type=cfg_in.outcome_outcome_type,
+        description=cfg_in.outcome_description,
+        base_platform_fee=cfg_in.outcome_base_platform_fee or 0.0,
+        platform_fee_frequency=cfg_in.outcome_platform_fee_frequency or "monthly",
         percentage=cfg_in.outcome_percentage,
+        attribution_window_days=cfg_in.outcome_attribution_window_days or 30,
+        minimum_attribution_value=cfg_in.outcome_minimum_attribution_value,
+        requires_verification=cfg_in.outcome_requires_verification if cfg_in.outcome_requires_verification is not None else True,
+        success_rate_assumption=cfg_in.outcome_success_rate_assumption,
+        risk_premium_percentage=cfg_in.outcome_risk_premium_percentage or 40.0,
+        monthly_cap_amount=cfg_in.outcome_monthly_cap_amount,
+        success_bonus_threshold=cfg_in.outcome_success_bonus_threshold,
+        success_bonus_percentage=cfg_in.outcome_success_bonus_percentage,
+        tier_1_threshold=cfg_in.outcome_tier_1_threshold,
+        tier_1_percentage=cfg_in.outcome_tier_1_percentage,
+        tier_2_threshold=cfg_in.outcome_tier_2_threshold,
+        tier_2_percentage=cfg_in.outcome_tier_2_percentage,
+        tier_3_threshold=cfg_in.outcome_tier_3_threshold,
+        tier_3_percentage=cfg_in.outcome_tier_3_percentage,
+        billing_frequency=cfg_in.outcome_billing_frequency or "monthly",
+        currency=cfg_in.outcome_currency or "USD",
+        is_active=cfg_in.outcome_is_active if cfg_in.outcome_is_active is not None else True,
+        auto_bill_verified_outcomes=cfg_in.outcome_auto_bill_verified_outcomes if cfg_in.outcome_auto_bill_verified_outcomes is not None else False,
     )
     db.add(out_cfg)
 

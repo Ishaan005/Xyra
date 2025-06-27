@@ -76,6 +76,51 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
         
         if billing_model_in.outcome_percentage is None or billing_model_in.outcome_percentage <= 0:
             raise ValueError("Outcome-based billing model must include a positive 'outcome_percentage'")
+        
+        # Validate base platform fee
+        if billing_model_in.outcome_base_platform_fee is not None and billing_model_in.outcome_base_platform_fee < 0:
+            raise ValueError("Base platform fee must be non-negative")
+        
+        # Validate attribution window
+        if billing_model_in.outcome_attribution_window_days is not None and billing_model_in.outcome_attribution_window_days <= 0:
+            raise ValueError("Attribution window days must be positive")
+        
+        # Validate risk premium
+        if billing_model_in.outcome_risk_premium_percentage is not None and billing_model_in.outcome_risk_premium_percentage < 0:
+            raise ValueError("Risk premium percentage must be non-negative")
+        
+        # Validate success rate assumption
+        if (billing_model_in.outcome_success_rate_assumption is not None and 
+            (billing_model_in.outcome_success_rate_assumption <= 0 or billing_model_in.outcome_success_rate_assumption > 1)):
+            raise ValueError("Success rate assumption must be between 0 and 1")
+        
+        # Validate monthly cap
+        if billing_model_in.outcome_monthly_cap_amount is not None and billing_model_in.outcome_monthly_cap_amount <= 0:
+            raise ValueError("Monthly cap amount must be positive")
+        
+        # Validate success bonus configuration
+        if billing_model_in.outcome_success_bonus_threshold is not None and billing_model_in.outcome_success_bonus_percentage is None:
+            raise ValueError("Success bonus threshold requires a bonus percentage")
+        if billing_model_in.outcome_success_bonus_percentage is not None and billing_model_in.outcome_success_bonus_threshold is None:
+            raise ValueError("Success bonus percentage requires a threshold")
+        
+        # Validate tier configuration
+        tiers = [
+            (billing_model_in.outcome_tier_1_threshold, billing_model_in.outcome_tier_1_percentage, "tier_1"),
+            (billing_model_in.outcome_tier_2_threshold, billing_model_in.outcome_tier_2_percentage, "tier_2"),
+            (billing_model_in.outcome_tier_3_threshold, billing_model_in.outcome_tier_3_percentage, "tier_3"),
+        ]
+        
+        previous_threshold = 0
+        for threshold, percentage, tier_name in tiers:
+            if threshold is not None or percentage is not None:
+                if threshold is None or percentage is None:
+                    raise ValueError(f"Outcome {tier_name} requires both threshold and percentage")
+                if threshold <= previous_threshold:
+                    raise ValueError(f"Outcome {tier_name} threshold must be greater than previous tier")
+                if percentage <= 0:
+                    raise ValueError(f"Outcome {tier_name} percentage must be positive")
+                previous_threshold = threshold
     
     elif model_type == "hybrid":
         # Hybrid must have at least one billing component

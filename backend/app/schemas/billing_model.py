@@ -42,8 +42,30 @@ class BillingModelCreate(BillingModelBase):
     activity_is_active: Optional[bool] = True
     
     # Outcome-based config fields
+    outcome_outcome_name: Optional[str] = None
     outcome_outcome_type: Optional[str] = None
+    outcome_description: Optional[str] = None
+    outcome_base_platform_fee: Optional[float] = None
+    outcome_platform_fee_frequency: Optional[str] = None
     outcome_percentage: Optional[float] = None
+    outcome_attribution_window_days: Optional[int] = None
+    outcome_minimum_attribution_value: Optional[float] = None
+    outcome_requires_verification: Optional[bool] = None
+    outcome_success_rate_assumption: Optional[float] = None
+    outcome_risk_premium_percentage: Optional[float] = None
+    outcome_monthly_cap_amount: Optional[float] = None
+    outcome_success_bonus_threshold: Optional[float] = None
+    outcome_success_bonus_percentage: Optional[float] = None
+    outcome_tier_1_threshold: Optional[float] = None
+    outcome_tier_1_percentage: Optional[float] = None
+    outcome_tier_2_threshold: Optional[float] = None
+    outcome_tier_2_percentage: Optional[float] = None
+    outcome_tier_3_threshold: Optional[float] = None
+    outcome_tier_3_percentage: Optional[float] = None
+    outcome_billing_frequency: Optional[str] = None
+    outcome_currency: Optional[str] = None
+    outcome_is_active: Optional[bool] = None
+    outcome_auto_bill_verified_outcomes: Optional[bool] = None
     
     # Hybrid-specific config
     hybrid_base_fee: Optional[float] = None
@@ -98,8 +120,30 @@ class BillingModelUpdate(BaseModel):
     activity_is_active: Optional[bool] = None
     
     # Outcome-based config fields
+    outcome_outcome_name: Optional[str] = None
     outcome_outcome_type: Optional[str] = None
+    outcome_description: Optional[str] = None
+    outcome_base_platform_fee: Optional[float] = None
+    outcome_platform_fee_frequency: Optional[str] = None
     outcome_percentage: Optional[float] = None
+    outcome_attribution_window_days: Optional[int] = None
+    outcome_minimum_attribution_value: Optional[float] = None
+    outcome_requires_verification: Optional[bool] = None
+    outcome_success_rate_assumption: Optional[float] = None
+    outcome_risk_premium_percentage: Optional[float] = None
+    outcome_monthly_cap_amount: Optional[float] = None
+    outcome_success_bonus_threshold: Optional[float] = None
+    outcome_success_bonus_percentage: Optional[float] = None
+    outcome_tier_1_threshold: Optional[float] = None
+    outcome_tier_1_percentage: Optional[float] = None
+    outcome_tier_2_threshold: Optional[float] = None
+    outcome_tier_2_percentage: Optional[float] = None
+    outcome_tier_3_threshold: Optional[float] = None
+    outcome_tier_3_percentage: Optional[float] = None
+    outcome_billing_frequency: Optional[str] = None
+    outcome_currency: Optional[str] = None
+    outcome_is_active: Optional[bool] = None
+    outcome_auto_bill_verified_outcomes: Optional[bool] = None
     
     # Hybrid-specific config
     hybrid_base_fee: Optional[float] = None
@@ -176,9 +220,48 @@ class ActivityBasedConfigSchema(BaseModel):
 
 
 class OutcomeBasedConfigSchema(BaseModel):
-    """Configuration schema for outcome-based billing"""
-    outcome_type: str  # revenue_uplift, cost_savings, etc.
+    """Configuration schema for sophisticated outcome-based billing"""
+    # Outcome identification
+    outcome_name: str  # e.g., "Revenue Uplift", "Cost Savings"
+    outcome_type: str  # revenue_uplift, cost_savings, lead_generation, etc.
+    description: Optional[str] = None
+    
+    # Base platform fee (covers operational costs even if no success)
+    base_platform_fee: float = 0.0
+    platform_fee_frequency: str = "monthly"  # monthly, yearly
+    
+    # Primary outcome pricing
     percentage: float  # e.g., 5% of revenue uplift
+    
+    # Success attribution settings
+    attribution_window_days: int = 30  # How long to attribute outcomes
+    minimum_attribution_value: Optional[float] = None  # Minimum value to qualify for billing
+    requires_verification: bool = True  # Whether outcomes need verification
+    
+    # Risk adjustment and caps
+    success_rate_assumption: Optional[float] = None  # Expected success rate (e.g., 0.70 = 70%)
+    risk_premium_percentage: float = 40.0  # Risk premium (30-50%)
+    
+    # Performance caps and guarantees
+    monthly_cap_amount: Optional[float] = None  # Maximum billing per month
+    success_bonus_threshold: Optional[float] = None  # Value threshold for bonus
+    success_bonus_percentage: Optional[float] = None  # Additional percentage for exceeding threshold
+    
+    # Multi-tier outcome pricing
+    tier_1_threshold: Optional[float] = None  # First tier threshold
+    tier_1_percentage: Optional[float] = None  # Percentage for tier 1
+    tier_2_threshold: Optional[float] = None  # Second tier threshold
+    tier_2_percentage: Optional[float] = None  # Percentage for tier 2
+    tier_3_threshold: Optional[float] = None  # Third tier threshold
+    tier_3_percentage: Optional[float] = None  # Percentage for tier 3
+    
+    # Billing configuration
+    billing_frequency: str = "monthly"  # monthly, quarterly
+    currency: str = "USD"
+    
+    # Status and settings
+    is_active: bool = True
+    auto_bill_verified_outcomes: bool = False  # Auto-bill verified outcomes
 
 
 class HybridConfigSchema(BaseModel):
@@ -262,3 +345,80 @@ class CommitmentTierSchema(BaseModel):
     # Status
     is_active: bool = True
     is_popular: bool = False
+
+
+class OutcomeMetricSchema(BaseModel):
+    """Schema for outcome metrics tracking"""
+    id: Optional[int] = None
+    outcome_config_id: int
+    agent_id: int
+    
+    # Outcome details
+    outcome_value: float
+    outcome_currency: str = "USD"
+    
+    # Attribution and verification
+    attribution_start_date: datetime
+    attribution_end_date: datetime
+    verification_status: str = "pending"  # pending, verified, rejected
+    verification_notes: Optional[str] = None
+    verified_by: Optional[str] = None
+    verified_at: Optional[datetime] = None
+    
+    # Calculation details
+    calculated_fee: float
+    tier_applied: Optional[str] = None
+    bonus_applied: float = 0.0
+    
+    # Billing status
+    billing_status: str = "pending"  # pending, billed, disputed
+    billed_at: Optional[datetime] = None
+    billing_period: Optional[str] = None
+    
+    # Metadata
+    outcome_data: Optional[str] = None  # JSON metadata
+    
+    class Config:
+        from_attributes = True
+
+
+class OutcomeVerificationRuleSchema(BaseModel):
+    """Schema for outcome verification rules"""
+    id: Optional[int] = None
+    outcome_config_id: int
+    
+    # Rule identification
+    rule_name: str
+    rule_type: str  # api_integration, manual_review, threshold_based
+    
+    # Verification criteria
+    verification_method: str  # webhook, api_pull, manual, analytics_integration
+    api_endpoint: Optional[str] = None
+    verification_threshold: Optional[float] = None
+    
+    # Rule configuration
+    rule_config: Optional[str] = None  # JSON configuration
+    is_active: bool = True
+    
+    class Config:
+        from_attributes = True
+
+
+class OutcomeMetricCreate(BaseModel):
+    """Schema for creating outcome metrics"""
+    agent_id: int
+    outcome_value: float
+    outcome_currency: str = "USD"
+    attribution_start_date: datetime
+    attribution_end_date: datetime
+    outcome_data: Optional[Dict[str, Any]] = None
+
+
+class OutcomeMetricUpdate(BaseModel):
+    """Schema for updating outcome metrics"""
+    outcome_value: Optional[float] = None
+    verification_status: Optional[str] = None
+    verification_notes: Optional[str] = None
+    verified_by: Optional[str] = None
+    billing_status: Optional[str] = None
+    outcome_data: Optional[Dict[str, Any]] = None

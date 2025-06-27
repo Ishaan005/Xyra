@@ -955,10 +955,52 @@ This file implements organization management functions including:
 
 ### app/services/billing_model_service.py
 
-This file implements billing model management functions including:
-- Billing model CRUD operations
-- Validation of different billing configurations
-- Cost calculations based on different billing strategies
+**Legacy Service (Refactored)**: This file now serves as a thin compatibility layer for existing API endpoints, delegating all business logic to modularized components in the `billing_model/` directory. It maintains backward compatibility while enabling better code organization.
+
+**Key Functions**:
+- All CRUD functions now delegate to `app.services.billing_model.crud`
+- Maintains identical signatures for backward compatibility
+- Provides graceful error handling with optional return types
+
+### app/services/billing_model/ (Modularized Components)
+
+The billing model service has been modularized into focused submodules:
+
+**`crud.py`** - Core CRUD Operations:
+- `get_billing_model()` - Retrieve single billing model with eager loading
+- `get_billing_models_by_organization()` - List billing models with pagination
+- `create_billing_model()` - Create new billing models with validation
+- `update_billing_model()` - Update existing billing models
+- `delete_billing_model()` - Delete billing models with safety checks
+
+**`validation.py`** - Input Validation & Business Rules:
+- `validate_billing_config_from_schema()` - Schema-based validation
+- Model-specific validation functions for each billing type
+- Comprehensive field validation and business rule enforcement
+
+**`calculation.py`** - Billing Calculations:
+- `calculate_cost()` - Main cost calculation logic
+- Enhanced outcome-based pricing with multi-tier support
+- Risk adjustment, performance bonuses, and volume discounts
+- Support for various billing model types
+
+**`config.py`** - Configuration Management:
+- Configuration creation helpers for each billing model type
+- Configuration cleanup utilities
+- Modular approach to managing different config types
+
+**`outcome_tracking.py`** - Outcome Tracking & Verification:
+- `record_outcome()` - Record outcome achievements
+- `verify_outcome()` - Verify outcome authenticity
+- Advanced outcome-based billing calculations
+- Outcome metrics and verification rule management
+
+**Benefits of Modularization**:
+- Improved maintainability with clear separation of concerns
+- Better testability with focused, independent modules
+- Enhanced reusability of components across the application
+- Easier to extend with new billing model types
+- Reduced complexity in individual modules
 
 ### app/services/agent_service.py
 
