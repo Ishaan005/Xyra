@@ -7,8 +7,9 @@ from alembic import context
 
 import sys
 sys.path.append('.')
-from app.db.session import Base  # or from app.models.base import Base
-from app.models import invoice, agent, billing_model, organization, user
+from app.db.session import Base  
+from app import models  # This will import all models
+from app.core.config import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -43,7 +44,10 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    if not settings.SQLALCHEMY_DATABASE_URI:
+        raise ValueError("SQLALCHEMY_DATABASE_URI is not configured")
+        
+    url = settings.SQLALCHEMY_DATABASE_URI
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -62,11 +66,12 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    from sqlalchemy import create_engine
+    
+    if not settings.SQLALCHEMY_DATABASE_URI:
+        raise ValueError("SQLALCHEMY_DATABASE_URI is not configured")
+        
+    connectable = create_engine(settings.SQLALCHEMY_DATABASE_URI)
 
     with connectable.connect() as connection:
         context.configure(

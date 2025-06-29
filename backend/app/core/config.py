@@ -7,7 +7,11 @@ from pydantic import AnyHttpUrl, field_validator, ValidationInfo
 from pydantic_settings import BaseSettings
 
 from dotenv import load_dotenv
-load_dotenv()
+import os
+# Load .env from the project root
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+env_path = os.path.join(project_root, '.env')
+load_dotenv(env_path)
 
 
 class Settings(BaseSettings):
@@ -37,7 +41,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: Optional[str] = os.getenv("POSTGRES_USER")
     POSTGRES_PASSWORD: Optional[str] = os.getenv("POSTGRES_PASSWORD")
     POSTGRES_DB: Optional[str] = os.getenv("POSTGRES_DB")
-    POSTGRES_OPTIONS: str = os.getenv("POSTGRES_OPTIONS", "?sslmode=require")
+    POSTGRES_OPTIONS: str = os.getenv("POSTGRES_OPTIONS", "")
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
@@ -51,7 +55,7 @@ class Settings(BaseSettings):
         password = values.get("POSTGRES_PASSWORD")
         host = values.get("POSTGRES_SERVER")
         db = values.get("POSTGRES_DB")
-        options = values.get("POSTGRES_OPTIONS", "?sslmode=require")
+        options = values.get("POSTGRES_OPTIONS", "")
         
         # Ensure all components are present
         if not all([user, password, host]):
