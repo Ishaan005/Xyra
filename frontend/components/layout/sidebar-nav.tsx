@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, CreditCard, Settings, LogOut, HelpCircle, Zap, User } from "lucide-react"
+import { BarChart3, CreditCard, Settings, LogOut, HelpCircle, Zap, User, Group, BrainCircuit } from "lucide-react"
 
 import {
   Sidebar,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Separator } from "@/components/ui/separator"
+import { OrganizationSelector } from "@/components/layout/organization-selector"
 
 export function SidebarNav() {
   const pathname = usePathname()
@@ -35,21 +36,36 @@ export function SidebarNav() {
       title: "Dashboard",
     },
     {
+      href: "/organisations",
+      icon: <Group className="h-5 w-5" />,
+      title: "Organisations",
+    },
+    {
+      href: "/users",
+      icon: <User className="h-5 w-5" />,
+      title: "Users",
+    },
+    {
       href: "/pricing",
       icon: <CreditCard className="h-5 w-5" />,
       title: "Pricing Models",
     },
     {
       href: "/agents",
-      icon: <Zap className="h-5 w-5" />,
+      icon: <BrainCircuit className="h-5 w-5" />,
       title: "Agents",
+    },
+    {
+      href: "/outcomes",
+      icon: <Zap className="h-5 w-5" />,
+      title: "Outcomes",
     },
     {
       href: "/settings",
       icon: <Settings className="h-5 w-5" />,
       title: "Settings",
     },
-        {
+    {
       href: "/integrations",
       icon: <Zap className="h-5 w-5" />,
       title: "Integrations",
@@ -76,6 +92,10 @@ export function SidebarNav() {
         </Nav>
       </SidebarContent>
       <Separator className="mx-2" />
+      <div className="mt-auto">
+        <OrganizationSelector />
+        <Separator className="mx-2" />
+      </div>
       <SidebarFooter>
         <div className="flex items-center justify-between bg-white">
           <DropdownMenu>

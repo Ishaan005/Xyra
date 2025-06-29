@@ -22,11 +22,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
+import { useOrganization } from "@/contexts/OrganizationContext"
 
 export default function DashboardPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  const orgId = 1 //TODO: obtain dynamically
+  const { currentOrgId } = useOrganization()
 
   useEffect(() => {
     if (status === "loading") return
@@ -76,7 +77,7 @@ export default function DashboardPage() {
 
   // Fetch analytics after authentication
   useEffect(() => {
-    if (status !== 'authenticated') return
+    if (status !== 'authenticated' || !currentOrgId) return
     const token = session.user.accessToken ?? ""
     setAuthToken(token)
     setLoading(true)
@@ -84,25 +85,25 @@ export default function DashboardPage() {
     const dateRanges = getDateRanges(period)
     
     Promise.all([
-      api.get(`/analytics/organization/${orgId}/summary`, {
+      api.get(`/analytics/organization/${currentOrgId}/summary`, {
         params: {
           start_date: dateRanges.current.start.toISOString(),
           end_date: dateRanges.current.end.toISOString()
         }
       }),
-      api.get(`/analytics/organization/${orgId}/summary`, {
+      api.get(`/analytics/organization/${currentOrgId}/summary`, {
         params: {
           start_date: dateRanges.previous.start.toISOString(),
           end_date: dateRanges.previous.end.toISOString()
         }
       }),
-      api.get(`/analytics/organization/${orgId}/top-agents?limit=5`, {
+      api.get(`/analytics/organization/${currentOrgId}/top-agents?limit=5`, {
         params: {
           start_date: dateRanges.current.start.toISOString(),
           end_date: dateRanges.current.end.toISOString()
         }
       }),
-      api.get(`/analytics/organization/${orgId}/top-agents?limit=5`, {
+      api.get(`/analytics/organization/${currentOrgId}/top-agents?limit=5`, {
         params: {
           start_date: dateRanges.previous.start.toISOString(),
           end_date: dateRanges.previous.end.toISOString()
@@ -117,7 +118,7 @@ export default function DashboardPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [status, session, period])
+  }, [status, session, period, currentOrgId])
 
   if (loading) {
     return (

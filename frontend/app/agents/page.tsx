@@ -25,6 +25,7 @@ import {
   ArrowUpDown,
   AlertCircle,
 } from "lucide-react"
+import { useOrganization } from "@/contexts/OrganizationContext"
 
 interface Agent {
   id: number
@@ -54,6 +55,7 @@ export default function AgentsPage() {
       router.push('/login')
     }
   })
+  const { currentOrgId } = useOrganization()
   const [agents, setAgents] = useState<Agent[]>([])
   const [agentStats, setAgentStats] = useState<Record<number, AgentStats>>({})
   const [loading, setLoading] = useState(true)
@@ -78,10 +80,12 @@ export default function AgentsPage() {
 
   // fetch list
   const fetchAgents = async () => {
+    if (!currentOrgId) return
+    
     setLoading(true)
     try {
       const res = await api.get<Agent[]>("/agents", {
-        params: { org_id: 1 },
+        params: { org_id: currentOrgId },
       })
       setAgents(res.data)
     } catch (e: any) {
@@ -92,15 +96,15 @@ export default function AgentsPage() {
   }
 
   useEffect(() => {
-    if (status !== 'authenticated') return
+    if (status !== 'authenticated' || !currentOrgId) return
     // authenticated: set token and fetch data
     const token = session.user.accessToken ?? ""
     setAuthToken(token)
     fetchAgents()
-    api.get<{ id: number; name: string }[]>('/billing-models', { params: { org_id: 1 } })
+    api.get<{ id: number; name: string }[]>('/billing-models', { params: { org_id: currentOrgId } })
       .then(res => setBillingModels(res.data))
       .catch(() => {})
-  }, [status, session, router])
+  }, [status, session, router, currentOrgId])
 
   // fetch stats for each agent when list changes
   useEffect(() => {
@@ -131,13 +135,13 @@ export default function AgentsPage() {
 
   // create new
   const handleCreate = async () => {
-    if (!newAgent.name) return
+    if (!newAgent.name || !currentOrgId) return
     try {
       await api.post("/agents", {
         name: newAgent.name,
         description: newAgent.description,
         billing_model_id: newAgent.billing_model_id ? Number(newAgent.billing_model_id) : undefined,
-        organization_id: 1,
+        organization_id: currentOrgId,
       })
       setNewAgent({ name: "", description: "", billing_model_id: "" })
       fetchAgents()

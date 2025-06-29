@@ -15,6 +15,7 @@ import {
   BarChart,
   Zap,
 } from "lucide-react"
+import { useOrganization } from "@/contexts/OrganizationContext"
 import PricingHeader from "@/app/pricing/components/PricingHeader"
 import PricingTabs from "@/app/pricing/components/PricingTabs"
 import PricingCreateForm from "@/app/pricing/components/PricingCreateForm"
@@ -23,7 +24,6 @@ import PricingModelsGrid from "@/app/pricing/components/PricingModelsGrid"
 import ActivityCostPreview from "@/app/pricing/components/ActivityCostPreview"
 import WorkflowModelDetail from "@/app/pricing/components/workflow-model-detail"
 import PricingLoadingSkeleton from "@/app/pricing/components/PricingLoadingSkeleton"
-import OutcomeBasedForm from "@/app/pricing/components/OutcomeBasedForm"
 
 export default function PricingPage() {
   const router = useRouter()
@@ -33,10 +33,10 @@ export default function PricingPage() {
       router.push('/login')
     }
   })
+  const { currentOrgId } = useOrganization()
   const [models, setModels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [orgId, setOrgId] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -119,23 +119,18 @@ export default function PricingPage() {
   const [editingModel, setEditingModel] = useState<any | null>(null)
 
   useEffect(() => {
-    if (status !== 'authenticated') return
+    if (status !== 'authenticated' || !currentOrgId) return
     const token = session.user.accessToken ?? ""
     setAuthToken(token)
-    // fetch organization and models
-    api.get('/auth/me')
-      .then(res => {
-        const oid = res.data.organization_id
-        setOrgId(oid)
-        return api.get(`/billing-models?org_id=${oid}`)
-      })
+    // fetch models for the current organization
+    api.get(`/billing-models?org_id=${currentOrgId}`)
       .then(res => setModels(res.data))
       .catch(err => setError(err.response?.data?.detail || err.message))
       .finally(() => setLoading(false))
-  }, [status, session])
+  }, [status, session, currentOrgId])
 
   const handleCreateModel = async () => {
-    if (!orgId || !newModel.name || !newModel.model_type) return
+    if (!currentOrgId || !newModel.name || !newModel.model_type) return
     
     // Build payload with dedicated fields instead of config object
     const payload: any = {
@@ -143,7 +138,7 @@ export default function PricingPage() {
       description: newModel.description,
       model_type: newModel.model_type,
       is_active: true,
-      organization_id: orgId,
+      organization_id: currentOrgId,
     }
 
     switch (newModel.model_type) {
@@ -362,12 +357,12 @@ export default function PricingPage() {
   }
 
   const handleDuplicate = async (model: any) => {
-    if (!orgId) return
+    if (!currentOrgId) return
     try {
       const payload = {
         ...model,
         name: `${model.name} (Copy)`,
-        organization_id: orgId,
+        organization_id: currentOrgId,
         id: undefined,
       }
       delete payload.id
@@ -384,7 +379,7 @@ export default function PricingPage() {
 
   // Delete billing model
   const handleDeleteModel = async (modelId: number) => {
-    if (!orgId) return
+    if (!currentOrgId) return
     if (!confirm("Are you sure you want to delete this pricing model?")) return
     try {
       await api.delete(`/billing-models/${modelId}`)
