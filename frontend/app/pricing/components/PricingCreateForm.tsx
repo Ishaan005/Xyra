@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import WorkflowBillingForm from "@/app/pricing/components/workflow-billing-form";
+import OutcomeBasedForm from "@/app/pricing/components/OutcomeBasedForm";
 
 /**
  * PricingCreateForm component
@@ -91,6 +92,12 @@ export default function PricingCreateForm({ show, newModel, setNewModel, onCance
                 onCommitmentTiersChange={(tiers) => setNewModel({ ...newModel, commitment_tiers: tiers })}
                 baseModel={newModel}
                 onBaseModelChange={setNewModel}
+              />
+            )}
+            {newModel.model_type === "outcome" && (
+              <OutcomeBasedForm
+                model={newModel}
+                setModel={setNewModel}
               />
             )}
             {/* ...add other model type forms here as needed... */}

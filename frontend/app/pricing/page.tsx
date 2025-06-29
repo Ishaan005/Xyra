@@ -23,6 +23,7 @@ import PricingModelsGrid from "@/app/pricing/components/PricingModelsGrid"
 import ActivityCostPreview from "@/app/pricing/components/ActivityCostPreview"
 import WorkflowModelDetail from "@/app/pricing/components/workflow-model-detail"
 import PricingLoadingSkeleton from "@/app/pricing/components/PricingLoadingSkeleton"
+import OutcomeBasedForm from "@/app/pricing/components/OutcomeBasedForm"
 
 export default function PricingPage() {
   const router = useRouter()
@@ -66,9 +67,39 @@ export default function PricingPage() {
     agent_volume_discount_threshold: "",
     agent_volume_discount_percentage: "",
     agent_tier: "professional",
-    // Outcome
+    // Enhanced Outcome-based Pricing
     outcome_type: "",
     percentage: "",
+    // Basic outcome fields
+    outcome_outcome_name: "",
+    outcome_outcome_type: "",
+    outcome_description: "",
+    outcome_percentage: "",
+    outcome_currency: "USD",
+    outcome_billing_frequency: "monthly",
+    // Base platform fee
+    outcome_base_platform_fee: "",
+    outcome_platform_fee_frequency: "monthly",
+    // Multi-tier pricing
+    outcome_tier_1_threshold: "",
+    outcome_tier_1_percentage: "",
+    outcome_tier_2_threshold: "",
+    outcome_tier_2_percentage: "",
+    outcome_tier_3_threshold: "",
+    outcome_tier_3_percentage: "",
+    // Risk and performance
+    outcome_risk_premium_percentage: "",
+    outcome_success_rate_assumption: "",
+    outcome_monthly_cap_amount: "",
+    outcome_minimum_attribution_value: "",
+    // Success bonus
+    outcome_success_bonus_threshold: "",
+    outcome_success_bonus_percentage: "",
+    // Attribution and verification
+    outcome_attribution_window_days: "",
+    outcome_requires_verification: false,
+    outcome_auto_bill_verified_outcomes: false,
+    outcome_is_active: true,
     // Hybrid
     hybrid_base_fee: "",
     include_agent: false,
@@ -146,8 +177,41 @@ export default function PricingPage() {
         payload.agent_tier = newModel.agent_tier
         break
       case "outcome":
-        payload.outcome_outcome_type = newModel.outcome_type
-        payload.outcome_percentage = Number.parseFloat(newModel.percentage) || 0
+        // Basic outcome fields
+        payload.outcome_outcome_name = newModel.outcome_outcome_name || ""
+        payload.outcome_outcome_type = newModel.outcome_outcome_type || newModel.outcome_type
+        payload.outcome_description = newModel.outcome_description || ""
+        payload.outcome_percentage = Number.parseFloat(newModel.outcome_percentage || newModel.percentage) || 0
+        payload.outcome_currency = newModel.outcome_currency || "USD"
+        payload.outcome_billing_frequency = newModel.outcome_billing_frequency || "monthly"
+        
+        // Base platform fee
+        payload.outcome_base_platform_fee = Number.parseFloat(newModel.outcome_base_platform_fee) || 0
+        payload.outcome_platform_fee_frequency = newModel.outcome_platform_fee_frequency || "monthly"
+        
+        // Multi-tier pricing
+        payload.outcome_tier_1_threshold = Number.parseFloat(newModel.outcome_tier_1_threshold) || null
+        payload.outcome_tier_1_percentage = Number.parseFloat(newModel.outcome_tier_1_percentage) || null
+        payload.outcome_tier_2_threshold = Number.parseFloat(newModel.outcome_tier_2_threshold) || null
+        payload.outcome_tier_2_percentage = Number.parseFloat(newModel.outcome_tier_2_percentage) || null
+        payload.outcome_tier_3_threshold = Number.parseFloat(newModel.outcome_tier_3_threshold) || null
+        payload.outcome_tier_3_percentage = Number.parseFloat(newModel.outcome_tier_3_percentage) || null
+        
+        // Risk and performance
+        payload.outcome_risk_premium_percentage = Number.parseFloat(newModel.outcome_risk_premium_percentage) || null
+        payload.outcome_success_rate_assumption = Number.parseFloat(newModel.outcome_success_rate_assumption) || null
+        payload.outcome_monthly_cap_amount = Number.parseFloat(newModel.outcome_monthly_cap_amount) || null
+        payload.outcome_minimum_attribution_value = Number.parseFloat(newModel.outcome_minimum_attribution_value) || null
+        
+        // Success bonus
+        payload.outcome_success_bonus_threshold = Number.parseFloat(newModel.outcome_success_bonus_threshold) || null
+        payload.outcome_success_bonus_percentage = Number.parseFloat(newModel.outcome_success_bonus_percentage) || null
+        
+        // Attribution and verification
+        payload.outcome_attribution_window_days = Number.parseInt(newModel.outcome_attribution_window_days) || null
+        payload.outcome_requires_verification = newModel.outcome_requires_verification || false
+        payload.outcome_auto_bill_verified_outcomes = newModel.outcome_auto_bill_verified_outcomes || false
+        payload.outcome_is_active = newModel.outcome_is_active !== false
         break
       case "hybrid":
         payload.hybrid_base_fee = Number.parseFloat(newModel.hybrid_base_fee) || 0
@@ -240,9 +304,39 @@ export default function PricingPage() {
         agent_volume_discount_threshold: "",
         agent_volume_discount_percentage: "",
         agent_tier: "professional",
-        // Outcome
+        // Enhanced Outcome-based Pricing
         outcome_type: "",
         percentage: "",
+        // Basic outcome fields
+        outcome_outcome_name: "",
+        outcome_outcome_type: "",
+        outcome_description: "",
+        outcome_percentage: "",
+        outcome_currency: "USD",
+        outcome_billing_frequency: "monthly",
+        // Base platform fee
+        outcome_base_platform_fee: "",
+        outcome_platform_fee_frequency: "monthly",
+        // Multi-tier pricing
+        outcome_tier_1_threshold: "",
+        outcome_tier_1_percentage: "",
+        outcome_tier_2_threshold: "",
+        outcome_tier_2_percentage: "",
+        outcome_tier_3_threshold: "",
+        outcome_tier_3_percentage: "",
+        // Risk and performance
+        outcome_risk_premium_percentage: "",
+        outcome_success_rate_assumption: "",
+        outcome_monthly_cap_amount: "",
+        outcome_minimum_attribution_value: "",
+        // Success bonus
+        outcome_success_bonus_threshold: "",
+        outcome_success_bonus_percentage: "",
+        // Attribution and verification
+        outcome_attribution_window_days: "",
+        outcome_requires_verification: false,
+        outcome_auto_bill_verified_outcomes: false,
+        outcome_is_active: true,
         // Hybrid
         hybrid_base_fee: "",
         include_agent: false,
