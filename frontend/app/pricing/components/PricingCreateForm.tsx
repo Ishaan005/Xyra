@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import WorkflowBillingForm from "@/app/pricing/components/workflow-billing-form";
 import OutcomeBasedForm from "@/app/pricing/components/OutcomeBasedForm";
+import AgentBasedForm from "@/app/pricing/components/AgentBasedForm";
+import ActivityBasedForm from "@/app/pricing/components/ActivityBasedForm";
 
 /**
  * PricingCreateForm component
@@ -100,7 +102,40 @@ export default function PricingCreateForm({ show, newModel, setNewModel, onCance
                 setModel={setNewModel}
               />
             )}
-            {/* ...add other model type forms here as needed... */}
+            {newModel.model_type === "agent" && (
+              <AgentBasedForm
+                model={newModel}
+                setModel={setNewModel}
+              />
+            )}
+            {newModel.model_type === "activity" && (
+              <ActivityBasedForm
+                model={newModel}
+                setModel={setNewModel}
+              />
+            )}
+            {newModel.model_type === "hybrid" && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Hybrid Configuration</h3>
+                <p className="text-sm text-muted-foreground">
+                  Hybrid billing models combine multiple billing types. Full configuration coming soon.
+                </p>
+                <div className="space-y-2">
+                  <label htmlFor="hybrid-base-fee" className="text-sm font-medium">
+                    Base Fee (USD)
+                  </label>
+                  <Input
+                    id="hybrid-base-fee"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="e.g., 100.00"
+                    value={newModel.hybrid_base_fee || ""}
+                    onChange={(e) => setNewModel({ ...newModel, hybrid_base_fee: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

@@ -242,7 +242,7 @@ export default function WorkflowBillingForm({
                 type="number"
                 step="0.01"
                 placeholder="3000.00"
-                value={baseModel.workflow_base_platform_fee}
+                value={baseModel.workflow_base_platform_fee !== undefined ? baseModel.workflow_base_platform_fee.toString() : ""}
                 onChange={(e) => onBaseModelChange({ ...baseModel, workflow_base_platform_fee: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">Monthly subscription fee for platform access</p>
@@ -252,7 +252,7 @@ export default function WorkflowBillingForm({
               <label className="text-sm font-medium">Platform Fee Frequency</label>
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={baseModel.workflow_platform_fee_frequency}
+                value={baseModel.workflow_platform_fee_frequency || "monthly"}
                 onChange={(e) => onBaseModelChange({ ...baseModel, workflow_platform_fee_frequency: e.target.value })}
               >
                 <option value="monthly">Monthly</option>
@@ -279,7 +279,7 @@ export default function WorkflowBillingForm({
                   <Input
                     type="number"
                     placeholder="50"
-                    value={baseModel.workflow_volume_discount_threshold}
+                    value={baseModel.workflow_volume_discount_threshold !== undefined ? baseModel.workflow_volume_discount_threshold.toString() : ""}
                     onChange={(e) => onBaseModelChange({ ...baseModel, workflow_volume_discount_threshold: e.target.value })}
                   />
                   <p className="text-xs text-muted-foreground">Total workflows/month to qualify</p>
@@ -291,7 +291,7 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.1"
                     placeholder="20.0"
-                    value={baseModel.workflow_volume_discount_percentage}
+                    value={baseModel.workflow_volume_discount_percentage !== undefined ? baseModel.workflow_volume_discount_percentage.toString() : ""}
                     onChange={(e) => onBaseModelChange({ ...baseModel, workflow_volume_discount_percentage: e.target.value })}
                   />
                   <p className="text-xs text-muted-foreground">Discount on total bill</p>
@@ -307,7 +307,7 @@ export default function WorkflowBillingForm({
                 type="number"
                 step="0.1"
                 placeholder="1.0"
-                value={baseModel.workflow_overage_multiplier}
+                value={baseModel.workflow_overage_multiplier !== undefined ? baseModel.workflow_overage_multiplier.toString() : ""}
                 onChange={(e) => onBaseModelChange({ ...baseModel, workflow_overage_multiplier: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">1.0 = normal price, 1.5 = 150% for overages</p>
@@ -317,7 +317,7 @@ export default function WorkflowBillingForm({
               <label className="text-sm font-medium">Currency</label>
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={baseModel.workflow_currency}
+                value={baseModel.workflow_currency || "USD"}
                 onChange={(e) => onBaseModelChange({ ...baseModel, workflow_currency: e.target.value })}
               >
                 <option value="USD">USD</option>

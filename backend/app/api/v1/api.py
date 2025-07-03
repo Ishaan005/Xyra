@@ -8,7 +8,8 @@ from app.api.v1.endpoints import (
     agents,
     analytics,
     invoices,
-    integration
+    integration,
+    outcomes
 )
 
 api_router = APIRouter()
@@ -22,3 +23,4 @@ api_router.include_router(agents.router, prefix="/agents", tags=["agents"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 api_router.include_router(invoices.router, prefix="/invoices", tags=["invoices"])
 api_router.include_router(integration.router, prefix="/integration", tags=["integration"])
+api_router.include_router(outcomes.router, tags=["outcomes"])

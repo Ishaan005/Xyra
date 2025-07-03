@@ -19,6 +19,7 @@ import { useOrganization } from "@/contexts/OrganizationContext"
 import PricingHeader from "@/app/pricing/components/PricingHeader"
 import PricingTabs from "@/app/pricing/components/PricingTabs"
 import PricingCreateForm from "@/app/pricing/components/PricingCreateForm"
+import ComprehensivePricingForm from "@/app/pricing/components/ComprehensivePricingForm"
 import PricingEmptyState from "@/app/pricing/components/PricingEmptyState"
 import PricingModelsGrid from "@/app/pricing/components/PricingModelsGrid"
 import ActivityCostPreview from "@/app/pricing/components/ActivityCostPreview"
@@ -356,6 +357,102 @@ export default function PricingPage() {
     }
   }
 
+  const handleComprehensiveFormSubmit = async (formData: any) => {
+    console.log('=== COMPREHENSIVE FORM SUBMIT DEBUG ===');
+    console.log('Received formData:', formData);
+    console.log('Form data keys:', Object.keys(formData));
+    console.log('Current org ID:', currentOrgId);
+    console.log('=== END SUBMIT DEBUG ===');
+    
+    if (!currentOrgId || !formData.name || !formData.model_type) {
+      console.error('Missing required fields:', { currentOrgId, name: formData.name, model_type: formData.model_type });
+      return;
+    }
+
+    // Build payload based on form data structure
+    const payload: any = {
+      name: formData.name,
+      description: formData.description,
+      model_type: formData.model_type,
+      is_active: true,
+      organization_id: currentOrgId,
+    }
+
+    // Map form data to backend payload format
+    switch (formData.model_type) {
+      case "agent":
+        payload.agent_base_agent_fee = parseFloat(formData.agent_base_agent_fee) || 0
+        payload.agent_billing_frequency = formData.agent_billing_frequency || "monthly"
+        payload.agent_setup_fee = parseFloat(formData.agent_setup_fee) || 0
+        payload.agent_volume_discount_enabled = formData.agent_volume_discount_enabled || false
+        if (formData.agent_volume_discount_enabled) {
+          payload.agent_volume_discount_threshold = parseInt(formData.agent_volume_discount_threshold) || null
+          payload.agent_volume_discount_percentage = parseFloat(formData.agent_volume_discount_percentage) || null
+        }
+        payload.agent_tier = formData.agent_tier || "professional"
+        break
+      case "activity":
+        payload.activity_price_per_unit = parseFloat(formData.activity_price_per_unit) || 0
+        payload.activity_activity_type = formData.activity_activity_type || "api_call"
+        payload.activity_unit_type = formData.activity_unit_type || "action"
+        payload.activity_base_agent_fee = parseFloat(formData.activity_base_agent_fee) || 0
+        payload.activity_volume_pricing_enabled = formData.activity_volume_pricing_enabled || false
+        if (formData.activity_volume_pricing_enabled) {
+          payload.activity_volume_tier_1_threshold = parseInt(formData.activity_volume_tier_1_threshold) || null
+          payload.activity_volume_tier_1_price = parseFloat(formData.activity_volume_tier_1_price) || null
+          payload.activity_volume_tier_2_threshold = parseInt(formData.activity_volume_tier_2_threshold) || null
+          payload.activity_volume_tier_2_price = parseFloat(formData.activity_volume_tier_2_price) || null
+          payload.activity_volume_tier_3_threshold = parseInt(formData.activity_volume_tier_3_threshold) || null
+          payload.activity_volume_tier_3_price = parseFloat(formData.activity_volume_tier_3_price) || null
+        }
+        payload.activity_minimum_charge = parseFloat(formData.activity_minimum_charge) || 0
+        payload.activity_billing_frequency = formData.activity_billing_frequency || "monthly"
+        payload.activity_is_active = true
+        break
+      case "outcome":
+        // Map outcome form data to payload
+        payload.outcome_outcome_name = formData.outcome_outcome_name || ""
+        payload.outcome_outcome_type = formData.outcome_outcome_type || ""
+        payload.outcome_description = formData.outcome_description || ""
+        payload.outcome_percentage = formData.outcome_percentage || 0
+        payload.outcome_currency = formData.outcome_currency || "USD"
+        payload.outcome_billing_frequency = formData.outcome_billing_frequency || "monthly"
+        payload.outcome_base_platform_fee = formData.outcome_base_platform_fee || 0
+        payload.outcome_platform_fee_frequency = formData.outcome_platform_fee_frequency || "monthly"
+        // Add other outcome fields as needed
+        break
+      case "workflow":
+        payload.workflow_base_platform_fee = parseFloat(formData.workflow_base_platform_fee) || 0
+        payload.workflow_platform_fee_frequency = formData.workflow_platform_fee_frequency || "monthly"
+        payload.workflow_default_billing_frequency = "monthly"
+        payload.workflow_volume_discount_enabled = formData.workflow_volume_discount_enabled || false
+        if (formData.workflow_volume_discount_enabled) {
+          payload.workflow_volume_discount_threshold = parseInt(formData.workflow_volume_discount_threshold) || null
+          payload.workflow_volume_discount_percentage = parseFloat(formData.workflow_volume_discount_percentage) || null
+        }
+        payload.workflow_overage_multiplier = parseFloat(formData.workflow_overage_multiplier) || 1.0
+        payload.workflow_currency = formData.workflow_currency || "USD"
+        payload.workflow_is_active = true
+        payload.workflow_types = formData.workflow_types || []
+        payload.commitment_tiers = formData.commitment_tiers || []
+        break
+      case "hybrid":
+        payload.hybrid_base_fee = formData.hybrid_base_fee || 0
+        break
+    }
+
+    try {
+      const res = await api.post("/billing-models", payload)
+      setModels((prev) => [...prev, res.data])
+      setShowCreateForm(false)
+      toast.success("Pricing model created successfully")
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message
+      setError(msg)
+      toast.error(msg)
+    }
+  }
+
   const handleDuplicate = async (model: any) => {
     if (!currentOrgId) return
     try {
@@ -464,12 +561,11 @@ export default function PricingPage() {
       </div>
 
       {/* Create Form */}
-      <PricingCreateForm
+      <ComprehensivePricingForm
         show={showCreateForm}
-        newModel={newModel}
-        setNewModel={setNewModel}
         onCancel={() => setShowCreateForm(false)}
-        onCreate={handleCreateModel}
+        onSubmit={handleComprehensiveFormSubmit}
+        isLoading={false}
       />
 
       {/* Cost Calculator Preview */}

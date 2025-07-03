@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { usePathname } from 'next/navigation'
 import api, { setAuthToken } from '@/utils/api'
 
 interface Organization {
@@ -34,10 +35,14 @@ interface OrganizationProviderProps {
 
 export function OrganizationProvider({ children }: OrganizationProviderProps) {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
   const [currentOrgId, setCurrentOrgIdState] = useState<number | null>(null)
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Check if we're on a page that needs organization data
+  const shouldFetchOrganizations = !['/login', '/signup', '/'].includes(pathname)
 
   // Load saved organization from localStorage
   useEffect(() => {
@@ -59,7 +64,8 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
 
   // Fetch organizations
   const refreshOrganizations = async () => {
-    if (status !== 'authenticated' || !session?.user?.accessToken) {
+    if (status !== 'authenticated' || !session?.user?.accessToken || !shouldFetchOrganizations) {
+      setLoading(false)
       return
     }
 
@@ -67,7 +73,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     setError(null)
     try {
       setAuthToken(session.user.accessToken)
-      const response = await api.get<Organization[]>('/organizations')
+      const response = await api.get<Organization[]>('/organizations/')
       setOrganizations(response.data)
       
       // If no current org is set, default to first org
@@ -81,10 +87,14 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     }
   }
 
-  // Fetch organizations when authenticated
+  // Fetch organizations when authenticated and on appropriate pages
   useEffect(() => {
-    refreshOrganizations()
-  }, [status, session])
+    if (shouldFetchOrganizations) {
+      refreshOrganizations()
+    } else {
+      setLoading(false)
+    }
+  }, [status, session, shouldFetchOrganizations])
 
   const value = {
     currentOrgId,

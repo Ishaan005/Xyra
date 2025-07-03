@@ -21,12 +21,25 @@ export default function LoginPage() {
     setError(null)
     setIsLoading(true)
 
-    // use NextAuth signIn with redirect to set cookie
-    await signIn('credentials', {
-      username: email,
-      password,
-      callbackUrl: '/dashboard'
-    })
+    try {
+      // use NextAuth signIn with redirect to set cookie
+      const result = await signIn('credentials', {
+        username: email,
+        password,
+        redirect: false // Don't redirect automatically so we can handle errors
+      })
+
+      if (result?.error) {
+        setError('Invalid email or password')
+      } else if (result?.ok) {
+        // Successful login, redirect to dashboard
+        window.location.href = '/dashboard'
+      }
+    } catch (error) {
+      setError('An unexpected error occurred')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
