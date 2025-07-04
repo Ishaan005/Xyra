@@ -391,3 +391,211 @@ def get_agent_stats(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.get("/{agent_id}/billing-config", response_model=dict)
+def get_agent_billing_config(
+    agent_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: schemas.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get billing configuration for an agent.
+    
+    Users can only access billing config for agents in their own organization unless they are superusers.
+    """
+    # Get agent to check permissions
+    agent = agent_service.get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+    
+    # Check permissions
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != agent.organization_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions to access billing config for this agent",
+        )
+    
+    # Get agent billing config
+    config = agent_service.get_agent_billing_config(db, agent_id=agent_id)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No billing configuration found for this agent",
+        )
+    
+    return config
+
+
+@router.get("/{agent_id}/billing-summary", response_model=dict)
+def get_agent_billing_summary(
+    agent_id: int,
+    start_date: Optional[str] = Query(None, description="Start date filter (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date filter (ISO format)"),
+    db: Session = Depends(deps.get_db),
+    current_user: schemas.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get detailed billing summary for an agent.
+    
+    Users can only access billing summary for agents in their own organization unless they are superusers.
+    """
+    # Get agent to check permissions
+    agent = agent_service.get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+    
+    # Check permissions
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != agent.organization_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions to access billing summary for this agent",
+        )
+    
+    # Parse dates if provided
+    from datetime import datetime
+    parsed_start_date = None
+    parsed_end_date = None
+    
+    if start_date:
+        try:
+            parsed_start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid start_date format. Use ISO format (e.g., 2023-01-01T00:00:00Z)",
+            )
+    
+    if end_date:
+        try:
+            parsed_end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid end_date format. Use ISO format (e.g., 2023-01-01T00:00:00Z)",
+            )
+    
+    # Get agent billing summary
+    try:
+        summary = agent_service.get_agent_billing_summary(
+            db, agent_id=agent_id, start_date=parsed_start_date, end_date=parsed_end_date
+        )
+        return summary
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/{agent_id}/workflows/bulk", response_model=List[schemas.AgentCost])
+def record_bulk_workflows(
+    agent_id: int,
+    workflow_data: dict,
+    db: Session = Depends(deps.get_db),
+    current_user: schemas.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Record multiple workflow executions for an agent.
+    
+    Expected request body:
+    {
+        "workflow_executions": {
+            "lead_research": 5,
+            "email_personalization": 10
+        },
+        "commitment_exceeded": false
+    }
+    """
+    # Get agent to check permissions
+    agent = agent_service.get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+    
+    # Check permissions
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != agent.organization_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions to record workflows for this agent",
+        )
+    
+    # Validate request data
+    workflow_executions = workflow_data.get("workflow_executions", {})
+    commitment_exceeded = workflow_data.get("commitment_exceeded", False)
+    
+    if not workflow_executions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="workflow_executions must be provided and non-empty",
+        )
+    
+    # Record bulk workflows
+    try:
+        cost_entries = agent_service.record_bulk_workflows(
+            db, agent_id=agent_id, workflow_executions=workflow_executions, commitment_exceeded=commitment_exceeded
+        )
+        return cost_entries
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/{agent_id}/workflows/validate", response_model=dict)
+def validate_workflow_billing_data(
+    agent_id: int,
+    workflow_data: dict,
+    db: Session = Depends(deps.get_db),
+    current_user: schemas.User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Validate workflow execution data against agent's billing model.
+    
+    Expected request body:
+    {
+        "workflow_executions": {
+            "lead_research": 5,
+            "email_personalization": 10
+        }
+    }
+    """
+    # Get agent to check permissions
+    agent = agent_service.get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+    
+    # Check permissions
+    if not current_user.is_superuser and (not current_user.organization_id or current_user.organization_id != agent.organization_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions to validate workflows for this agent",
+        )
+    
+    # Validate request data
+    workflow_executions = workflow_data.get("workflow_executions", {})
+    
+    if not workflow_executions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="workflow_executions must be provided and non-empty",
+        )
+    
+    # Validate workflow billing data
+    validation_result = agent_service.validate_workflow_billing_data(
+        db, agent_id=agent_id, workflow_executions=workflow_executions
+    )
+    
+    return validation_result

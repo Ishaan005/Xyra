@@ -76,7 +76,7 @@ class XyraClient:
         
         results = []
         for cfg in configs:
-            activity_type = cfg.get("action_type")
+            activity_type = cfg.get("activity_type")  # Updated from action_type to activity_type
             payload = {
                 'agent_id': self.agent_id,
                 'activity_type': activity_type,
@@ -142,3 +142,47 @@ class XyraClient:
             }
             results.append(await self._post(f"/api/v1/agents/{self.agent_id}/outcomes", payload))
         return results[0] if len(results) == 1 else results
+
+    async def record_workflow(self, workflow_type: str, metadata: Optional[Dict[str, Any]] = None) -> Any:
+        """
+        Record workflow execution for the agent automatically based on billing model config.
+        """
+        # Fetch agent and billing model
+        agent = await self._get(f"/api/v1/agents/{self.agent_id}")
+        bm_id = agent.get("billing_model_id")
+        if not bm_id:
+            raise ValueError("Agent has no billing model assigned")
+        
+        bm = await self._get(f"/api/v1/billing-models/{bm_id}")
+        model_type = bm.get("model_type")
+        
+        if model_type != "workflow":
+            raise ValueError(f"Agent billing model type '{model_type}' does not support workflow recording")
+        
+        workflow_types = bm.get("workflow_types") or []
+        if not workflow_types:
+            raise ValueError("No workflow types configured for this billing model")
+        
+        # Find matching workflow type
+        matching_workflow = None
+        for wt in workflow_types:
+            if wt.get("workflow_type") == workflow_type:
+                matching_workflow = wt
+                break
+        
+        if not matching_workflow:
+            raise ValueError(f"Workflow type '{workflow_type}' not found in billing model configuration")
+        
+        # Record workflow cost directly via agent service
+        payload = {
+            'agent_id': self.agent_id,
+            'cost_type': 'workflow',
+            'amount': matching_workflow.get('price_per_workflow', 0),
+            'currency': bm.get('workflow_config', {}).get('currency', 'USD'),
+            'details': {
+                'workflow_type': workflow_type,
+                'workflow_name': matching_workflow.get('workflow_name'),
+                'metadata': metadata or {}
+            }
+        }
+        return await self._post(f"/api/v1/agents/{self.agent_id}/costs", payload)

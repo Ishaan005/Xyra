@@ -1,0 +1,892 @@
+from typing import List, Optional, Dict, Any
+import logging
+from datetime import datetime, timezone
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from app.models.agent import Agent, AgentActivity as AgentActivityModel, AgentCost as AgentCostModel, AgentOutcome as AgentOutcomeModel
+from app.models.organization import Organization
+from app.schemas.agent import (
+    AgentCreate, AgentUpdate, 
+    AgentActivityCreate, AgentCostCreate, AgentOutcomeCreate
+)
+from app.services.billing_model.calculation import calculate_cost
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+def get_agent(db: Session, agent_id: int) -> Optional[Agent]:
+    """
+    Get agent by ID
+    """
+    return db.query(Agent).filter(Agent.id == agent_id).first()
+
+
+def get_agent_by_external_id(db: Session, external_id: str) -> Optional[Agent]:
+    """
+    Get agent by external ID
+    """
+    return db.query(Agent).filter(Agent.external_id == external_id).first()
+
+
+def get_agents_by_organization(
+    db: Session, org_id: int, skip: int = 0, limit: int = 100, active_only: bool = False
+) -> List[Agent]:
+    """
+    Get all agents for an organization with pagination
+    """
+    query = db.query(Agent).filter(Agent.organization_id == org_id)
+    
+    if active_only:
+        query = query.filter(Agent.is_active == True)
+    
+    return query.offset(skip).limit(limit).all()
+
+
+def create_agent(db: Session, agent_in: AgentCreate) -> Agent:
+    """
+    Create a new agent for an organization
+    """
+    # Check if organization exists
+    organization = db.query(Organization).filter(
+        Organization.id == agent_in.organization_id
+    ).first()
+    
+    if not organization:
+        raise ValueError(f"Organization with ID {agent_in.organization_id} not found")
+    
+    # Create agent
+    agent = Agent(
+        name=agent_in.name,
+        description=agent_in.description,
+        organization_id=agent_in.organization_id,
+        billing_model_id=agent_in.billing_model_id,
+        config=agent_in.config,
+        is_active=agent_in.is_active,
+        external_id=agent_in.external_id,
+        last_active=datetime.now(timezone.utc),
+    )
+    
+    # Add agent to database
+    db.add(agent)
+    db.commit()
+    db.refresh(agent)
+    
+    logger.info(f"Created new agent: {agent.name} for organization {organization.name}")
+    return agent
+
+
+def update_agent(db: Session, agent_id: int, agent_in: AgentUpdate) -> Optional[Agent]:
+    """
+    Update an agent
+    """
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent:
+        logger.warning(f"Agent update failed: Agent not found with ID {agent_id}")
+        return None
+    
+    # Update agent properties - Updated to use model_dump instead of dict for Pydantic v2
+    update_data = agent_in.model_dump(exclude_unset=True)
+    
+    # Update agent attributes
+    for field, value in update_data.items():
+        if hasattr(agent, field):
+            setattr(agent, field, value)
+    
+    # Update last active timestamp if the agent is active
+    if agent.is_active is True:
+        setattr(agent, 'last_active', datetime.now(timezone.utc))
+    
+    # Commit changes to database
+    db.commit()
+    db.refresh(agent)
+    
+    logger.info(f"Updated agent: {agent.name}")
+    return agent
+
+
+def delete_agent(db: Session, agent_id: int) -> Optional[Agent]:
+    """
+    Delete an agent
+    """
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent:
+        logger.warning(f"Agent deletion failed: Agent not found with ID {agent_id}")
+        return None
+
+    # Manually delete related records to avoid FK constraint violations
+    from app.models.agent import AgentActivity, AgentCost, AgentOutcome
+    db.query(AgentActivity).filter(AgentActivity.agent_id == agent_id).delete(synchronize_session=False)
+    db.query(AgentCost).filter(AgentCost.agent_id == agent_id).delete(synchronize_session=False)
+    db.query(AgentOutcome).filter(AgentOutcome.agent_id == agent_id).delete(synchronize_session=False)
+    # Delete agent
+    db.delete(agent)
+    db.commit()
+    logger.info(f"Deleted agent and related records: {agent.name}")
+    return agent
+
+
+def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> AgentActivityModel:
+    """
+    Record an activity for an agent
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=activity_in.agent_id)
+    if not agent:
+        raise ValueError(f"Agent with ID {activity_in.agent_id} not found")
+    
+    # Create activity
+    activity = AgentActivityModel(
+        agent_id=activity_in.agent_id,
+        activity_type=activity_in.activity_type,
+        timestamp=datetime.now(timezone.utc),
+        activity_metadata=activity_in.activity_metadata,
+    )
+    
+    # Add activity to database
+    db.add(activity)
+    db.commit()
+    db.refresh(activity)
+    # Update agent's last active timestamp
+    setattr(agent, 'last_active', datetime.now(timezone.utc))
+    db.commit()
+
+    logger.info(f"Recorded activity {activity.activity_type} for agent: {agent.name}")
+    # Auto-record cost for activity based on billing model
+    bm = agent.billing_model
+    if bm and bm.model_type in ("activity", "hybrid"):
+        # For activity-based billing, use activity_type from the config
+        if bm.model_type == "activity":
+            # Find matching activity config based on activity_type
+            activity_configs = bm.activity_config or []
+            matching_config = None
+            for cfg in activity_configs:
+                if cfg.activity_type == activity.activity_type:
+                    matching_config = cfg
+                    break
+            
+            if matching_config:
+                # Use specific activity config for calculation
+                usage_data = {"units": 1, "activity_type": activity.activity_type}
+                cost_amt = calculate_cost(bm, usage_data)
+                
+                # Create cost entry with enhanced details
+                cost_entry = AgentCostModel(
+                    agent_id=agent.id,
+                    cost_type="activity",
+                    amount=cost_amt,
+                    currency="USD",
+                    timestamp=datetime.now(timezone.utc),
+                    details={
+                        "activity_id": activity.id, 
+                        "activity_type": activity.activity_type,
+                        "unit_type": matching_config.unit_type,
+                        "price_per_unit": matching_config.price_per_unit,
+                        "volume_pricing_enabled": matching_config.volume_pricing_enabled,
+                        "billing_frequency": matching_config.billing_frequency
+                    }
+                )
+                db.add(cost_entry)
+                db.commit()
+                logger.info(f"Auto-recorded activity cost {cost_amt} USD for agent: {agent.name}")
+            else:
+                logger.warning(f"No matching activity config found for activity type: {activity.activity_type}")
+        else:
+            # For hybrid models, use activities dictionary
+            usage_data = {"activities": {activity.activity_type: 1}}
+            cost_amt = calculate_cost(bm, usage_data)
+            
+            cost_entry = AgentCostModel(
+                agent_id=agent.id,
+                cost_type="activity",
+                amount=cost_amt,
+                currency="USD",
+                timestamp=datetime.now(timezone.utc),
+                details={"activity_id": activity.id, "activity_type": activity.activity_type}
+            )
+            db.add(cost_entry)
+            db.commit()
+            logger.info(f"Auto-recorded activity cost {cost_amt} USD for agent: {agent.name}")
+    return activity
+
+
+def record_agent_cost(db: Session, cost_in: AgentCostCreate) -> AgentCostModel:
+    """
+    Record a cost for an agent
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=cost_in.agent_id)
+    if not agent:
+        raise ValueError(f"Agent with ID {cost_in.agent_id} not found")
+    
+    # Create cost, calculating via billing model config if available
+    bm = agent.billing_model
+    amount = cost_in.amount  # Default to provided amount
+    
+    if bm and cost_in.details:
+        # Calculate based on billing model config if possible
+        try:
+            # For activity-based costs, use activity type information
+            if cost_in.cost_type == "activity" and "activity_type" in cost_in.details:
+                activity_type = cost_in.details["activity_type"]
+                units = cost_in.details.get("units", 1)
+                usage_data = {"units": units, "activity_type": activity_type}
+                computed = calculate_cost(bm, usage_data)
+                amount = computed
+            # For outcome-based costs, use outcome value
+            elif cost_in.cost_type == "outcome" and "outcome_value" in cost_in.details:
+                outcome_value = cost_in.details["outcome_value"]
+                outcome_type = cost_in.details.get("outcome_type")
+                usage_data = {"outcome_value": outcome_value}
+                if outcome_type:
+                    usage_data["outcome_type"] = outcome_type
+                computed = calculate_cost(bm, usage_data)
+                amount = computed
+            # For workflow-based costs, use workflow type information
+            elif cost_in.cost_type == "workflow" and "workflow_type" in cost_in.details:
+                workflow_type = cost_in.details["workflow_type"]
+                workflow_count = cost_in.details.get("workflow_count", 1)
+                usage_data = {"workflows": {workflow_type: workflow_count}}
+                computed = calculate_cost(bm, usage_data)
+                amount = computed
+            # For agent-based costs, use agent count
+            elif cost_in.cost_type == "agent" and bm.model_type == "agent":
+                agents = cost_in.details.get("agents", 1)
+                include_setup = cost_in.details.get("include_setup_fee", False)
+                usage_data = {"agents": agents, "include_setup_fee": include_setup}
+                computed = calculate_cost(bm, usage_data)
+                amount = computed
+            else:
+                # Generic calculation with provided details
+                computed = calculate_cost(bm, cost_in.details)
+                amount = computed
+        except Exception as e:
+            logger.warning(f"Failed to calculate cost via billing model: {e}")
+            # Fall back to provided amount
+            amount = cost_in.amount
+    
+    cost = AgentCostModel(
+        agent_id=cost_in.agent_id,
+        cost_type=cost_in.cost_type,
+        amount=amount,
+        currency=cost_in.currency,
+        timestamp=datetime.now(timezone.utc),
+        details=cost_in.details,
+    )
+    
+    # Add cost to database
+    db.add(cost)
+    db.commit()
+    db.refresh(cost)
+    
+    logger.info(f"Recorded cost {cost.amount} {cost.currency} for agent: {agent.name}")
+    return cost
+
+
+def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOutcomeModel:
+    """
+    Record an outcome for an agent
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=outcome_in.agent_id)
+    if not agent:
+        raise ValueError(f"Agent with ID {outcome_in.agent_id} not found")
+    
+    # Create outcome
+    outcome = AgentOutcomeModel(
+        agent_id=outcome_in.agent_id,
+        outcome_type=outcome_in.outcome_type,
+        value=outcome_in.value,
+        currency=outcome_in.currency,
+        timestamp=datetime.now(timezone.utc),
+        details=outcome_in.details,
+        verified=outcome_in.verified,
+    )
+    
+    # Add outcome to database
+    db.add(outcome)
+    db.commit()
+    db.refresh(outcome)
+
+    logger.info(f"Recorded outcome {outcome.value} {outcome.currency} for agent: {agent.name}")
+    # Auto-record cost for outcome based on billing model
+    bm = agent.billing_model
+    if bm and bm.model_type in ("outcome", "hybrid"):
+        # For outcome-based billing, use outcome_type from the config
+        if bm.model_type == "outcome":
+            # Find matching outcome config based on outcome_type
+            outcome_configs = bm.outcome_config or []
+            matching_config = None
+            for cfg in outcome_configs:
+                if cfg.outcome_type == outcome.outcome_type:
+                    matching_config = cfg
+                    break
+            
+            if matching_config:
+                # Use specific outcome config for calculation
+                usage_data = {"outcome_value": outcome.value, "outcome_type": outcome.outcome_type}
+                cost_amt = calculate_cost(bm, usage_data)
+                
+                # Create cost entry with enhanced details
+                cost_entry = AgentCostModel(
+                    agent_id=agent.id,
+                    cost_type="outcome",
+                    amount=cost_amt,
+                    currency=outcome.currency,
+                    timestamp=datetime.now(timezone.utc),
+                    details={
+                        "outcome_id": outcome.id, 
+                        "outcome_type": outcome.outcome_type,
+                        "outcome_name": matching_config.outcome_name,
+                        "base_platform_fee": matching_config.base_platform_fee,
+                        "percentage": matching_config.percentage,
+                        "attribution_window_days": matching_config.attribution_window_days,
+                        "requires_verification": matching_config.requires_verification,
+                        "verified": outcome.verified,
+                        "risk_premium_percentage": matching_config.risk_premium_percentage
+                    }
+                )
+                db.add(cost_entry)
+                db.commit()
+                logger.info(f"Auto-recorded outcome cost {cost_amt} {outcome.currency} for agent: {agent.name}")
+            else:
+                logger.warning(f"No matching outcome config found for outcome type: {outcome.outcome_type}")
+        else:
+            # For hybrid models, use outcome_value
+            usage_data = {"outcome_value": outcome.value}
+            cost_amt = calculate_cost(bm, usage_data)
+            
+            cost_entry = AgentCostModel(
+                agent_id=agent.id,
+                cost_type="outcome",
+                amount=cost_amt,
+                currency=outcome.currency,
+                timestamp=datetime.now(timezone.utc),
+                details={"outcome_id": outcome.id, "outcome_type": outcome.outcome_type}
+            )
+            db.add(cost_entry)
+            db.commit()
+            logger.info(f"Auto-recorded outcome cost {cost_amt} {outcome.currency} for agent: {agent.name}")
+    return outcome
+
+
+def record_agent_workflow(db: Session, agent_id: int, workflow_type: str, workflow_metadata: Optional[Dict[str, Any]] = None) -> AgentCostModel:
+    """
+    Record a workflow execution for an agent and auto-calculate cost
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise ValueError(f"Agent with ID {agent_id} not found")
+    
+    # Get billing model
+    bm = agent.billing_model
+    if not bm or bm.model_type != "workflow":
+        raise ValueError(f"Agent {agent_id} does not have a workflow billing model")
+    
+    # Find matching workflow type config
+    workflow_configs = bm.workflow_types or []
+    matching_config = None
+    for cfg in workflow_configs:
+        if cfg.workflow_type == workflow_type:
+            matching_config = cfg
+            break
+    
+    if not matching_config:
+        raise ValueError(f"No workflow configuration found for type: {workflow_type}")
+    
+    # Calculate cost based on workflow config
+    usage_data = {"workflows": {workflow_type: 1}}
+    cost_amt = calculate_cost(bm, usage_data)
+    
+    # Create cost entry for workflow
+    cost_entry = AgentCostModel(
+        agent_id=agent_id,
+        cost_type="workflow",
+        amount=cost_amt,
+        currency=bm.workflow_config.currency if bm.workflow_config else "USD",
+        timestamp=datetime.now(timezone.utc),
+        details={
+            "workflow_type": workflow_type,
+            "workflow_name": matching_config.workflow_name,
+            "complexity_level": matching_config.complexity_level,
+            "estimated_duration_minutes": matching_config.estimated_duration_minutes,
+            "business_value_category": matching_config.business_value_category,
+            "metadata": workflow_metadata or {}
+        }
+    )
+    
+    db.add(cost_entry)
+    db.commit()
+    db.refresh(cost_entry)
+    
+    logger.info(f"Recorded workflow execution {workflow_type} cost {cost_amt} for agent: {agent.name}")
+    return cost_entry
+
+
+def record_bulk_workflows(db: Session, agent_id: int, workflow_executions: Dict[str, int], commitment_exceeded: bool = False) -> List[AgentCostModel]:
+    """
+    Record multiple workflow executions at once for an agent
+    
+    Args:
+        agent_id: ID of the agent
+        workflow_executions: Dictionary mapping workflow types to execution counts
+        commitment_exceeded: Whether these executions exceed the commitment tier
+    
+    Returns:
+        List of created cost entries
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise ValueError(f"Agent with ID {agent_id} not found")
+    
+    # Get billing model
+    bm = agent.billing_model
+    if not bm or bm.model_type != "workflow":
+        raise ValueError(f"Agent {agent_id} does not have a workflow billing model")
+    
+    # Calculate cost for all workflows
+    usage_data = {
+        "workflows": workflow_executions,
+        "commitment_exceeded": commitment_exceeded
+    }
+    total_cost = calculate_cost(bm, usage_data)
+    
+    # Create individual cost entries for each workflow type
+    cost_entries = []
+    total_workflows = sum(workflow_executions.values())
+    
+    for workflow_type, count in workflow_executions.items():
+        if count <= 0:
+            continue
+            
+        # Find matching workflow config
+        matching_config = None
+        for cfg in bm.workflow_types:
+            if cfg.workflow_type == workflow_type:
+                matching_config = cfg
+                break
+        
+        if not matching_config:
+            logger.warning(f"No workflow configuration found for type: {workflow_type}")
+            continue
+        
+        # Calculate proportional cost for this workflow type
+        proportional_cost = (count / total_workflows) * total_cost if total_workflows > 0 else 0
+        
+        cost_entry = AgentCostModel(
+            agent_id=agent_id,
+            cost_type="workflow",
+            amount=proportional_cost,
+            currency=bm.workflow_config.currency if bm.workflow_config else "USD",
+            timestamp=datetime.now(timezone.utc),
+            details={
+                "workflow_type": workflow_type,
+                "workflow_name": matching_config.workflow_name,
+                "workflow_count": count,
+                "total_workflows_in_batch": total_workflows,
+                "commitment_exceeded": commitment_exceeded,
+                "complexity_level": matching_config.complexity_level,
+                "business_value_category": matching_config.business_value_category,
+                "batch_total_cost": total_cost
+            }
+        )
+        
+        cost_entries.append(cost_entry)
+        db.add(cost_entry)
+    
+    db.commit()
+    logger.info(f"Recorded {len(cost_entries)} workflow cost entries totaling {total_cost} for agent: {agent.name}")
+    
+    return cost_entries
+
+
+def get_agent_billing_config(db: Session, agent_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Get the billing configuration for an agent
+    """
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent or not agent.billing_model:
+        return None
+    
+    bm = agent.billing_model
+    config = {
+        "model_type": bm.model_type,
+        "model_id": bm.id,
+        "model_name": bm.name,
+        "is_active": bm.is_active
+    }
+    
+    # Add type-specific config
+    if bm.model_type == "agent" and bm.agent_config:
+        config["agent_config"] = {
+            "base_agent_fee": bm.agent_config.base_agent_fee,
+            "billing_frequency": bm.agent_config.billing_frequency,
+            "agent_tier": bm.agent_config.agent_tier
+        }
+    elif bm.model_type == "activity" and bm.activity_config:
+        config["activity_configs"] = [
+            {
+                "activity_type": cfg.activity_type,
+                "price_per_unit": cfg.price_per_unit,
+                "unit_type": cfg.unit_type,
+                "is_active": cfg.is_active
+            } for cfg in bm.activity_config
+        ]
+    elif bm.model_type == "outcome" and bm.outcome_config:
+        config["outcome_configs"] = [
+            {
+                "outcome_type": cfg.outcome_type,
+                "outcome_name": cfg.outcome_name,
+                "percentage": cfg.percentage,
+                "requires_verification": cfg.requires_verification,
+                "is_active": cfg.is_active
+            } for cfg in bm.outcome_config
+        ]
+    elif bm.model_type == "workflow" and bm.workflow_types:
+        config["workflow_config"] = {
+            "base_platform_fee": bm.workflow_config.base_platform_fee,
+            "platform_fee_frequency": bm.workflow_config.platform_fee_frequency,
+            "default_billing_frequency": bm.workflow_config.default_billing_frequency,
+            "currency": bm.workflow_config.currency,
+            "volume_discount_enabled": bm.workflow_config.volume_discount_enabled,
+            "volume_discount_threshold": bm.workflow_config.volume_discount_threshold,
+            "volume_discount_percentage": bm.workflow_config.volume_discount_percentage,
+            "overage_multiplier": bm.workflow_config.overage_multiplier,
+            "is_active": bm.workflow_config.is_active
+        }
+        config["workflow_types"] = [
+            {
+                "workflow_type": wt.workflow_type,
+                "workflow_name": wt.workflow_name,
+                "description": wt.description,
+                "price_per_workflow": wt.price_per_workflow,
+                "complexity_level": wt.complexity_level,
+                "estimated_compute_cost": wt.estimated_compute_cost,
+                "estimated_duration_minutes": wt.estimated_duration_minutes,
+                "expected_roi_multiplier": wt.expected_roi_multiplier,
+                "business_value_category": wt.business_value_category,
+                "volume_tier_1_threshold": wt.volume_tier_1_threshold,
+                "volume_tier_1_price": wt.volume_tier_1_price,
+                "volume_tier_2_threshold": wt.volume_tier_2_threshold,
+                "volume_tier_2_price": wt.volume_tier_2_price,
+                "volume_tier_3_threshold": wt.volume_tier_3_threshold,
+                "volume_tier_3_price": wt.volume_tier_3_price,
+                "billing_frequency": wt.billing_frequency,
+                "minimum_charge": wt.minimum_charge,
+                "is_active": wt.is_active
+            } for wt in bm.workflow_types
+        ]
+        if bm.commitment_tiers:
+            config["commitment_tiers"] = [
+                {
+                    "tier_name": ct.tier_name,
+                    "tier_level": ct.tier_level,
+                    "description": ct.description,
+                    "minimum_workflows_per_month": ct.minimum_workflows_per_month,
+                    "minimum_monthly_revenue": ct.minimum_monthly_revenue,
+                    "included_workflows": ct.included_workflows,
+                    "included_workflow_types": ct.included_workflow_types,
+                    "discount_percentage": ct.discount_percentage,
+                    "platform_fee_discount": ct.platform_fee_discount,
+                    "commitment_period_months": ct.commitment_period_months,
+                    "overage_rate_multiplier": ct.overage_rate_multiplier,
+                    "is_active": ct.is_active,
+                    "is_popular": ct.is_popular
+                } for ct in bm.commitment_tiers
+            ]
+    elif bm.model_type == "hybrid":
+        config["hybrid_config"] = {}
+        if bm.hybrid_config:
+            config["hybrid_config"]["base_fee"] = bm.hybrid_config.base_fee
+        if bm.agent_config:
+            config["hybrid_config"]["agent_config"] = {
+                "base_agent_fee": bm.agent_config.base_agent_fee,
+                "billing_frequency": bm.agent_config.billing_frequency
+            }
+        if bm.activity_config:
+            config["hybrid_config"]["activity_configs"] = [
+                {
+                    "activity_type": cfg.activity_type,
+                    "price_per_unit": cfg.price_per_unit,
+                    "is_active": cfg.is_active
+                } for cfg in bm.activity_config
+            ]
+        if bm.outcome_config:
+            config["hybrid_config"]["outcome_configs"] = [
+                {
+                    "outcome_type": cfg.outcome_type,
+                    "percentage": cfg.percentage,
+                    "is_active": cfg.is_active
+                } for cfg in bm.outcome_config
+            ]
+    
+    return config
+
+
+def validate_agent_billing_data(db: Session, agent_id: int, data_type: str, data: Dict[str, Any]) -> bool:
+    """
+    Validate that billing data matches the agent's billing model configuration
+    """
+    config = get_agent_billing_config(db, agent_id)
+    if not config:
+        return False
+    
+    model_type = config["model_type"]
+    
+    if data_type == "activity":
+        if model_type not in ("activity", "hybrid"):
+            return False
+        
+        activity_type = data.get("activity_type")
+        if not activity_type:
+            return False
+        
+        # Check if activity type is configured
+        if model_type == "activity":
+            activity_configs = config.get("activity_configs", [])
+            return any(cfg["activity_type"] == activity_type for cfg in activity_configs)
+        elif model_type == "hybrid":
+            hybrid_config = config.get("hybrid_config", {})
+            activity_configs = hybrid_config.get("activity_configs", [])
+            return any(cfg["activity_type"] == activity_type for cfg in activity_configs)
+    
+    elif data_type == "outcome":
+        if model_type not in ("outcome", "hybrid"):
+            return False
+        
+        outcome_type = data.get("outcome_type")
+        if not outcome_type:
+            return False
+        
+        # Check if outcome type is configured
+        if model_type == "outcome":
+            outcome_configs = config.get("outcome_configs", [])
+            return any(cfg["outcome_type"] == outcome_type for cfg in outcome_configs)
+        elif model_type == "hybrid":
+            hybrid_config = config.get("hybrid_config", {})
+            outcome_configs = hybrid_config.get("outcome_configs", [])
+            return any(cfg["outcome_type"] == outcome_type for cfg in outcome_configs)
+    
+    elif data_type == "workflow":
+        if model_type != "workflow":
+            return False
+        
+        workflow_type = data.get("workflow_type")
+        if not workflow_type:
+            return False
+        
+        # Check if workflow type is configured
+        workflow_types = config.get("workflow_types", [])
+        return any(wt["workflow_type"] == workflow_type for wt in workflow_types)
+    
+    return False
+
+
+def get_agent_stats(db: Session, agent_id: int) -> Dict[str, Any]:
+    """
+    Get statistics for an agent including activity count, costs, and outcomes
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise ValueError(f"Agent with ID {agent_id} not found")
+    
+    # Count activities
+    activity_count = db.query(func.count(AgentActivityModel.id)).filter(
+        AgentActivityModel.agent_id == agent_id
+    ).scalar() or 0
+    
+    # Sum costs
+    total_cost = db.query(func.sum(AgentCostModel.amount)).filter(
+        AgentCostModel.agent_id == agent_id
+    ).scalar() or 0.0
+    
+    # Sum outcomes
+    total_outcomes_value = db.query(func.sum(AgentOutcomeModel.value)).filter(
+        AgentOutcomeModel.agent_id == agent_id
+    ).scalar() or 0.0
+    
+    # Calculate margin
+    margin = 0.0
+    if total_outcomes_value > 0:
+        margin = (total_outcomes_value - total_cost) / total_outcomes_value
+    
+    return {
+        "activity_count": activity_count,
+        "total_cost": total_cost,
+        "total_outcomes_value": total_outcomes_value,
+        "margin": margin
+    }
+
+
+def get_agent_billing_summary(db: Session, agent_id: int, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
+    """
+    Get detailed billing summary for an agent including breakdown by cost type
+    
+    Args:
+        agent_id: ID of the agent
+        start_date: Optional start date for filtering
+        end_date: Optional end date for filtering
+    
+    Returns:
+        Dictionary with detailed billing information
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent:
+        raise ValueError(f"Agent with ID {agent_id} not found")
+    
+    # Base query for costs
+    cost_query = db.query(AgentCostModel).filter(AgentCostModel.agent_id == agent_id)
+    
+    # Apply date filters if provided
+    if start_date:
+        cost_query = cost_query.filter(AgentCostModel.timestamp >= start_date)
+    if end_date:
+        cost_query = cost_query.filter(AgentCostModel.timestamp <= end_date)
+    
+    # Get all costs
+    costs = cost_query.all()
+    
+    # Initialize summary
+    summary = {
+        "agent_id": agent_id,
+        "agent_name": agent.name,
+        "billing_model": {
+            "id": agent.billing_model.id if agent.billing_model else None,
+            "name": agent.billing_model.name if agent.billing_model else None,
+            "type": agent.billing_model.model_type if agent.billing_model else None
+        },
+        "period": {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None
+        },
+        "total_cost": 0.0,
+        "cost_by_type": {},
+        "cost_breakdown": [],
+        "activity_stats": {},
+        "workflow_stats": {},
+        "outcome_stats": {}
+    }
+    
+    # Process costs
+    for cost in costs:
+        cost_type = str(cost.cost_type)
+        amount = cost.amount
+        details = cost.details
+        
+        # Add to total
+        summary["total_cost"] += amount
+        
+        # Add to cost by type
+        if cost_type not in summary["cost_by_type"]:
+            summary["cost_by_type"][cost_type] = {"total": 0.0, "count": 0}
+        summary["cost_by_type"][cost_type]["total"] += amount
+        summary["cost_by_type"][cost_type]["count"] += 1
+        
+        # Add to breakdown
+        summary["cost_breakdown"].append({
+            "id": cost.id,
+            "type": cost_type,
+            "amount": amount,
+            "currency": cost.currency,
+            "timestamp": cost.timestamp.isoformat(),
+            "details": details
+        })
+        
+        # Collect type-specific stats
+        if cost_type == "activity" and details is not None:
+            activity_type = details.get("activity_type")
+            if activity_type:
+                if activity_type not in summary["activity_stats"]:
+                    summary["activity_stats"][activity_type] = {"total_cost": 0.0, "count": 0}
+                summary["activity_stats"][activity_type]["total_cost"] += amount
+                summary["activity_stats"][activity_type]["count"] += 1
+        
+        elif cost_type == "workflow" and details is not None:
+            workflow_type = details.get("workflow_type")
+            if workflow_type:
+                if workflow_type not in summary["workflow_stats"]:
+                    summary["workflow_stats"][workflow_type] = {"total_cost": 0.0, "count": 0}
+                summary["workflow_stats"][workflow_type]["total_cost"] += amount
+                summary["workflow_stats"][workflow_type]["count"] += details.get("workflow_count", 1)
+        
+        elif cost_type == "outcome" and details is not None:
+            outcome_type = details.get("outcome_type")
+            if outcome_type:
+                if outcome_type not in summary["outcome_stats"]:
+                    summary["outcome_stats"][outcome_type] = {"total_cost": 0.0, "count": 0}
+                summary["outcome_stats"][outcome_type]["total_cost"] += amount
+                summary["outcome_stats"][outcome_type]["count"] += 1
+    
+    return summary
+
+
+def validate_workflow_billing_data(db: Session, agent_id: int, workflow_executions: Dict[str, int]) -> Dict[str, Any]:
+    """
+    Validate workflow execution data against agent's billing model
+    
+    Args:
+        agent_id: ID of the agent
+        workflow_executions: Dictionary mapping workflow types to execution counts
+    
+    Returns:
+        Dictionary with validation results
+    """
+    # Check if agent exists
+    agent = get_agent(db, agent_id=agent_id)
+    if not agent:
+        return {"valid": False, "error": f"Agent with ID {agent_id} not found"}
+    
+    # Check billing model
+    bm = agent.billing_model
+    if not bm or bm.model_type != "workflow":
+        return {"valid": False, "error": f"Agent {agent_id} does not have a workflow billing model"}
+    
+    # Validate each workflow type
+    validation_results = {
+        "valid": True,
+        "workflow_validations": {},
+        "warnings": [],
+        "total_estimated_cost": 0.0
+    }
+    
+    configured_workflow_types = {wt.workflow_type for wt in bm.workflow_types if wt.is_active}
+    
+    for workflow_type, count in workflow_executions.items():
+        workflow_validation = {
+            "valid": True,
+            "configured": workflow_type in configured_workflow_types,
+            "count": count,
+            "estimated_cost": 0.0
+        }
+        
+        if not workflow_validation["configured"]:
+            workflow_validation["valid"] = False
+            workflow_validation["error"] = f"Workflow type '{workflow_type}' is not configured for this agent"
+            validation_results["valid"] = False
+        else:
+            # Calculate estimated cost
+            try:
+                usage_data = {"workflows": {workflow_type: count}}
+                estimated_cost = calculate_cost(bm, usage_data)
+                workflow_validation["estimated_cost"] = estimated_cost
+                validation_results["total_estimated_cost"] += estimated_cost
+            except Exception as e:
+                workflow_validation["valid"] = False
+                workflow_validation["error"] = f"Failed to calculate cost: {str(e)}"
+                validation_results["valid"] = False
+        
+        validation_results["workflow_validations"][workflow_type] = workflow_validation
+    
+    # Add warnings for inactive workflow types
+    for workflow_type in workflow_executions.keys():
+        if workflow_type in configured_workflow_types:
+            workflow_config = next((wt for wt in bm.workflow_types if wt.workflow_type == workflow_type), None)
+            if workflow_config and not workflow_config.is_active:
+                validation_results["warnings"].append(f"Workflow type '{workflow_type}' is configured but not active")
+    
+    return validation_results
