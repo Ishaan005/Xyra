@@ -43,7 +43,7 @@ export function CTASection() {
               <h3 className="text-2xl font-bold">60-Day Money-Back Guarantee</h3>
             </div>
             <p className="text-lg opacity-90">
-              If OutcomeAI doesn't help you increase your revenue within 60 days, we'll refund every penny. We're that
+              If Xyra doesn't help you increase your revenue within 60 days, we'll refund every penny. We're that
               confident.
             </p>
           </div>

@@ -40,7 +40,7 @@ export function HeroSection() {
             className={`text-4xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl mb-8 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           >
             <span className="block text-gray-dark">Start Charging for</span>
-            <span className="block bg-gradient-to-r from-gold via-purple to-blue bg-clip-text text-transparent animate-pulse">
+            <span className="block bg-gradient-to-r from-gold via-purple to-blue bg-clip-text text-transparent">
               Results That Matter
             </span>
           </h1>
@@ -79,13 +79,7 @@ export function HeroSection() {
             <div className="grid md:grid-cols-2 gap-6 mt-6">
               <div className="text-left relative">
                 <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-destructive to-destructive/50 rounded-full"></div>
-                <div className="font-bold text-destructive mb-2 flex items-center gap-2">
-                  <div className="relative w-6 h-6">
-                    {/* Cross/X mark for "broken" */}
-                    <div className="absolute inset-1 w-4 h-0.5 bg-destructive rounded-full transform rotate-45"></div>
-                    <div className="absolute inset-1 w-4 h-0.5 bg-destructive rounded-full transform -rotate-45"></div>
-                    <div className="absolute inset-0 border-2 border-destructive rounded-full animate-pulse"></div>
-                  </div>
+                <div className="font-bold mb-2 flex items-center gap-2">
                   Here's the problem:
                 </div>
                 <div className="text-gray-dark">
@@ -94,16 +88,7 @@ export function HeroSection() {
               </div>
               <div className="text-left relative">
                 <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-destructive via-orange-500 to-yellow-500 rounded-full animate-pulse"></div>
-                <div className="font-bold text-destructive mb-2 flex items-center gap-2">
-                  <div className="relative w-6 h-6">
-                    {/* Money/cash leaving animation */}
-                    <div className="absolute inset-0">
-                      <div className="w-4 h-3 bg-gradient-to-r from-green-500 to-green-600 rounded-sm"></div>
-                      <div className="absolute top-0 left-4 w-1 h-1 bg-green-500 rounded-full animate-ping"></div>
-                      <div className="absolute top-1 left-5 w-0.5 h-0.5 bg-green-400 rounded-full animate-ping delay-200"></div>
-                      <div className="text-xs text-green-600 absolute -bottom-2 left-0">$$$</div>
-                    </div>
-                  </div>
+                <div className="font-bold mb-2 flex items-center gap-2">
                   Here's the bigger problem:
                 </div>
                 <div className="text-gray-dark">You're leaving piles of cash on the table.</div>
@@ -113,7 +98,7 @@ export function HeroSection() {
 
           {/* Solution statement */}
           <div
-            className={`bg-gradient-to-r from-gold/10 to-purple/10 rounded-2xl p-8 mb-12 border border-purple/8 ring-1 ring-purple/5 transition-all duration-1000 delay-800 hover:ring-purple/10 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            className={`bg-gold/10 rounded-2xl p-8 mb-12 border border-purple/8 ring-1 ring-purple/5 transition-all duration-1000 delay-800 hover:ring-purple/10 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           >
             <div className="text-xl text-gray-dark mb-4">
               <span className="font-bold text-purple">Xyra</span> is like having a financial advisor, data

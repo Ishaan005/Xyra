@@ -27,7 +27,7 @@ export function SocialProofSection() {
   const testimonials = [
     {
       quote:
-        "We switched from seat-based to outcome-based pricing and saw a 47% revenue increase in 90 days. Our sales cycle also dropped from 45 days to 12. OutcomeAI paid for itself in the first week.",
+        "We switched from seat-based to outcome-based pricing and saw a 47% revenue increase in 90 days. Our sales cycle also dropped from 45 days to 12. Xyra paid for itself in the first week.",
       author: "Sarah J.",
       title: "CEO of PhantomWriter.io",
       color: "gold",
@@ -35,7 +35,7 @@ export function SocialProofSection() {
     },
     {
       quote:
-        "I was skeptical about outcome-based pricing until our customers started ASKING to pay more because they could finally see the ROI. Implementation took 3 days and the OutcomeAI team was with us every step.",
+        "I was skeptical about outcome-based pricing until our customers started ASKING to pay more because they could finally see the ROI. Implementation took 3 days and the Xyra team was with us every step.",
       author: "Mark T.",
       title: "CRO at DataSynthAI",
       color: "purple",
@@ -43,7 +43,7 @@ export function SocialProofSection() {
     },
     {
       quote:
-        "We were charging $99/seat and struggling to grow. With OutcomeAI, we now charge $0.50 per successful customer interaction plus $10 per conversion. Our revenue is up 62% and customers are happier.",
+        "We were charging $99/seat and struggling to grow. With Xyra, we now charge $0.50 per successful customer interaction plus $10 per conversion. Our revenue is up 62% and customers are happier.",
       author: "Priya M.",
       title: "Founder of SupportGPT",
       color: "blue",

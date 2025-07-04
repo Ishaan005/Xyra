@@ -7,7 +7,7 @@ export function Footer() {
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <h3 className="text-xl font-bold mb-4">Business Engine</h3>
+            <h3 className="text-xl font-bold mb-4">Xyra</h3>
             <p className="text-gray-40">The plug-and-play monetization layer for AI SaaS platforms.</p>
           </div>
 
@@ -83,7 +83,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 border-t border-gray-80 pt-8 text-center text-sm text-gray-60">
-          <p>© {new Date().getFullYear()} Business Engine. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Xyra. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -38,7 +38,7 @@ export function HowItWorksSection() {
       icon: Link,
       title: "2. Connect Your Systems",
       subtitle: "(1 hour)",
-      description: "Plug OutcomeAI into your existing stack with our no-code connectors. We play nice with everyone.",
+      description: "Plug Xyra into your existing stack with our no-code connectors. We play nice with everyone.",
       color: "purple",
       delay: 200,
     },

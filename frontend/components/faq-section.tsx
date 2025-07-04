@@ -10,7 +10,7 @@ export function FAQSection() {
     {
       question: "Is this just another analytics platform?",
       answer:
-        "Nope! While we do provide killer analytics, OutcomeAI is a complete monetization platform that handles everything from outcome tracking to billing and revenue optimization.",
+        "Nope! While we do provide killer analytics, Xyra is a complete monetization platform that handles everything from outcome tracking to billing and revenue optimization.",
       color: "gold",
     },
     {
@@ -28,7 +28,7 @@ export function FAQSection() {
     {
       question: "Is this complicated to implement?",
       answer:
-        "If you can install Google Analytics, you can implement OutcomeAI. Most customers are up and running in less than a week.",
+        "If you can install Google Analytics, you can implement Xyra. Most customers are up and running in less than a week.",
       color: "teal",
     },
   ]

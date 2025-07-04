@@ -203,12 +203,12 @@ export function BenefitsSection() {
 
               {benefit.before && benefit.after ? (
                 <div className="space-y-4">
-                  <div className="rounded-lg bg-destructive/10 p-4 border-l-4 border-destructive">
+                  <div className="rounded-lg p-4 border-l-4 border-destructive">
                     <p className="font-medium text-destructive mb-1">Before:</p>
                     <p className="text-gray-dark italic">{benefit.before}</p>
                   </div>
-                  <div className="rounded-lg bg-success/10 p-4 border-l-4 border-success">
-                    <p className="font-medium text-success mb-1">After:</p>
+                  <div className="rounded-lg p-4 border-l-4 border-green-600">
+                    <p className="font-medium text-green-600 mb-1">After:</p>
                     <p className="text-gray-dark italic">{benefit.after}</p>
                   </div>
                 </div>
