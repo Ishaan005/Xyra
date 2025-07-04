@@ -42,7 +42,7 @@ export function PricingSection() {
                 Ready to Transform Your Pricing Strategy?
               </h3>
               <p className="text-lg text-gray-60 max-w-2xl mx-auto">
-                Xyra is launching soon! Join our waitlist to be notified when we go live and get exclusive early access benefits.
+                Join our waitlist to be notified when we go live and get exclusive early access benefits.
               </p>
             </div>
 
@@ -68,20 +68,20 @@ export function PricingSection() {
             {/* Email Signup */}
             {!isSubmitted ? (
               <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch gap-3">
                   <div className="flex-1">
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email address"
-                      className="w-full px-4 py-3 rounded-xl border border-gray/20 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 bg-white/80 backdrop-blur-sm"
+                      className="w-full h-full px-4 py-3 rounded-xl border border-gray/20 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 bg-white/80 backdrop-blur-sm"
                       required
                     />
                   </div>
                   <Button 
                     type="submit"
-                    className="bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-white font-bold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    className="h-full bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-white font-bold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
                   >
                     <Mail className="mr-2 h-5 w-5" />
                     Join Waitlist
