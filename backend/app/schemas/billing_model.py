@@ -48,6 +48,7 @@ class BillingModelCreate(BillingModelBase):
     outcome_base_platform_fee: Optional[float] = None
     outcome_platform_fee_frequency: Optional[str] = None
     outcome_percentage: Optional[float] = None
+    outcome_fixed_charge_per_outcome: Optional[float] = None
     outcome_attribution_window_days: Optional[int] = None
     outcome_minimum_attribution_value: Optional[float] = None
     outcome_requires_verification: Optional[bool] = None
@@ -126,6 +127,7 @@ class BillingModelUpdate(BaseModel):
     outcome_base_platform_fee: Optional[float] = None
     outcome_platform_fee_frequency: Optional[str] = None
     outcome_percentage: Optional[float] = None
+    outcome_fixed_charge_per_outcome: Optional[float] = None
     outcome_attribution_window_days: Optional[int] = None
     outcome_minimum_attribution_value: Optional[float] = None
     outcome_requires_verification: Optional[bool] = None
@@ -231,7 +233,8 @@ class OutcomeBasedConfigSchema(BaseModel):
     platform_fee_frequency: str = "monthly"  # monthly, yearly
     
     # Primary outcome pricing
-    percentage: float  # e.g., 5% of revenue uplift
+    percentage: Optional[float] = None  # e.g., 5% of revenue uplift
+    fixed_charge_per_outcome: Optional[float] = None  # e.g., $10 per lead
     
     # Success attribution settings
     attribution_window_days: int = 30  # How long to attribute outcomes

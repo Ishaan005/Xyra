@@ -141,7 +141,8 @@ class OutcomeBasedConfig(BaseModel):
     platform_fee_frequency = Column(String, nullable=False, default="monthly")  # monthly, yearly
     
     # Primary outcome pricing
-    percentage = Column(Float, nullable=False)  # e.g., 5% of revenue uplift
+    percentage = Column(Float, nullable=True)  # e.g., 5% of revenue uplift
+    fixed_charge_per_outcome = Column(Float, nullable=True) # e.g., $10 per lead
     
     # Success attribution settings
     attribution_window_days = Column(Integer, nullable=False, default=30)  # How long to attribute outcomes

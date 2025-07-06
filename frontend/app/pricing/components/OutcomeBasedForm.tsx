@@ -115,7 +115,14 @@ export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormPr
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              You can set a revenue share, a fixed charge, or both. If both are set, they will be combined.
+            </AlertDescription>
+          </Alert>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="outcome_percentage">Revenue Share %</Label>
               <div className="relative">
@@ -130,6 +137,22 @@ export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormPr
                   onChange={(e) => updateField("outcome_percentage", e.target.value)}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="outcome_fixed_charge">Fixed Charge</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <Input
+                  id="outcome_fixed_charge"
+                  type="number"
+                  placeholder="10.00"
+                  min="0"
+                  step="0.01"
+                  className="pl-7"
+                  value={model.outcome_fixed_charge_per_outcome || ""}
+                  onChange={(e) => updateField("outcome_fixed_charge_per_outcome", e.target.value)}
+                />
               </div>
             </div>
             <div className="space-y-2">

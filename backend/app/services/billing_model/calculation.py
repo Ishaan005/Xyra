@@ -109,34 +109,46 @@ def calculate_cost(billing_model: BillingModel, usage_data: Dict[str, Any]) -> f
             
             # Calculate outcome-based fee using tiered pricing if configured
             outcome_fee = 0.0
-            remaining_value = outcome_value
-            
-            # Apply tiered pricing if configured
-            if cfg.tier_1_threshold and cfg.tier_1_percentage:
-                # Tier 1
-                tier_1_value = min(remaining_value, cfg.tier_1_threshold)
-                outcome_fee += tier_1_value * (cfg.tier_1_percentage / 100.0)
-                remaining_value -= tier_1_value
+            percentage_based_fee = 0.0
+            fixed_fee = 0.0
+
+            # 1. Calculate percentage-based fee
+            if cfg.percentage is not None and cfg.percentage > 0:
+                remaining_value = outcome_value
                 
-                # Tier 2
-                if remaining_value > 0 and cfg.tier_2_threshold and cfg.tier_2_percentage:
-                    tier_2_value = min(remaining_value, cfg.tier_2_threshold - cfg.tier_1_threshold)
-                    outcome_fee += tier_2_value * (cfg.tier_2_percentage / 100.0)
-                    remaining_value -= tier_2_value
+                # Apply tiered pricing if configured
+                if cfg.tier_1_threshold and cfg.tier_1_percentage:
+                    # Tier 1
+                    tier_1_value = min(remaining_value, cfg.tier_1_threshold)
+                    percentage_based_fee += tier_1_value * (cfg.tier_1_percentage / 100.0)
+                    remaining_value -= tier_1_value
                     
-                    # Tier 3
-                    if remaining_value > 0 and cfg.tier_3_threshold and cfg.tier_3_percentage:
-                        tier_3_value = min(remaining_value, cfg.tier_3_threshold - cfg.tier_2_threshold)
-                        outcome_fee += tier_3_value * (cfg.tier_3_percentage / 100.0)
-                        remaining_value -= tier_3_value
-                
-                # Any remaining value uses highest tier percentage or base percentage
-                if remaining_value > 0:
-                    final_percentage = cfg.tier_3_percentage if cfg.tier_3_percentage else cfg.percentage
-                    outcome_fee += remaining_value * (final_percentage / 100.0)
-            else:
-                # Simple percentage-based pricing
-                outcome_fee = outcome_value * (cfg.percentage / 100.0)
+                    # Tier 2
+                    if remaining_value > 0 and cfg.tier_2_threshold and cfg.tier_2_percentage:
+                        tier_2_value = min(remaining_value, cfg.tier_2_threshold - cfg.tier_1_threshold)
+                        percentage_based_fee += tier_2_value * (cfg.tier_2_percentage / 100.0)
+                        remaining_value -= tier_2_value
+                        
+                        # Tier 3
+                        if remaining_value > 0 and cfg.tier_3_threshold and cfg.tier_3_percentage:
+                            tier_3_value = min(remaining_value, cfg.tier_3_threshold - cfg.tier_2_threshold)
+                            percentage_based_fee += tier_3_value * (cfg.tier_3_percentage / 100.0)
+                            remaining_value -= tier_3_value
+                    
+                    # Any remaining value uses highest tier percentage or base percentage
+                    if remaining_value > 0:
+                        final_percentage = cfg.tier_3_percentage if cfg.tier_3_percentage else cfg.percentage
+                        percentage_based_fee += remaining_value * (final_percentage / 100.0)
+                else:
+                    # Simple percentage-based pricing
+                    percentage_based_fee = outcome_value * (cfg.percentage / 100.0)
+
+            # 2. Calculate fixed charge fee
+            if cfg.fixed_charge_per_outcome is not None and cfg.fixed_charge_per_outcome > 0:
+                outcome_count = usage_data.get("outcome_count", 1) # Default to 1 if value > 0
+                fixed_fee = cfg.fixed_charge_per_outcome * outcome_count
+
+            outcome_fee = percentage_based_fee + fixed_fee
             
             # Apply risk premium if configured
             if cfg.risk_premium_percentage > 0:

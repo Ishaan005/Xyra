@@ -281,7 +281,7 @@ class XyraClient:
 
     # Outcome Recording Methods
 
-    async def record_outcome(self, outcome_type: str, value: float, currency: str = 'USD', details: Optional[Dict[str, Any]] = None, verified: bool = True) -> Dict[str, Any]:
+    async def record_outcome(self, outcome_type: str, value: float, currency: str = 'USD', details: Optional[Dict[str, Any]] = None, verified: bool = True, outcome_count: int = 1) -> Dict[str, Any]:
         """
         Record a specific outcome for the agent.
         
@@ -294,6 +294,7 @@ class XyraClient:
             currency: Currency code (default "USD")
             details: Optional additional details about the outcome
             verified: Whether the outcome is verified (default True)
+            outcome_count: The number of outcomes to record (for fixed-charge billing)
             
         Returns:
             Dictionary containing the recorded outcome information.
@@ -307,7 +308,8 @@ class XyraClient:
             'value': value,
             'currency': currency,
             'details': details or {},
-            'verified': verified
+            'verified': verified,
+            'outcome_count': outcome_count
         }
         return await self._post(f"/api/v1/agents/{self.agent_id}/outcomes", payload)
 

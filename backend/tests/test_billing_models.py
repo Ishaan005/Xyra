@@ -92,6 +92,100 @@ def test_calculate_billing_cost(client, token):
     assert isinstance(cost_data["cost"], float)
 
 
+def test_create_and_calculate_outcome_billing_model(client, token, setup_org):
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Test case 1: Both percentage and fixed charge
+    outcome_data_1 = {
+        "name": "Outcome BM 1",
+        "description": "Test outcome billing model with both charges",
+        "model_type": "outcome",
+        "organization_id": setup_org,
+        "outcome_outcome_name": "Test Outcome",
+        "outcome_outcome_type": "revenue_uplift",
+        "outcome_percentage": 10.0,
+        "outcome_fixed_charge_per_outcome": 5.0,
+        "outcome_risk_premium_percentage": 0.0  # Disable risk premium for test
+    }
+    
+    response = client.post("/api/v1/billing-models/", json=outcome_data_1, headers=headers)
+    assert response.status_code == 200
+    bm1 = response.json()
+    bm1_id = bm1["id"]
+
+    usage_data_1 = {"outcome_value": 1000, "outcome_count": 10}
+    response = client.post(f"/api/v1/billing-models/{bm1_id}/calculate", json=usage_data_1, headers=headers)
+    assert response.status_code == 200
+    cost_data_1 = response.json()
+    # cost = (1000 * 0.10) + (10 * 5.0) = 100 + 50 = 150
+    assert cost_data_1["cost"] == 150.0
+
+    # Test case 2: Only percentage
+    outcome_data_2 = {
+        "name": "Outcome BM 2",
+        "description": "Test outcome billing model with percentage only",
+        "model_type": "outcome",
+        "organization_id": setup_org,
+        "outcome_outcome_name": "Test Outcome 2",
+        "outcome_outcome_type": "revenue_uplift",
+        "outcome_percentage": 15.0,
+        "outcome_risk_premium_percentage": 0.0  # Disable risk premium for test
+    }
+
+    response = client.post("/api/v1/billing-models/", json=outcome_data_2, headers=headers)
+    assert response.status_code == 200
+    bm2 = response.json()
+    bm2_id = bm2["id"]
+
+    usage_data_2 = {"outcome_value": 1000, "outcome_count": 10}
+    response = client.post(f"/api/v1/billing-models/{bm2_id}/calculate", json=usage_data_2, headers=headers)
+    assert response.status_code == 200
+    cost_data_2 = response.json()
+    # cost = 1000 * 0.15 = 150
+    assert cost_data_2["cost"] == 150.0
+
+    # Test case 3: Only fixed charge
+    outcome_data_3 = {
+        "name": "Outcome BM 3",
+        "description": "Test outcome billing model with fixed charge only",
+        "model_type": "outcome",
+        "organization_id": setup_org,
+        "outcome_outcome_name": "Test Outcome 3",
+        "outcome_outcome_type": "lead_generation",
+        "outcome_fixed_charge_per_outcome": 7.5,
+        "outcome_risk_premium_percentage": 0.0  # Disable risk premium for test
+    }
+
+    response = client.post("/api/v1/billing-models/", json=outcome_data_3, headers=headers)
+    assert response.status_code == 200
+    bm3 = response.json()
+    bm3_id = bm3["id"]
+
+    usage_data_3 = {"outcome_value": 1000, "outcome_count": 20}
+    response = client.post(f"/api/v1/billing-models/{bm3_id}/calculate", json=usage_data_3, headers=headers)
+    assert response.status_code == 200
+    cost_data_3 = response.json()
+    # cost = 20 * 7.5 = 150
+    assert cost_data_3["cost"] == 150.0
+    
+    # Test case 4: Validation failure - neither is provided
+    outcome_data_4 = {
+        "name": "Outcome BM 4",
+        "description": "Test outcome billing model with no charges",
+        "model_type": "outcome",
+        "organization_id": setup_org,
+        "outcome_outcome_name": "Test Outcome 4",
+        "outcome_outcome_type": "revenue_uplift"
+    }
+    response = client.post("/api/v1/billing-models/", json=outcome_data_4, headers=headers)
+    assert response.status_code == 400  # Bad Request for business logic validation
+
+    # Cleanup created models
+    client.delete(f"/api/v1/billing-models/{bm1_id}", headers=headers)
+    client.delete(f"/api/v1/billing-models/{bm2_id}", headers=headers)
+    client.delete(f"/api/v1/billing-models/{bm3_id}", headers=headers)
+
+
 def test_delete_billing_model(client, token):
     headers = {"Authorization": f"Bearer {token}"}
     response = client.delete(f"/api/v1/billing-models/{bm_id}", headers=headers)

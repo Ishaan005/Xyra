@@ -74,8 +74,17 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
         if not billing_model_in.outcome_outcome_type:
             raise ValueError("Outcome-based billing model must include 'outcome_outcome_type'")
         
-        if billing_model_in.outcome_percentage is None or billing_model_in.outcome_percentage <= 0:
-            raise ValueError("Outcome-based billing model must include a positive 'outcome_percentage'")
+        has_percentage = billing_model_in.outcome_percentage is not None and billing_model_in.outcome_percentage > 0
+        has_fixed_charge = billing_model_in.outcome_fixed_charge_per_outcome is not None and billing_model_in.outcome_fixed_charge_per_outcome > 0
+
+        if not has_percentage and not has_fixed_charge:
+            raise ValueError("Outcome-based billing model must include a positive 'outcome_percentage' or a positive 'outcome_fixed_charge_per_outcome'")
+
+        if billing_model_in.outcome_percentage is not None and billing_model_in.outcome_percentage <= 0:
+            raise ValueError("'outcome_percentage' must be positive if provided")
+
+        if billing_model_in.outcome_fixed_charge_per_outcome is not None and billing_model_in.outcome_fixed_charge_per_outcome <= 0:
+            raise ValueError("'outcome_fixed_charge_per_outcome' must be positive if provided")
         
         # Validate base platform fee
         if billing_model_in.outcome_base_platform_fee is not None and billing_model_in.outcome_base_platform_fee < 0:

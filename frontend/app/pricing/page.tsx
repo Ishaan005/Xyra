@@ -76,6 +76,7 @@ export default function PricingPage() {
     outcome_outcome_type: "",
     outcome_description: "",
     outcome_percentage: "",
+    outcome_fixed_charge_per_outcome: "",
     outcome_currency: "USD",
     outcome_billing_frequency: "monthly",
     // Base platform fee
@@ -177,7 +178,8 @@ export default function PricingPage() {
         payload.outcome_outcome_name = newModel.outcome_outcome_name || ""
         payload.outcome_outcome_type = newModel.outcome_outcome_type || newModel.outcome_type
         payload.outcome_description = newModel.outcome_description || ""
-        payload.outcome_percentage = Number.parseFloat(newModel.outcome_percentage || newModel.percentage) || 0
+        payload.outcome_percentage = Number.parseFloat(newModel.outcome_percentage || newModel.percentage) || null
+        payload.outcome_fixed_charge_per_outcome = Number.parseFloat(newModel.outcome_fixed_charge_per_outcome) || null
         payload.outcome_currency = newModel.outcome_currency || "USD"
         payload.outcome_billing_frequency = newModel.outcome_billing_frequency || "monthly"
         
@@ -308,6 +310,7 @@ export default function PricingPage() {
         outcome_outcome_type: "",
         outcome_description: "",
         outcome_percentage: "",
+        outcome_fixed_charge_per_outcome: "",
         outcome_currency: "USD",
         outcome_billing_frequency: "monthly",
         // Base platform fee
@@ -410,16 +413,39 @@ export default function PricingPage() {
         payload.activity_is_active = true
         break
       case "outcome":
-        // Map outcome form data to payload
+        // Map basic and advanced outcome form data to payload
         payload.outcome_outcome_name = formData.outcome_outcome_name || ""
-        payload.outcome_outcome_type = formData.outcome_outcome_type || ""
+        payload.outcome_outcome_type = formData.outcome_outcome_type || "custom"
         payload.outcome_description = formData.outcome_description || ""
-        payload.outcome_percentage = formData.outcome_percentage || 0
+        payload.outcome_percentage = parseFloat(formData.outcome_percentage) || 0
+        payload.outcome_fixed_charge_per_outcome = parseFloat(formData.outcome_fixed_charge_per_outcome) || null
         payload.outcome_currency = formData.outcome_currency || "USD"
         payload.outcome_billing_frequency = formData.outcome_billing_frequency || "monthly"
-        payload.outcome_base_platform_fee = formData.outcome_base_platform_fee || 0
+        payload.outcome_base_platform_fee = parseFloat(formData.outcome_base_platform_fee) || 0
         payload.outcome_platform_fee_frequency = formData.outcome_platform_fee_frequency || "monthly"
-        // Add other outcome fields as needed
+        payload.outcome_is_active = formData.outcome_is_active === undefined ? true : formData.outcome_is_active
+
+        // Multi-Tier Pricing
+        payload.outcome_tier_1_threshold = parseInt(formData.outcome_tier_1_threshold) || null
+        payload.outcome_tier_1_percentage = parseFloat(formData.outcome_tier_1_percentage) || null
+        payload.outcome_tier_2_threshold = parseInt(formData.outcome_tier_2_threshold) || null
+        payload.outcome_tier_2_percentage = parseFloat(formData.outcome_tier_2_percentage) || null
+        payload.outcome_tier_3_threshold = parseInt(formData.outcome_tier_3_threshold) || null
+        payload.outcome_tier_3_percentage = parseFloat(formData.outcome_tier_3_percentage) || null
+
+        // Risk, Caps, and Bonuses
+        payload.outcome_risk_premium_percentage = parseFloat(formData.outcome_risk_premium_percentage) || null
+        payload.outcome_monthly_cap_amount = parseFloat(formData.outcome_monthly_cap_amount) || null
+        payload.outcome_success_bonus_threshold = parseInt(formData.outcome_success_bonus_threshold) || null
+        payload.outcome_success_bonus_percentage = parseFloat(formData.outcome_success_bonus_percentage) || null
+
+        // Attribution and Verification
+        payload.outcome_attribution_window_days = parseInt(formData.outcome_attribution_window_days) || null
+        payload.outcome_verification_method = formData.outcome_verification_method || "automatic"
+        payload.outcome_requires_verification = formData.outcome_requires_verification || false
+        payload.outcome_auto_bill_verified_outcomes = formData.outcome_auto_bill_verified_outcomes || false
+        payload.outcome_success_rate_assumption = parseFloat(formData.outcome_success_rate_assumption) || null
+        payload.outcome_minimum_attribution_value = parseFloat(formData.outcome_minimum_attribution_value) || null
         break
       case "workflow":
         payload.workflow_base_platform_fee = parseFloat(formData.workflow_base_platform_fee) || 0
