@@ -63,7 +63,7 @@ async def main():
     shutil.copytree(src_path, file_path, dirs_exist_ok=True)
 
     # Get the Azure AI Agent settings
-    ai_agent_settings = AzureAIAgentSettings(model_deployment_name=os.getenv("AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME"))
+    ai_agent_settings = AzureAIAgentSettings(model_deployment_name=os.getenv("AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME")) # type: ignore
 
     async with (
         DefaultAzureCredential(exclude_environment_credential=True, 
@@ -108,15 +108,19 @@ async def main():
                 maximum_iterations=10, 
                 automatic_reset=True
             ),
-            selection_strategy=SelectionStrategy(agents=[agent_incident,agent_devops]),      
+            selection_strategy=SelectionStrategy(agents=[agent_incident,agent_devops]),       # type: ignore
         )
 
         # Initialize XyraClient SDK for billing and analytics
         xyra_client = XyraClient(
-            base_url="http://localhost:8000/",
-            agent_id=2,
-            token="<insert_token_here>"  # Replace with your Xyra token
+            base_url=os.getenv("XYRA_BASE_URL", "http://localhost:8000"),
+            agent_id=int(os.getenv("XYRA_AGENT_ID", "2")),
+            token=os.getenv("XYRA_TOKEN", "<insert_token_here>")  # Replace with your Xyra token
         )
+
+        # Check health
+        health = await xyra_client.health_check()
+        print(f"Xyra SDK Health: {health['status']}")
 
         # Process log files
         for filename in os.listdir(file_path):
@@ -124,8 +128,11 @@ async def main():
             await asyncio.sleep(30) # Wait to reduce TPM
             print(f"\nReady to process log file: {filename}\n")
 
-            # Record the processing activity
-            await xyra_client.record_activity("file_processed", {"file": filename})
+            # Record the processing activity using smart tracking
+            await xyra_client.smart_track(
+                activity_units=1,
+                metadata={"file": filename, "operation": "log_processing"}
+            )
 
             # Append the current log file to the chat
             await chat.add_chat_message(logfile_msg)
@@ -137,17 +144,43 @@ async def main():
                     if response is None or not response.name:
                         continue
                     print(f"{response.content}")
-                    # Record an activity for this completion
-                    await xyra_client.record_activity("completion")
+                    
+                    # Record completion activity
+                    await xyra_client.record_activity(
+                        activity_type="ai_completion",
+                        metadata={"agent": response.name, "response_length": len(response.content)}
+                    )
+                    
                     # Estimate cost (e.g. $0.0001 per token)
                     cost = len(response.content.split()) * 0.0001
-                    await xyra_client.record_cost(amount = cost, cost_type="token", currency="USD")
-                    # Record outcome (e.g. success count)
-                    await xyra_client.record_outcome("ticket", 200, "USD", details={"summary": response.content[:50]})
-
+                    await xyra_client.record_cost(
+                        amount=cost,
+                        cost_type="token",
+                        currency="USD",
+                        details={"agent": response.name, "tokens": len(response.content.split())}
+                    )
+                    
+                    # Record outcome if successful resolution
+                    if "no action needed" in response.content.lower():
+                        await xyra_client.record_outcome(
+                            outcome_type="incident_resolved",
+                            value=200.0,  # Value of successful incident resolution
+                            currency="USD",
+                            details={"summary": response.content[:50], "agent": response.name},
+                            verified=True
+                        )
+                    
                 print()
             except Exception as e:
                 print(f"Error during chat invocation: {e}")
+                # Record error
+                await xyra_client.record_cost(
+                    amount=0.01,
+                    cost_type="error",
+                    currency="USD",
+                    details={"error": str(e), "file": filename}
+                )
+                
                 # If TPM rate exceeded, wait 60 secs
                 if "Rate limit is exceeded" in str(e):
                     print ("Waiting...")
@@ -163,7 +196,7 @@ class SelectionStrategy(SequentialSelectionStrategy):
     """A strategy for determining which agent should take the next turn in the chat."""
     
     # Select the next agent that should take the next turn in the chat
-    async def select_agent(self, agents, history):
+    async def select_agent(self, agents, history): # type: ignore
         """"Check which agent should take the next turn in the chat."""
 
         # The Incident Manager should go after the User or the Devops Assistant

@@ -13,8 +13,19 @@ xyra_client = XyraClient(
 
 ## Insert your Agent Functions here
 async def main():
-    #await xyra_client.record_activity()
-    await xyra_client.record_cost(amount = 0.05, cost_type="token", currency="USD")
+    # Check health first
+    health = await xyra_client.health_check()
+    print(f"Health check: {health}")
+    
+    # Use smart tracking (works with any billing model)
+    await xyra_client.smart_track(metadata={"test": "simple_test"})
+    
+    # Record specific cost
+    await xyra_client.record_cost(amount=0.05, cost_type="token", currency="USD")
+    
+    # Get stats
+    stats = await xyra_client.get_agent_stats()
+    print(f"Agent stats: {stats}")
 
 # Start the app
 if __name__ == "__main__":

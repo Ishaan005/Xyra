@@ -380,18 +380,72 @@ pip install -e .
 
 Example usage:
 ```python
+import asyncio
 from xyra_client import XyraClient
 
-# Initialize the client
-client = XyraClient(
-    base_url="http://localhost:8000",
-    api_key="your-api-key"
-)
+async def main():
+    # Initialize the client
+    client = XyraClient(
+        base_url="http://localhost:8000",
+        agent_id=1,  # Your agent ID
+        token="your-api-token"  # Your API token
+    )
+    
+    # Check health
+    health = await client.health_check()
+    print(f"Status: {health['status']}")
+    
+    # Smart tracking - works with any billing model
+    result = await client.smart_track(
+        value=100.0,  # For outcome-based models
+        activity_units=1,  # For activity-based models
+        workflow_type="default",  # For workflow-based models
+        metadata={"user_id": "demo_user"}
+    )
+    
+    print(f"Tracking result: {result}")
+    
+    # Get billing summary
+    summary = await client.get_billing_summary()
+    print(f"Billing summary: {summary}")
 
-# Use the client to interact with the API
-organizations = client.organizations.list()
-agents = client.agents.list(org_id="your-org-id")
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
+
+#### Key SDK Features:
+
+- **Smart Tracking**: Automatically adapts to your billing model
+- **All Billing Models**: Agent, Activity, Outcome, Workflow, and Hybrid
+- **Health Checks**: Validate configuration and connectivity
+- **Analytics**: Get billing summaries, stats, and cost estimates
+- **Error Handling**: Comprehensive error handling and validation
+- **Type Safety**: Full type hints for better IDE support
+
+#### SDK Methods:
+
+```python
+# Smart tracking (recommended)
+await client.smart_track(value=100.0, metadata={"user": "demo"})
+
+# Specific recording
+await client.record_activity("data_processing", {"records": 1000})
+await client.record_cost(10.50, "compute", "USD")
+await client.record_outcome("sale", 500.0, "USD", {"deal_id": "D123"})
+await client.record_workflow("lead_research", {"industry": "tech"})
+
+# Information and analytics
+agent_info = await client.get_agent_info()
+billing_config = await client.get_billing_config()
+stats = await client.get_agent_stats()
+summary = await client.get_billing_summary()
+
+# Utilities
+health = await client.health_check()
+estimate = await client.estimate_cost(activity_units=10)
+```
+
+See `xyra_client/README.md` and `xyra_client/examples.py` for comprehensive documentation and examples.
 
 ### Direct API Access
 
