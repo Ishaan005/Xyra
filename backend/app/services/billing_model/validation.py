@@ -131,38 +131,6 @@ def validate_billing_config_from_schema(billing_model_in, current_model_type: Op
                     raise ValueError(f"Outcome {tier_name} percentage must be positive")
                 previous_threshold = threshold
     
-    elif model_type == "hybrid":
-        # Hybrid must have at least one billing component
-        has_base_fee = billing_model_in.hybrid_base_fee is not None and billing_model_in.hybrid_base_fee >= 0
-        has_agent = billing_model_in.hybrid_agent_config is not None
-        has_activity = billing_model_in.hybrid_activity_configs is not None and len(billing_model_in.hybrid_activity_configs) > 0
-        has_outcome = billing_model_in.hybrid_outcome_configs is not None and len(billing_model_in.hybrid_outcome_configs) > 0
-        
-        if not any([has_base_fee, has_agent, has_activity, has_outcome]):
-            raise ValueError("Hybrid billing model must include at least one billing component")
-        
-        # Validate each component if present
-        if has_agent:
-            if billing_model_in.hybrid_agent_config.base_agent_fee <= 0:
-                raise ValueError("Agent configuration must include a positive 'base_agent_fee'")
-            if billing_model_in.hybrid_agent_config.volume_discount_enabled:
-                if (billing_model_in.hybrid_agent_config.volume_discount_threshold is None or 
-                    billing_model_in.hybrid_agent_config.volume_discount_threshold <= 0):
-                    raise ValueError("Volume discount requires a positive 'volume_discount_threshold'")
-                if (billing_model_in.hybrid_agent_config.volume_discount_percentage is None or 
-                    billing_model_in.hybrid_agent_config.volume_discount_percentage <= 0):
-                    raise ValueError("Volume discount requires a positive 'volume_discount_percentage'")
-        
-        if has_activity:
-            for activity in billing_model_in.hybrid_activity_configs:
-                if activity.price_per_unit <= 0 or not activity.activity_type:
-                    raise ValueError("Each activity configuration must include positive 'price_per_unit' and 'activity_type'")
-        
-        if has_outcome:
-            for outcome in billing_model_in.hybrid_outcome_configs:
-                if not outcome.outcome_type or outcome.percentage <= 0:
-                    raise ValueError("Each outcome configuration must include 'outcome_type' and positive 'percentage'")
-    
     elif model_type == "workflow":
         # Workflow must have at least a base config or one workflow type
         has_base_config = billing_model_in.workflow_base_platform_fee is not None and billing_model_in.workflow_base_platform_fee >= 0

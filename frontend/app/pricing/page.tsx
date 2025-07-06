@@ -102,11 +102,6 @@ export default function PricingPage() {
     outcome_requires_verification: false,
     outcome_auto_bill_verified_outcomes: false,
     outcome_is_active: true,
-    // Hybrid
-    hybrid_base_fee: "",
-    include_agent: false,
-    include_activity: false,
-    include_outcome: false,
     // Workflow
     workflow_base_platform_fee: "",
     workflow_platform_fee_frequency: "monthly",
@@ -211,48 +206,6 @@ export default function PricingPage() {
         payload.outcome_auto_bill_verified_outcomes = newModel.outcome_auto_bill_verified_outcomes || false
         payload.outcome_is_active = newModel.outcome_is_active !== false
         break
-      case "hybrid":
-        payload.hybrid_base_fee = Number.parseFloat(newModel.hybrid_base_fee) || 0
-        if (newModel.include_agent) {
-          payload.hybrid_agent_config = {
-            base_agent_fee: Number.parseFloat(newModel.agent_base_agent_fee) || 0,
-            billing_frequency: newModel.agent_billing_frequency,
-            setup_fee: Number.parseFloat(newModel.agent_setup_fee) || 0,
-            volume_discount_enabled: newModel.agent_volume_discount_enabled,
-            volume_discount_threshold: newModel.agent_volume_discount_enabled ? Number.parseInt(newModel.agent_volume_discount_threshold) || 0 : null,
-            volume_discount_percentage: newModel.agent_volume_discount_enabled ? Number.parseFloat(newModel.agent_volume_discount_percentage) || 0 : null,
-            agent_tier: newModel.agent_tier,
-          }
-        }
-        if (newModel.include_activity) {
-          payload.hybrid_activity_configs = [
-            {
-              activity_type: newModel.activity_type,
-              price_per_unit: Number.parseFloat(newModel.price_per_unit) || 0,
-              unit_type: newModel.unit_type,
-              base_agent_fee: Number.parseFloat(newModel.base_agent_fee) || 0,
-              volume_pricing_enabled: newModel.volume_pricing_enabled,
-              volume_tier_1_threshold: newModel.volume_pricing_enabled ? Number.parseInt(newModel.volume_tier_1_threshold) || null : null,
-              volume_tier_1_price: newModel.volume_pricing_enabled ? Number.parseFloat(newModel.volume_tier_1_price) || null : null,
-              volume_tier_2_threshold: newModel.volume_pricing_enabled ? Number.parseInt(newModel.volume_tier_2_threshold) || null : null,
-              volume_tier_2_price: newModel.volume_pricing_enabled ? Number.parseFloat(newModel.volume_tier_2_price) || null : null,
-              volume_tier_3_threshold: newModel.volume_pricing_enabled ? Number.parseInt(newModel.volume_tier_3_threshold) || null : null,
-              volume_tier_3_price: newModel.volume_pricing_enabled ? Number.parseFloat(newModel.volume_tier_3_price) || null : null,
-              minimum_charge: Number.parseFloat(newModel.minimum_charge) || 0,
-              billing_frequency: newModel.billing_frequency,
-              is_active: newModel.is_active,
-            },
-          ]
-        }
-        if (newModel.include_outcome) {
-          payload.hybrid_outcome_configs = [
-            {
-              outcome_type: newModel.outcome_type,
-              percentage: Number.parseFloat(newModel.percentage) || 0,
-            },
-          ]
-        }
-        break
       case "workflow":
         payload.workflow_base_platform_fee = Number.parseFloat(newModel.workflow_base_platform_fee) || 0
         payload.workflow_platform_fee_frequency = newModel.workflow_platform_fee_frequency
@@ -336,11 +289,6 @@ export default function PricingPage() {
         outcome_requires_verification: false,
         outcome_auto_bill_verified_outcomes: false,
         outcome_is_active: true,
-        // Hybrid
-        hybrid_base_fee: "",
-        include_agent: false,
-        include_activity: false,
-        include_outcome: false,
         // Workflow
         workflow_base_platform_fee: "",
         workflow_platform_fee_frequency: "monthly",
@@ -470,9 +418,6 @@ export default function PricingPage() {
         payload.workflow_types = formData.workflow_types || []
         payload.commitment_tiers = formData.commitment_tiers || []
         break
-      case "hybrid":
-        payload.hybrid_base_fee = formData.hybrid_base_fee || 0
-        break
     }
 
     try {
@@ -529,8 +474,6 @@ export default function PricingPage() {
         return <BarChart className="h-5 w-5" />
       case "agent":
         return <Users className="h-5 w-5" />
-      case "hybrid":
-        return <Zap className="h-5 w-5" />
       case "outcome":
         return <DollarSign className="h-5 w-5" />
       case "workflow":
@@ -546,8 +489,6 @@ export default function PricingPage() {
         return "bg-blue/10 text-blue border-blue/8"
       case "agent":
         return "bg-purple/10 text-purple border-purple/8"
-      case "hybrid":
-        return "bg-gold/10 text-gold-dark border-gold/8"
       case "outcome":
         return "bg-green/10 text-green border-green/8"
       case "workflow":

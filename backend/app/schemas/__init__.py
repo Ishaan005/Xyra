@@ -3,7 +3,7 @@ from .user import User, UserCreate, UserUpdate, UserInDB
 from .organization import Organization, OrganizationCreate, OrganizationUpdate, OrganizationWithStats
 from .billing_model import (
     BillingModel, BillingModelCreate, BillingModelUpdate,
-    AgentBasedConfigSchema, ActivityBasedConfigSchema, OutcomeBasedConfigSchema, HybridConfigSchema
+    AgentBasedConfigSchema, ActivityBasedConfigSchema, OutcomeBasedConfigSchema
 )
 from .agent import (
     Agent, AgentCreate, AgentUpdate, AgentWithStats,

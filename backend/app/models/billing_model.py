@@ -11,7 +11,7 @@ class BillingModel(BaseModel):
     description = Column(String, nullable=True)
     organization_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
     
-    # Billing model type: 'agent', 'activity', 'outcome', 'hybrid', 'workflow'
+    # Billing model type: 'agent', 'activity', 'outcome', 'workflow'
     model_type = Column(String, nullable=False)
     
     # Whether this billing model is active
@@ -36,13 +36,6 @@ class BillingModel(BaseModel):
     )
     outcome_config = relationship(
         "OutcomeBasedConfig",
-        back_populates="billing_model",
-        cascade="all, delete, delete-orphan",
-        passive_deletes=True
-    )
-    hybrid_config = relationship(
-        "HybridConfig",
-        uselist=False,
         back_populates="billing_model",
         cascade="all, delete, delete-orphan",
         passive_deletes=True
@@ -176,17 +169,6 @@ class OutcomeBasedConfig(BaseModel):
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="outcome_config")
-
-class HybridConfig(BaseModel):
-    """
-    Configuration for hybrid billing - stores base fee and other hybrid-specific settings
-    """
-    billing_model_id = Column(Integer, ForeignKey("billingmodel.id", ondelete="CASCADE"), nullable=False)
-    base_fee = Column(Float, nullable=False, default=0.0)
-    
-    # Relationship
-    billing_model = relationship("BillingModel", back_populates="hybrid_config")
-
 
 class WorkflowBasedConfig(BaseModel):
     """

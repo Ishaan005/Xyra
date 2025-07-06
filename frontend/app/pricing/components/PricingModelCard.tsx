@@ -127,7 +127,7 @@ export default function PricingModelCard({ model, onEdit, onDelete, onDuplicate,
               </div>
             </div>
           )}
-          {/* Add similar sections for workflow, outcome, hybrid, etc. as needed */}
+          {/* Add similar sections for workflow, outcome, etc. as needed */}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between border-t pt-4">

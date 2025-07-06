@@ -5,7 +5,7 @@ from app.models.organization import Organization
 from app.schemas.billing_model import BillingModelCreate, BillingModelUpdate
 from .validation import validate_billing_config_from_schema
 from .config import (
-    create_agent_config, create_activity_config, create_outcome_config, create_hybrid_config, create_workflow_config, delete_all_configs
+    create_agent_config, create_activity_config, create_outcome_config, create_workflow_config, delete_all_configs
 )
 import logging
 
@@ -19,8 +19,6 @@ CONFIG_FIELDS = [
     "activity_price_per_unit", "activity_activity_type", "activity_unit_type", "activity_base_agent_fee", "activity_volume_pricing_enabled", "activity_volume_tier_1_threshold", "activity_volume_tier_1_price", "activity_volume_tier_2_threshold", "activity_volume_tier_2_price", "activity_volume_tier_3_threshold", "activity_volume_tier_3_price", "activity_minimum_charge", "activity_billing_frequency", "activity_is_active",
     # Outcome
     "outcome_outcome_name", "outcome_outcome_type", "outcome_description", "outcome_base_platform_fee", "outcome_platform_fee_frequency", "outcome_percentage", "outcome_fixed_charge_per_outcome", "outcome_attribution_window_days", "outcome_minimum_attribution_value", "outcome_requires_verification", "outcome_success_rate_assumption", "outcome_risk_premium_percentage", "outcome_monthly_cap_amount", "outcome_success_bonus_threshold", "outcome_success_bonus_percentage", "outcome_tier_1_threshold", "outcome_tier_1_percentage", "outcome_tier_2_threshold", "outcome_tier_2_percentage", "outcome_tier_3_threshold", "outcome_tier_3_percentage", "outcome_billing_frequency", "outcome_currency", "outcome_is_active", "outcome_auto_bill_verified_outcomes",
-    # Hybrid
-    "hybrid_base_fee", "hybrid_agent_config", "hybrid_activity_configs", "hybrid_outcome_configs",
     # Workflow
     "workflow_base_platform_fee", "workflow_platform_fee_frequency", "workflow_default_billing_frequency", "workflow_volume_discount_enabled", "workflow_volume_discount_threshold", "workflow_volume_discount_percentage", "workflow_overage_multiplier", "workflow_currency", "workflow_is_active", "workflow_types", "commitment_tiers"
 ]
@@ -36,7 +34,6 @@ def get_billing_model(db: Session, model_id: int) -> BillingModel:
             joinedload(BillingModel.agent_config),
             joinedload(BillingModel.activity_config),
             joinedload(BillingModel.outcome_config),
-            joinedload(BillingModel.hybrid_config),
             joinedload(BillingModel.workflow_config),
             joinedload(BillingModel.workflow_types),
             joinedload(BillingModel.commitment_tiers)
@@ -58,7 +55,6 @@ def get_billing_models_by_organization(db: Session, org_id: int, skip: int = 0, 
             joinedload(BillingModel.agent_config),
             joinedload(BillingModel.activity_config),
             joinedload(BillingModel.outcome_config),
-            joinedload(BillingModel.hybrid_config),
             joinedload(BillingModel.workflow_config),
             joinedload(BillingModel.workflow_types),
             joinedload(BillingModel.commitment_tiers)
@@ -76,7 +72,7 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
     organization = db.query(Organization).filter(Organization.id == billing_model_in.organization_id).first()
     if not organization:
         raise ValueError(f"Organization with ID {billing_model_in.organization_id} not found")
-    valid_types = ["agent", "activity", "outcome", "hybrid", "workflow"]
+    valid_types = ["agent", "activity", "outcome", "workflow"]
     if billing_model_in.model_type not in valid_types:
         raise ValueError(
             f"Invalid billing model type: {billing_model_in.model_type}. "
@@ -103,7 +99,6 @@ def create_billing_model(db: Session, billing_model_in: BillingModelCreate) -> B
         "agent": create_agent_config,
         "activity": create_activity_config,
         "outcome": create_outcome_config,
-        "hybrid": create_hybrid_config,
         "workflow": create_workflow_config,
     }
     config_creator = config_creators.get(billing_model_in.model_type)
@@ -121,7 +116,7 @@ def update_billing_model(db: Session, model_id: int, billing_model_in: BillingMo
     billing_model = get_billing_model(db, model_id=model_id)
     update_data = billing_model_in.model_dump(exclude_unset=True)
     if "model_type" in update_data:
-        valid_types = ["agent", "activity", "outcome", "hybrid", "workflow"]
+        valid_types = ["agent", "activity", "outcome", "workflow"]
         if update_data["model_type"] not in valid_types:
             raise ValueError(
                 f"Invalid billing model type: {update_data['model_type']}. "
@@ -137,7 +132,6 @@ def update_billing_model(db: Session, model_id: int, billing_model_in: BillingMo
             "agent": create_agent_config,
             "activity": create_activity_config,
             "outcome": create_outcome_config,
-            "hybrid": create_hybrid_config,
             "workflow": create_workflow_config,
         }
         config_creator = config_creators.get(new_model_type)

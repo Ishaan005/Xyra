@@ -78,7 +78,6 @@ export default function PricingCreateForm({ show, newModel, setNewModel, onCance
               >
                 <option value="activity">Activity-based</option>
                 <option value="agent">Agent-based</option>
-                <option value="hybrid">Hybrid</option>
                 <option value="outcome">Outcome-based</option>
                 <option value="workflow">Workflow-based</option>
               </select>
@@ -113,28 +112,6 @@ export default function PricingCreateForm({ show, newModel, setNewModel, onCance
                 model={newModel}
                 setModel={setNewModel}
               />
-            )}
-            {newModel.model_type === "hybrid" && (
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Hybrid Configuration</h3>
-                <p className="text-sm text-muted-foreground">
-                  Hybrid billing models combine multiple billing types. Full configuration coming soon.
-                </p>
-                <div className="space-y-2">
-                  <label htmlFor="hybrid-base-fee" className="text-sm font-medium">
-                    Base Fee (USD)
-                  </label>
-                  <Input
-                    id="hybrid-base-fee"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="e.g., 100.00"
-                    value={newModel.hybrid_base_fee || ""}
-                    onChange={(e) => setNewModel({ ...newModel, hybrid_base_fee: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
             )}
           </div>
         </div>

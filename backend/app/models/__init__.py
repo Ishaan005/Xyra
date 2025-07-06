@@ -8,7 +8,7 @@ from .user import User
 from .organization import Organization
 from .billing_model import (
     BillingModel, AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig,
-    HybridConfig, WorkflowBasedConfig, WorkflowType, CommitmentTier,
+    WorkflowBasedConfig, WorkflowType, CommitmentTier,
     OutcomeMetric, OutcomeVerificationRule
 )
 from .agent import Agent, AgentActivity, AgentCost, AgentOutcome
@@ -24,7 +24,6 @@ __all__ = [
     "AgentBasedConfig",
     "ActivityBasedConfig", 
     "OutcomeBasedConfig",
-    "HybridConfig",
     "WorkflowBasedConfig",
     "WorkflowType",
     "CommitmentTier",

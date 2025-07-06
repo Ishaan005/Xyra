@@ -2,7 +2,7 @@
 Config creation and deletion helpers for billing models.
 """
 from app.models.billing_model import (
-    AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, HybridConfig, WorkflowBasedConfig, WorkflowType, CommitmentTier
+    AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig, WorkflowBasedConfig, WorkflowType, CommitmentTier
 )
 
 def create_agent_config(db, billing_model, cfg_in):
@@ -69,22 +69,6 @@ def create_outcome_config(db, billing_model, cfg_in):
     )
     db.add(out_cfg)
 
-def create_hybrid_config(db, billing_model, cfg_in):
-    if cfg_in.hybrid_base_fee is not None:
-        hybrid_cfg = HybridConfig(
-            billing_model_id=billing_model.id,
-            base_fee=cfg_in.hybrid_base_fee,
-        )
-        db.add(hybrid_cfg)
-    if cfg_in.hybrid_agent_config:
-        create_agent_config(db, billing_model, cfg_in.hybrid_agent_config)
-    if cfg_in.hybrid_activity_configs:
-        for ac in cfg_in.hybrid_activity_configs:
-            create_activity_config(db, billing_model, ac)
-    if cfg_in.hybrid_outcome_configs:
-        for oc in cfg_in.hybrid_outcome_configs:
-            create_outcome_config(db, billing_model, oc)
-
 def create_workflow_config(db, billing_model, cfg_in):
     workflow_cfg = WorkflowBasedConfig(
         billing_model_id=billing_model.id,
@@ -144,14 +128,12 @@ def create_workflow_config(db, billing_model, cfg_in):
             db.add(commitment_tier)
 
 def delete_all_configs(db, model_id, current_model_type, model_type_changing):
-    if current_model_type in ("agent", "hybrid") or model_type_changing:
+    if current_model_type == "agent" or model_type_changing:
         db.query(AgentBasedConfig).filter(AgentBasedConfig.billing_model_id == model_id).delete()
-    if current_model_type in ("activity", "hybrid") or model_type_changing:
+    if current_model_type == "activity" or model_type_changing:
         db.query(ActivityBasedConfig).filter(ActivityBasedConfig.billing_model_id == model_id).delete()
-    if current_model_type in ("outcome", "hybrid") or model_type_changing:
+    if current_model_type == "outcome" or model_type_changing:
         db.query(OutcomeBasedConfig).filter(OutcomeBasedConfig.billing_model_id == model_id).delete()
-    if current_model_type == "hybrid" or model_type_changing:
-        db.query(HybridConfig).filter(HybridConfig.billing_model_id == model_id).delete()
     if current_model_type == "workflow" or model_type_changing:
         db.query(WorkflowBasedConfig).filter(WorkflowBasedConfig.billing_model_id == model_id).delete()
         db.query(WorkflowType).filter(WorkflowType.billing_model_id == model_id).delete()

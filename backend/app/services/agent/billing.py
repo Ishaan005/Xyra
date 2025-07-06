@@ -102,31 +102,6 @@ def get_agent_billing_config(db: Session, agent_id: int) -> Optional[Dict[str, A
                     "is_popular": ct.is_popular
                 } for ct in bm.commitment_tiers
             ]
-    elif bm.model_type == "hybrid":
-        config["hybrid_config"] = {}
-        if bm.hybrid_config:
-            config["hybrid_config"]["base_fee"] = bm.hybrid_config.base_fee
-        if bm.agent_config:
-            config["hybrid_config"]["agent_config"] = {
-                "base_agent_fee": bm.agent_config.base_agent_fee,
-                "billing_frequency": bm.agent_config.billing_frequency
-            }
-        if bm.activity_config:
-            config["hybrid_config"]["activity_configs"] = [
-                {
-                    "activity_type": cfg.activity_type,
-                    "price_per_unit": cfg.price_per_unit,
-                    "is_active": cfg.is_active
-                } for cfg in bm.activity_config
-            ]
-        if bm.outcome_config:
-            config["hybrid_config"]["outcome_configs"] = [
-                {
-                    "outcome_type": cfg.outcome_type,
-                    "percentage": cfg.percentage,
-                    "is_active": cfg.is_active
-                } for cfg in bm.outcome_config
-            ]
     
     return config
 
@@ -142,7 +117,7 @@ def validate_agent_billing_data(db: Session, agent_id: int, data_type: str, data
     model_type = config["model_type"]
     
     if data_type == "activity":
-        if model_type not in ("activity", "hybrid"):
+        if model_type != "activity":
             return False
         
         activity_type = data.get("activity_type")
@@ -150,16 +125,11 @@ def validate_agent_billing_data(db: Session, agent_id: int, data_type: str, data
             return False
         
         # Check if activity type is configured
-        if model_type == "activity":
-            activity_configs = config.get("activity_configs", [])
-            return any(cfg["activity_type"] == activity_type for cfg in activity_configs)
-        elif model_type == "hybrid":
-            hybrid_config = config.get("hybrid_config", {})
-            activity_configs = hybrid_config.get("activity_configs", [])
-            return any(cfg["activity_type"] == activity_type for cfg in activity_configs)
+        activity_configs = config.get("activity_configs", [])
+        return any(cfg["activity_type"] == activity_type for cfg in activity_configs)
     
     elif data_type == "outcome":
-        if model_type not in ("outcome", "hybrid"):
+        if model_type != "outcome":
             return False
         
         outcome_type = data.get("outcome_type")
@@ -169,10 +139,6 @@ def validate_agent_billing_data(db: Session, agent_id: int, data_type: str, data
         # Check if outcome type is configured
         if model_type == "outcome":
             outcome_configs = config.get("outcome_configs", [])
-            return any(cfg["outcome_type"] == outcome_type for cfg in outcome_configs)
-        elif model_type == "hybrid":
-            hybrid_config = config.get("hybrid_config", {})
-            outcome_configs = hybrid_config.get("outcome_configs", [])
             return any(cfg["outcome_type"] == outcome_type for cfg in outcome_configs)
     
     elif data_type == "workflow":

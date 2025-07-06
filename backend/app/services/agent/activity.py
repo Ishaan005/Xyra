@@ -42,7 +42,7 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
     logger.info(f"Recorded activity {activity.activity_type} for agent: {agent.name}")
     # Auto-record cost for activity based on billing model
     bm = agent.billing_model
-    if bm and bm.model_type in ("activity", "hybrid"):
+    if bm and bm.model_type == "activity":
         # For activity-based billing, use activity_type from the config
         if bm.model_type == "activity":
             # Find matching activity config based on activity_type
@@ -80,19 +80,17 @@ def record_agent_activity(db: Session, activity_in: AgentActivityCreate) -> Agen
             else:
                 logger.warning(f"No matching activity config found for activity type: {activity.activity_type}")
         else:
-            # For hybrid models, use activities dictionary
-            usage_data = {"activities": {activity.activity_type: 1}}
-            cost_amt = calculate_cost(bm, usage_data)
+            logger.warning(f"Unsupported model type for activity tracking: {bm.model_type}")
             
             cost_entry = AgentCostModel(
                 agent_id=agent.id,
                 cost_type="activity",
-                amount=cost_amt,
+                amount=0.0,
                 currency="USD",
                 timestamp=datetime.now(timezone.utc),
                 details={"activity_id": activity.id, "activity_type": activity.activity_type}
             )
             db.add(cost_entry)
             db.commit()
-            logger.info(f"Auto-recorded activity cost {cost_amt} USD for agent: {agent.name}")
+            logger.info(f"Auto-recorded activity cost 0.0 USD for agent: {agent.name}")
     return activity

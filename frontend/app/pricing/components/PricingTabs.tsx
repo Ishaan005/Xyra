@@ -17,11 +17,10 @@ interface PricingTabsProps {
 export default function PricingTabs({ activeTab, setActiveTab }: PricingTabsProps) {
   return (
     <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-      <TabsList className="grid grid-cols-5 w-full sm:w-auto">
+      <TabsList className="grid grid-cols-4 w-full sm:w-auto">
         <TabsTrigger value="all">All</TabsTrigger>
         <TabsTrigger value="activity">Activity</TabsTrigger>
         <TabsTrigger value="agent">Agent</TabsTrigger>
-        <TabsTrigger value="hybrid">Hybrid</TabsTrigger>
         <TabsTrigger value="workflow">Workflow</TabsTrigger>
       </TabsList>
     </Tabs>

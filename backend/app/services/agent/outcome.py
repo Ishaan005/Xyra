@@ -42,7 +42,7 @@ def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOu
     logger.info(f"Recorded outcome {outcome.value} {outcome.currency} for agent: {agent.name}")
     # Auto-record cost for outcome based on billing model
     bm = agent.billing_model
-    if bm and bm.model_type in ("outcome", "hybrid"):
+    if bm and bm.model_type == "outcome":
         # For outcome-based billing, use outcome_type from the config
         if bm.model_type == "outcome":
             # Find matching outcome config based on outcome_type
@@ -83,19 +83,17 @@ def record_agent_outcome(db: Session, outcome_in: AgentOutcomeCreate) -> AgentOu
             else:
                 logger.warning(f"No matching outcome config found for outcome type: {outcome.outcome_type}")
         else:
-            # For hybrid models, use outcome_value
-            usage_data = {"outcome_value": outcome.value}
-            cost_amt = calculate_cost(bm, usage_data)
+            logger.warning(f"Unsupported model type for outcome tracking: {bm.model_type}")
             
             cost_entry = AgentCostModel(
                 agent_id=agent.id,
                 cost_type="outcome",
-                amount=cost_amt,
+                amount=0.0,
                 currency=outcome.currency,
                 timestamp=datetime.now(timezone.utc),
                 details={"outcome_id": outcome.id, "outcome_type": outcome.outcome_type}
             )
             db.add(cost_entry)
             db.commit()
-            logger.info(f"Auto-recorded outcome cost {cost_amt} {outcome.currency} for agent: {agent.name}")
+            logger.info(f"Auto-recorded outcome cost 0.0 {outcome.currency} for agent: {agent.name}")
     return outcome

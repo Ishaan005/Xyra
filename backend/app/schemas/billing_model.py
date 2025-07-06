@@ -8,7 +8,7 @@ class BillingModelBase(BaseModel):
     """Base billing model schema"""
     name: str
     description: Optional[str] = None
-    model_type: str = Field(..., description="One of: 'agent', 'activity', 'outcome', 'hybrid', 'workflow'")
+    model_type: str = Field(..., description="One of: 'agent', 'activity', 'outcome', 'workflow'")
     is_active: bool = True
 
 
@@ -68,12 +68,6 @@ class BillingModelCreate(BillingModelBase):
     outcome_is_active: Optional[bool] = None
     outcome_auto_bill_verified_outcomes: Optional[bool] = None
     
-    # Hybrid-specific config
-    hybrid_base_fee: Optional[float] = None
-    hybrid_agent_config: Optional[AgentBasedConfigSchema] = None
-    hybrid_activity_configs: Optional[List[ActivityBasedConfigSchema]] = None
-    hybrid_outcome_configs: Optional[List[OutcomeBasedConfigSchema]] = None
-    
     # Workflow-based config fields
     workflow_base_platform_fee: Optional[float] = None
     workflow_platform_fee_frequency: Optional[str] = "monthly"
@@ -92,7 +86,7 @@ class BillingModelUpdate(BaseModel):
     """Schema for updating billing models"""
     name: Optional[str] = None
     description: Optional[str] = None
-    model_type: Optional[str] = Field(None, description="One of: 'agent', 'activity', 'outcome', 'hybrid', 'workflow'")
+    model_type: Optional[str] = Field(None, description="One of: 'agent', 'activity', 'outcome', 'workflow'")
     is_active: Optional[bool] = None
     
     # Agent-based config fields
@@ -147,12 +141,6 @@ class BillingModelUpdate(BaseModel):
     outcome_is_active: Optional[bool] = None
     outcome_auto_bill_verified_outcomes: Optional[bool] = None
     
-    # Hybrid-specific config
-    hybrid_base_fee: Optional[float] = None
-    hybrid_agent_config: Optional[AgentBasedConfigSchema] = None
-    hybrid_activity_configs: Optional[List[ActivityBasedConfigSchema]] = None
-    hybrid_outcome_configs: Optional[List[OutcomeBasedConfigSchema]] = None
-    
     # Workflow-based config fields
     workflow_base_platform_fee: Optional[float] = None
     workflow_platform_fee_frequency: Optional[str] = None
@@ -177,7 +165,6 @@ class BillingModelInDBBase(BillingModelBase):
     agent_config: Optional["AgentBasedConfigSchema"] = None
     activity_config: Optional[List["ActivityBasedConfigSchema"]] = None
     outcome_config: Optional[List["OutcomeBasedConfigSchema"]] = None
-    hybrid_config: Optional["HybridConfigSchema"] = None
     workflow_config: Optional["WorkflowBasedConfigSchema"] = None
     workflow_types: Optional[List["WorkflowTypeSchema"]] = None
     commitment_tiers: Optional[List["CommitmentTierSchema"]] = None
@@ -265,19 +252,6 @@ class OutcomeBasedConfigSchema(BaseModel):
     # Status and settings
     is_active: bool = True
     auto_bill_verified_outcomes: bool = False  # Auto-bill verified outcomes
-
-
-class HybridConfigSchema(BaseModel):
-    """Configuration schema for hybrid billing"""
-    base_fee: float = 0.0
-
-
-class HybridConfigExtendedSchema(BaseModel):
-    """Extended configuration schema for hybrid billing with all components"""
-    base_fee: Optional[float] = 0.0
-    agent_config: Optional[AgentBasedConfigSchema] = None
-    activity_config: Optional[List[ActivityBasedConfigSchema]] = None
-    outcome_config: Optional[List[OutcomeBasedConfigSchema]] = None
 
 
 class WorkflowBasedConfigSchema(BaseModel):

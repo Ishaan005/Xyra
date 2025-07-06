@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Users, Activity, Target, Zap, GitBranch } from "lucide-react";
+import { ArrowLeft, Plus, Users, Activity, Target, Zap } from "lucide-react";
 import WorkflowBasedForm from "@/app/pricing/components/WorkflowBasedForm";
 import OutcomeBasedForm from "@/app/pricing/components/OutcomeBasedForm";
 import AgentBasedForm from "@/app/pricing/components/AgentBasedForm";
@@ -53,15 +53,6 @@ const billingModelTypes = [
     badge: "Structured",
     badgeVariant: "secondary" as const,
     features: ["Workflow pricing", "Commitment tiers", "Volume discounts", "Overage handling"]
-  },
-  {
-    id: "hybrid",
-    name: "Hybrid",
-    description: "Combine multiple billing models for comprehensive pricing",
-    icon: GitBranch,
-    badge: "Advanced",
-    badgeVariant: "outline" as const,
-    features: ["Multiple models", "Custom combinations", "Complex pricing", "Enterprise-ready"]
   }
 ];
 
@@ -211,37 +202,6 @@ export default function ComprehensivePricingForm({
               </Button>
             </div>
           </div>
-        );
-      case "hybrid":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GitBranch className="h-5 w-5" />
-                Hybrid Billing Model
-              </CardTitle>
-              <CardDescription>
-                Combine multiple billing models for comprehensive pricing
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center py-8">
-                <GitBranch className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Hybrid Billing Coming Soon</h3>
-                <p className="text-muted-foreground mb-4">
-                  Advanced hybrid billing models that combine multiple pricing strategies are currently in development.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  For now, you can create individual billing models and combine them manually.
-                </p>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <Button variant="outline" onClick={() => setSelectedModelType(null)}>
-                  Back
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         );
       default:
         return null;

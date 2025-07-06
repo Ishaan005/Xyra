@@ -166,43 +166,7 @@ async def example_workflow_based_billing():
     print(f"Smart tracked workflow: {smart_result}")
 
 
-# Example 6: Hybrid Billing Model
-async def example_hybrid_billing():
-    """Example for hybrid billing model."""
-    client = example_basic_setup()
-    
-    print("=== Hybrid Billing Example ===")
-    
-    # Get supported activities and outcomes
-    activities = await client.get_supported_activities()
-    outcomes = await client.get_supported_outcomes()
-    
-    print(f"Supported activities: {activities}")
-    print(f"Supported outcomes: {outcomes}")
-    
-    # Use smart tracking for hybrid model
-    smart_result = await client.smart_track(
-        activity_units=3,
-        value=1500.0,
-        metadata={"campaign_id": "C789", "client": "Big Corp"}
-    )
-    print(f"Smart tracked hybrid: {smart_result}")
-    
-    # Track multiple metrics at once
-    activities_data = [{"type": activities[0], "metadata": {"batch": "B001"}}] if activities else []
-    outcomes_data = [{"type": outcomes[0], "value": 2000.0, "currency": "USD"}] if outcomes else []
-    
-    metrics_result = await client.track_agent_metrics(
-        activities=activities_data,
-        costs=[
-            {"amount": 10.50, "type": "compute", "currency": "USD"}
-        ],
-        outcomes=outcomes_data
-    )
-    print(f"Multiple metrics tracked: {metrics_result}")
-
-
-# Example 7: Cost Tracking and Estimation
+# Example 6: Cost Tracking and Estimation
 async def example_cost_tracking():
     """Example for cost tracking and estimation."""
     client = example_basic_setup()
@@ -385,7 +349,6 @@ async def run_examples():
         ("Activity-Based Billing", example_activity_based_billing),
         ("Outcome-Based Billing", example_outcome_based_billing),
         ("Workflow-Based Billing", example_workflow_based_billing),
-        ("Hybrid Billing", example_hybrid_billing),
         ("Cost Tracking", example_cost_tracking),
         ("Analytics", example_analytics),
         ("Error Handling", example_error_handling),

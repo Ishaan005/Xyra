@@ -121,10 +121,6 @@ class XyraClient:
             if config.get("model_type") == "activity":
                 configs = config.get("activity_configs", [])
                 activity_types = [cfg.get("activity_type") for cfg in configs if cfg.get("is_active")]
-            elif config.get("model_type") == "hybrid":
-                hybrid_config = config.get("hybrid_config", {})
-                configs = hybrid_config.get("activity_configs", [])
-                activity_types = [cfg.get("activity_type") for cfg in configs if cfg.get("is_active")]
             
             return [at for at in activity_types if at]
         except Exception:
@@ -143,10 +139,6 @@ class XyraClient:
             
             if config.get("model_type") == "outcome":
                 configs = config.get("outcome_configs", [])
-                outcome_types = [cfg.get("outcome_type") for cfg in configs if cfg.get("is_active")]
-            elif config.get("model_type") == "hybrid":
-                hybrid_config = config.get("hybrid_config", {})
-                configs = hybrid_config.get("outcome_configs", [])
                 outcome_types = [cfg.get("outcome_type") for cfg in configs if cfg.get("is_active")]
             
             return [ot for ot in outcome_types if ot]
@@ -237,10 +229,6 @@ class XyraClient:
 
         if model_type == "activity":
             configs = bm.get("activity_config") or []
-        elif model_type == "hybrid":
-            hybrid_config_data = bm.get("hybrid_config")
-            if hybrid_config_data:
-                configs = hybrid_config_data.get("activity_configs") or []
         
         if not configs:
             raise ValueError(f"No applicable activity configurations found for billing model type '{model_type}'")
@@ -345,10 +333,6 @@ class XyraClient:
 
         if model_type == "outcome":
             configs = bm.get("outcome_config") or []
-        elif model_type == "hybrid":
-            hybrid_config_data = bm.get("hybrid_config")
-            if hybrid_config_data:
-                configs = hybrid_config_data.get("outcome_configs") or []
 
         if not configs:
             raise ValueError(f"No applicable outcome configurations found for billing model type '{model_type}'")
@@ -535,7 +519,6 @@ class XyraClient:
         - Activity-based: Records configured activities
         - Outcome-based: Records outcomes (requires value)
         - Workflow-based: Records workflow execution (requires workflow_type)
-        - Hybrid: Records appropriate combination
         
         Args:
             value: Value for outcome recording (required for outcome-based models)
@@ -609,25 +592,6 @@ class XyraClient:
                 
                 workflow_result = await self.record_workflow(workflow_type, metadata)
                 results["workflows"].append(workflow_result)
-                
-            elif model_type == "hybrid":
-                # For hybrid models, record activities and optionally outcomes
-                activity_types = await self.get_supported_activities()
-                for activity_type in activity_types:
-                    for _ in range(activity_units):
-                        activity_result = await self.record_activity(activity_type, metadata)
-                        results["activities"].append(activity_result)
-                
-                # Record outcomes if value provided
-                if value is not None:
-                    if outcome_type:
-                        outcome_result = await self.record_outcome(outcome_type, value, details=metadata)
-                        results["outcomes"].append(outcome_result)
-                    else:
-                        outcome_types = await self.get_supported_outcomes()
-                        for ot in outcome_types:
-                            outcome_result = await self.record_outcome(ot, value, details=metadata)
-                            results["outcomes"].append(outcome_result)
             
             return results
             
@@ -739,16 +703,6 @@ class XyraClient:
                         for wt in workflow_types if wt.get("is_active")
                     ]
                 }
-                
-            elif model_type == "hybrid":
-                hybrid_config = config.get("hybrid_config", {})
-                info["supported_operations"] = ["activities", "outcomes", "agent_usage"]
-                info["pricing_info"] = {
-                    "base_fee": hybrid_config.get("base_fee"),
-                    "activity_configs": hybrid_config.get("activity_configs", []),
-                    "outcome_configs": hybrid_config.get("outcome_configs", []),
-                    "agent_config": hybrid_config.get("agent_config", {})
-                }
             
             return info
             
@@ -857,10 +811,6 @@ class XyraClient:
                 elif model_type == "workflow":
                     workflows = await self.get_supported_workflows()
                     health["supported_operations"] = [w["type"] for w in workflows]
-                elif model_type == "hybrid":
-                    activities = await self.get_supported_activities()
-                    outcomes = await self.get_supported_outcomes()
-                    health["supported_operations"] = activities + outcomes
                 elif model_type == "agent":
                     health["supported_operations"] = ["agent_usage"]
                 

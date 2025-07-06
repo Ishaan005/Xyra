@@ -16,7 +16,7 @@ export function FAQSection() {
     {
       question: "Do I need to change my pricing right away?",
       answer:
-        "Not at all! Start with a hybrid model — keep your base subscription fee and add outcome-based components. We'll help you transition at your own pace.",
+        "Not at all! You can keep your base subscription fee and add outcome-based components. We'll help you transition at your own pace.",
       color: "purple",
     },
     {

@@ -9,7 +9,6 @@
   - Activity-based billing
   - Outcome-based billing
   - Workflow-based billing
-  - Hybrid billing
 - Smart tracking functionality that automatically adapts to billing model
 - Comprehensive error handling and validation
 - Health check functionality for debugging and monitoring
