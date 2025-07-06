@@ -367,8 +367,16 @@ export default function PricingPage() {
     console.log('Current org ID:', currentOrgId);
     console.log('=== END SUBMIT DEBUG ===');
     
-    if (!currentOrgId || !formData.name || !formData.model_type) {
-      console.error('Missing required fields:', { currentOrgId, name: formData.name, model_type: formData.model_type });
+    // Check required fields with better error reporting
+    const missingFields = [];
+    if (!currentOrgId) missingFields.push('organization');
+    if (!formData.name) missingFields.push('name');
+    if (!formData.model_type) missingFields.push('model_type');
+    
+    if (missingFields.length > 0) {
+      const errorMsg = `Missing required fields: ${missingFields.join(', ')}`;
+      console.error(errorMsg, { currentOrgId, name: formData.name, model_type: formData.model_type });
+      toast.error(errorMsg);
       return;
     }
 
@@ -417,11 +425,11 @@ export default function PricingPage() {
         payload.outcome_outcome_name = formData.outcome_outcome_name || ""
         payload.outcome_outcome_type = formData.outcome_outcome_type || "custom"
         payload.outcome_description = formData.outcome_description || ""
-        payload.outcome_percentage = parseFloat(formData.outcome_percentage) || 0
+        payload.outcome_percentage = parseFloat(formData.outcome_percentage) || null
         payload.outcome_fixed_charge_per_outcome = parseFloat(formData.outcome_fixed_charge_per_outcome) || null
         payload.outcome_currency = formData.outcome_currency || "USD"
         payload.outcome_billing_frequency = formData.outcome_billing_frequency || "monthly"
-        payload.outcome_base_platform_fee = parseFloat(formData.outcome_base_platform_fee) || 0
+        payload.outcome_base_platform_fee = parseFloat(formData.outcome_base_platform_fee) || null
         payload.outcome_platform_fee_frequency = formData.outcome_platform_fee_frequency || "monthly"
         payload.outcome_is_active = formData.outcome_is_active === undefined ? true : formData.outcome_is_active
 

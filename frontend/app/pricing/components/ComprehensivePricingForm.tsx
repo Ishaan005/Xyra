@@ -78,7 +78,11 @@ export default function ComprehensivePricingForm({
 
   const handleModelTypeSelect = (modelType: string) => {
     setSelectedModelType(modelType);
-    setFormData({ model_type: modelType }); // Initialize form data with model type only
+    setFormData({ 
+      model_type: modelType,
+      name: "",
+      description: ""
+    }); // Initialize form data with required fields
   };
 
   const handleFormSubmit = (data?: any) => {
@@ -94,10 +98,52 @@ export default function ComprehensivePricingForm({
   };
 
   const renderBillingModelForm = () => {
+    const commonFormSection = (
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Basic Information</CardTitle>
+          <CardDescription>
+            Provide basic details for your pricing model
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="model-name" className="text-sm font-medium">
+                Model Name *
+              </label>
+              <input
+                id="model-name"
+                type="text"
+                placeholder="e.g., Enterprise Outcome Model"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="model-description" className="text-sm font-medium">
+                Description
+              </label>
+              <input
+                id="model-description"
+                type="text"
+                placeholder="Brief description of the pricing model"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={formData.description || ""}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+
     switch (selectedModelType) {
       case "agent":
         return (
           <div className="space-y-6">
+            {commonFormSection}
             <AgentBasedForm
               model={formData}
               setModel={setFormData}
@@ -115,6 +161,7 @@ export default function ComprehensivePricingForm({
       case "activity":
         return (
           <div className="space-y-6">
+            {commonFormSection}
             <ActivityBasedForm
               model={formData}
               setModel={setFormData}
@@ -132,6 +179,7 @@ export default function ComprehensivePricingForm({
       case "outcome":
         return (
           <div className="space-y-6">
+            {commonFormSection}
             <OutcomeBasedForm
               model={formData}
               setModel={setFormData}
@@ -149,6 +197,7 @@ export default function ComprehensivePricingForm({
       case "workflow":
         return (
           <div className="space-y-6">
+            {commonFormSection}
             <WorkflowBasedForm
               model={formData}
               setModel={setFormData}

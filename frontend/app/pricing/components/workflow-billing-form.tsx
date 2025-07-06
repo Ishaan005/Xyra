@@ -235,18 +235,17 @@ export default function WorkflowBillingForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Base Platform Fee ($)</label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="3000.00"
-                value={baseModel.workflow_base_platform_fee !== undefined ? baseModel.workflow_base_platform_fee.toString() : ""}
-                onChange={(e) => onBaseModelChange({ ...baseModel, workflow_base_platform_fee: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">Monthly subscription fee for platform access</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">              <div className="space-y-2">
+                <label className="text-sm font-medium">Base Platform Fee ($)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="3000.00"
+                  value={baseModel.workflow_base_platform_fee?.toString() || ""}
+                  onChange={(e) => onBaseModelChange({ ...baseModel, workflow_base_platform_fee: e.target.value || "" })}
+                />
+                <p className="text-xs text-muted-foreground">Monthly subscription fee for platform access</p>
+              </div>
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Platform Fee Frequency</label>
@@ -266,7 +265,7 @@ export default function WorkflowBillingForm({
               <input
                 type="checkbox"
                 id="workflow-volume-discount"
-                checked={baseModel.workflow_volume_discount_enabled}
+                checked={baseModel.workflow_volume_discount_enabled || false}
                 onChange={(e) => onBaseModelChange({ ...baseModel, workflow_volume_discount_enabled: e.target.checked })}
               />
               <label htmlFor="workflow-volume-discount" className="text-sm font-medium">Enable Global Volume Discount</label>
@@ -279,8 +278,8 @@ export default function WorkflowBillingForm({
                   <Input
                     type="number"
                     placeholder="50"
-                    value={baseModel.workflow_volume_discount_threshold !== undefined ? baseModel.workflow_volume_discount_threshold.toString() : ""}
-                    onChange={(e) => onBaseModelChange({ ...baseModel, workflow_volume_discount_threshold: e.target.value })}
+                    value={baseModel.workflow_volume_discount_threshold?.toString() || ""}
+                    onChange={(e) => onBaseModelChange({ ...baseModel, workflow_volume_discount_threshold: e.target.value || "" })}
                   />
                   <p className="text-xs text-muted-foreground">Total workflows/month to qualify</p>
                 </div>
@@ -291,8 +290,8 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.1"
                     placeholder="20.0"
-                    value={baseModel.workflow_volume_discount_percentage !== undefined ? baseModel.workflow_volume_discount_percentage.toString() : ""}
-                    onChange={(e) => onBaseModelChange({ ...baseModel, workflow_volume_discount_percentage: e.target.value })}
+                    value={baseModel.workflow_volume_discount_percentage?.toString() || ""}
+                    onChange={(e) => onBaseModelChange({ ...baseModel, workflow_volume_discount_percentage: e.target.value || "" })}
                   />
                   <p className="text-xs text-muted-foreground">Discount on total bill</p>
                 </div>
@@ -307,8 +306,8 @@ export default function WorkflowBillingForm({
                 type="number"
                 step="0.1"
                 placeholder="1.0"
-                value={baseModel.workflow_overage_multiplier !== undefined ? baseModel.workflow_overage_multiplier.toString() : ""}
-                onChange={(e) => onBaseModelChange({ ...baseModel, workflow_overage_multiplier: e.target.value })}
+                value={baseModel.workflow_overage_multiplier?.toString() || ""}
+                onChange={(e) => onBaseModelChange({ ...baseModel, workflow_overage_multiplier: e.target.value || "" })}
               />
               <p className="text-xs text-muted-foreground">1.0 = normal price, 1.5 = 150% for overages</p>
             </div>
@@ -550,7 +549,7 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.01"
                     placeholder="2.00"
-                    value={newWorkflow.price_per_workflow}
+                    value={newWorkflow.price_per_workflow.toString()}
                     onChange={(e) => setNewWorkflow({ ...newWorkflow, price_per_workflow: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -560,7 +559,7 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={newWorkflow.minimum_charge}
+                    value={newWorkflow.minimum_charge.toString()}
                     onChange={(e) => setNewWorkflow({ ...newWorkflow, minimum_charge: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -569,7 +568,7 @@ export default function WorkflowBillingForm({
                   <Input
                     type="number"
                     placeholder="10"
-                    value={newWorkflow.estimated_duration_minutes}
+                    value={newWorkflow.estimated_duration_minutes.toString()}
                     onChange={(e) => setNewWorkflow({ ...newWorkflow, estimated_duration_minutes: parseInt(e.target.value) || 0 })}
                   />
                 </div>
@@ -606,7 +605,7 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.1"
                     placeholder="5.0"
-                    value={newWorkflow.expected_roi_multiplier}
+                    value={newWorkflow.expected_roi_multiplier.toString()}
                     onChange={(e) => setNewWorkflow({ ...newWorkflow, expected_roi_multiplier: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -618,7 +617,7 @@ export default function WorkflowBillingForm({
                   type="number"
                   step="0.01"
                   placeholder="0.50"
-                  value={newWorkflow.estimated_compute_cost}
+                  value={newWorkflow.estimated_compute_cost.toString()}
                   onChange={(e) => setNewWorkflow({ ...newWorkflow, estimated_compute_cost: parseFloat(e.target.value) || 0 })}
                 />
                 {newWorkflow.estimated_compute_cost > 0 && (
@@ -638,8 +637,8 @@ export default function WorkflowBillingForm({
                     <Input
                       type="number"
                       placeholder="100"
-                      value={newWorkflow.volume_tier_1_threshold || ''}
-                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_1_threshold: parseInt(e.target.value) || null })}
+                      value={newWorkflow.volume_tier_1_threshold?.toString() || ''}
+                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_1_threshold: e.target.value ? parseInt(e.target.value) : null })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -648,8 +647,8 @@ export default function WorkflowBillingForm({
                       type="number"
                       step="0.01"
                       placeholder="1.80"
-                      value={newWorkflow.volume_tier_1_price || ''}
-                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_1_price: parseFloat(e.target.value) || null })}
+                      value={newWorkflow.volume_tier_1_price?.toString() || ''}
+                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_1_price: e.target.value ? parseFloat(e.target.value) : null })}
                     />
                   </div>
                 </div>
@@ -660,8 +659,8 @@ export default function WorkflowBillingForm({
                     <Input
                       type="number"
                       placeholder="500"
-                      value={newWorkflow.volume_tier_2_threshold || ''}
-                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_2_threshold: parseInt(e.target.value) || null })}
+                      value={newWorkflow.volume_tier_2_threshold?.toString() || ''}
+                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_2_threshold: e.target.value ? parseInt(e.target.value) : null })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -670,8 +669,8 @@ export default function WorkflowBillingForm({
                       type="number"
                       step="0.01"
                       placeholder="1.50"
-                      value={newWorkflow.volume_tier_2_price || ''}
-                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_2_price: parseFloat(e.target.value) || null })}
+                      value={newWorkflow.volume_tier_2_price?.toString() || ''}
+                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_2_price: e.target.value ? parseFloat(e.target.value) : null })}
                     />
                   </div>
                 </div>
@@ -682,8 +681,8 @@ export default function WorkflowBillingForm({
                     <Input
                       type="number"
                       placeholder="1000"
-                      value={newWorkflow.volume_tier_3_threshold || ''}
-                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_3_threshold: parseInt(e.target.value) || null })}
+                      value={newWorkflow.volume_tier_3_threshold?.toString() || ''}
+                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_3_threshold: e.target.value ? parseInt(e.target.value) : null })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -692,8 +691,8 @@ export default function WorkflowBillingForm({
                       type="number"
                       step="0.01"
                       placeholder="1.20"
-                      value={newWorkflow.volume_tier_3_price || ''}
-                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_3_price: parseFloat(e.target.value) || null })}
+                      value={newWorkflow.volume_tier_3_price?.toString() || ''}
+                      onChange={(e) => setNewWorkflow({ ...newWorkflow, volume_tier_3_price: e.target.value ? parseFloat(e.target.value) : null })}
                     />
                   </div>
                 </div>
@@ -747,7 +746,7 @@ export default function WorkflowBillingForm({
                   <Input
                     type="number"
                     placeholder="12"
-                    value={newTier.commitment_period_months}
+                    value={newTier.commitment_period_months.toString()}
                     onChange={(e) => setNewTier({ ...newTier, commitment_period_months: parseInt(e.target.value) || 12 })}
                   />
                 </div>
@@ -768,7 +767,7 @@ export default function WorkflowBillingForm({
                   <Input
                     type="number"
                     placeholder="2000"
-                    value={newTier.minimum_workflows_per_month}
+                    value={newTier.minimum_workflows_per_month.toString()}
                     onChange={(e) => setNewTier({ ...newTier, minimum_workflows_per_month: parseInt(e.target.value) || 0 })}
                   />
                 </div>
@@ -778,8 +777,8 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.01"
                     placeholder="12500.00"
-                    value={newTier.minimum_monthly_revenue}
-                    onChange={(e) => setNewTier({ ...newTier, minimum_monthly_revenue: parseFloat(e.target.value) || 0 })}
+                    value={newTier.minimum_monthly_revenue?.toString() || ''}
+                    onChange={(e) => setNewTier({ ...newTier, minimum_monthly_revenue: e.target.value ? parseFloat(e.target.value) : 0 })}
                   />
                 </div>
               </div>
@@ -790,7 +789,7 @@ export default function WorkflowBillingForm({
                   <Input
                     type="number"
                     placeholder="100"
-                    value={newTier.included_workflows}
+                    value={newTier.included_workflows?.toString() || ''}
                     onChange={(e) => setNewTier({ ...newTier, included_workflows: parseInt(e.target.value) || 0 })}
                   />
                 </div>
@@ -800,7 +799,7 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.1"
                     placeholder="10.0"
-                    value={newTier.discount_percentage}
+                    value={newTier.discount_percentage?.toString() || ''}
                     onChange={(e) => setNewTier({ ...newTier, discount_percentage: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -813,7 +812,7 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.01"
                     placeholder="500.00"
-                    value={newTier.platform_fee_discount}
+                    value={newTier.platform_fee_discount?.toString() || ''}
                     onChange={(e) => setNewTier({ ...newTier, platform_fee_discount: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -823,7 +822,7 @@ export default function WorkflowBillingForm({
                     type="number"
                     step="0.1"
                     placeholder="1.0"
-                    value={newTier.overage_rate_multiplier}
+                    value={newTier.overage_rate_multiplier?.toString() || ''}
                     onChange={(e) => setNewTier({ ...newTier, overage_rate_multiplier: parseFloat(e.target.value) || 1.0 })}
                   />
                 </div>
