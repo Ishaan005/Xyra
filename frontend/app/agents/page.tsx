@@ -344,6 +344,9 @@ export default function AgentsPage() {
                 <thead>
                   <tr className="bg-muted/30">
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Agent
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -384,6 +387,11 @@ export default function AgentsPage() {
                     return (
                       <Fragment key={agent.id}>
                         <tr className="hover:bg-muted/20 transition-colors">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-mono text-muted-foreground">
+                              #{agent.id}
+                            </div>
+                          </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-20 to-blue-20 flex items-center justify-center text-sm font-medium">
@@ -469,7 +477,7 @@ export default function AgentsPage() {
                         </tr>
                         {editAgentId === agent.id && (
                           <tr>
-                            <td colSpan={7} className="bg-muted/30 p-4">
+                            <td colSpan={8} className="bg-muted/30 p-4">
                               <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
                                 <h3 className="text-sm font-medium mb-3">Edit Agent</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

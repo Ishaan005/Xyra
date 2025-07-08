@@ -11,22 +11,21 @@ xyra_client = XyraClient(
     agent_id=int(os.getenv("XYRA_AGENT_ID", "3")),
 )
 
-## Insert your Agent Functions here
 async def main():
-    # Check health first
+    # Check health
     health = await xyra_client.health_check()
     print(f"Health check: {health}")
-    
-    # Use smart tracking (works with any billing model)
-    await xyra_client.smart_track(metadata={"test": "simple_test"})
-    
-    # Record specific cost
-    await xyra_client.record_cost(amount=0.05, cost_type="token", currency="USD")
-    
-    # Get stats
-    stats = await xyra_client.get_agent_stats()
-    print(f"Agent stats: {stats}")
 
-# Start the app
+    # Record a single outcome (simulate a successful outcome for ADO Automation)
+    result = await xyra_client.record_outcome(
+        outcome_type="time_savings",  # Use the actual outcome type configured for your agent
+        value=27.0,  # Value is arbitrary for fixed charge, can be 1
+        currency="EUR",
+        details={"test": "basic_outcome"},
+        verified=True,
+        outcome_count=1  # One successful outcome
+    )
+    print(f"Outcome recorded: {result}")
+
 if __name__ == "__main__":
     asyncio.run(main())

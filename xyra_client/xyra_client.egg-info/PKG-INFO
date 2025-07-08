@@ -88,7 +88,6 @@ if __name__ == "__main__":
 - **Activity-based**: Track specific activities and units
 - **Outcome-based**: Track outcomes and value generation
 - **Workflow-based**: Track workflow executions
-- **Hybrid**: Combine multiple billing approaches
 
 ### 📊 **Comprehensive Analytics**
 - Real-time cost tracking
@@ -204,24 +203,6 @@ validation = await client.validate_workflow_data({
 await client.smart_track(
     workflow_type="lead_research",
     metadata={"industry": "technology"}
-)
-```
-
-### Hybrid Billing
-
-```python
-# Smart tracking handles hybrid models automatically
-await client.smart_track(
-    activity_units=3,
-    value=1500.0,
-    metadata={"campaign_id": "C789"}
-)
-
-# Track multiple metrics at once
-await client.track_agent_metrics(
-    activities=[{"type": "data_processing", "metadata": {"batch": "B001"}}],
-    costs=[{"amount": 10.50, "type": "compute"}],
-    outcomes=[{"type": "sale", "value": 2000.0}]
 )
 ```
 
