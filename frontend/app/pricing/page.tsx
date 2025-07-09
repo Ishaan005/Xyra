@@ -25,6 +25,9 @@ import PricingModelsGrid from "@/app/pricing/components/PricingModelsGrid"
 import ActivityCostPreview from "@/app/pricing/components/ActivityCostPreview"
 import WorkflowModelDetail from "@/app/pricing/components/workflow-model-detail"
 import PricingLoadingSkeleton from "@/app/pricing/components/PricingLoadingSkeleton"
+import OutcomeModelDetail from "@/app/pricing/components/outcome-model-detail"
+import AgentModelDetail from "@/app/pricing/components/agent-model-detail"
+import ActivityModelDetail from "@/app/pricing/components/activity-model-detail"
 
 export default function PricingPage() {
   const router = useRouter()
@@ -605,10 +608,27 @@ export default function PricingPage() {
             getModelTypeColor={getModelTypeColor}
           />
           {editingModel && (
-            <WorkflowModelDetail
-              modelId={editingModel.id}
-              onBack={() => setEditingModel(null)}
-            />
+            editingModel.model_type === "workflow" ? (
+              <WorkflowModelDetail
+                modelId={editingModel.id}
+                onBack={() => setEditingModel(null)}
+              />
+            ) : editingModel.model_type === "outcome" ? (
+              <OutcomeModelDetail
+                modelId={editingModel.id}
+                onBack={() => setEditingModel(null)}
+              />
+            ) : editingModel.model_type === "agent" ? (
+              <AgentModelDetail
+                modelId={editingModel.id}
+                onBack={() => setEditingModel(null)}
+              />
+            ) : editingModel.model_type === "activity" ? (
+              <ActivityModelDetail
+                modelId={editingModel.id}
+                onBack={() => setEditingModel(null)}
+              />
+            ) : null
           )}
         </>
       )}
