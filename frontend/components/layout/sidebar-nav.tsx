@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, CreditCard, Settings, LogOut, HelpCircle, Zap, User, Group, BrainCircuit } from "lucide-react"
+import { BarChart3, CreditCard, Settings, LogOut, HelpCircle, Zap, User, Group, BrainCircuit, FileText } from "lucide-react"
 
 import {
   Sidebar,
@@ -59,6 +59,11 @@ export function SidebarNav() {
       href: "/outcomes",
       icon: <Zap className="h-5 w-5" />,
       title: "Outcomes",
+    },
+      {
+      href: "/invoices",
+      icon: <FileText className="h-5 w-5" />,
+      title: "Invoices",
     },
     {
       href: "/settings",

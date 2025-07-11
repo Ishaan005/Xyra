@@ -272,93 +272,218 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
         billing_model_id = getattr(billing_model, 'id')
         agent_name = getattr(agent, 'name')
         
-        if model_type == "seat":
-            # Seat-based billing
-            price_per_seat = billing_model.config.get("price_per_seat", 0)
-            billing_frequency = billing_model.config.get("billing_frequency", "monthly")
-            
-            # Check if this is the right billing cycle
-            if billing_frequency == "monthly" or (billing_frequency == "quarterly" and month % 3 == 1):
-                item_amount = price_per_seat
-                invoice_items.append(
-                    InvoiceLineItemCreate(
-                        description=f"Agent access: {agent_name} - {billing_frequency} subscription",
-                        quantity=1,
-                        unit_price=item_amount,
-                        amount=item_amount,
-                        item_type="subscription",
-                        reference_id=agent_id,
-                        reference_type="Agent",
-                        item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
+        if model_type == "agent":
+            # Agent-based billing using dedicated config table
+            if billing_model.agent_config:
+                cfg = billing_model.agent_config
+                base_fee = cfg.base_agent_fee
+                
+                # Add setup fee if this is the first billing cycle
+                # Note: You might want to add logic to check if this is the first invoice
+                item_amount = base_fee
+                
+                # Apply volume discount if enabled
+                if cfg.volume_discount_enabled and cfg.volume_discount_threshold and cfg.volume_discount_percentage:
+                    # For simplicity, assuming single agent. In practice, you'd check total agents.
+                    if 1 >= cfg.volume_discount_threshold:
+                        discount = item_amount * (cfg.volume_discount_percentage / 100.0)
+                        item_amount -= discount
+                
+                if item_amount > 0:
+                    invoice_items.append(
+                        InvoiceLineItemCreate(
+                            description=f"Agent subscription: {agent_name} - Monthly fee",
+                            quantity=1,
+                            unit_price=item_amount,
+                            amount=item_amount,
+                            item_type="subscription",
+                            reference_id=agent_id,
+                            reference_type="Agent",
+                            item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
+                        )
                     )
-                )
-                total_amount += item_amount
+                    total_amount += item_amount
         
         elif model_type == "activity":
-            # Activity-based billing
-            price_per_action = billing_model.config.get("price_per_action", 0)
-            action_type = billing_model.config.get("action_type", None)
-            
-            # Query activities in the date range
-            activities_query = db.query(func.count(AgentActivity.id)).filter(
-                AgentActivity.agent_id == agent_id,
-                AgentActivity.timestamp >= start_date,
-                AgentActivity.timestamp <= end_date
-            )
-            
-            if action_type:
-                activities_query = activities_query.filter(AgentActivity.activity_type == action_type)
+            # Activity-based billing using dedicated config table
+            for cfg in billing_model.activity_config:
+                if not cfg.is_active:
+                    continue
                 
-            activity_count = activities_query.scalar() or 0
-            
-            if activity_count > 0:
-                item_amount = price_per_action * activity_count
-                invoice_items.append(
-                    InvoiceLineItemCreate(
-                        description=f"Agent usage: {agent_name} - {activity_count} activities",
-                        quantity=activity_count,
-                        unit_price=price_per_action,
-                        amount=item_amount,
-                        item_type="usage",
-                        reference_id=agent_id,
-                        reference_type="Agent",
-                        item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
-                    )
+                # Query activities in the date range
+                activities_query = db.query(func.count(AgentActivity.id)).filter(
+                    AgentActivity.agent_id == agent_id,
+                    AgentActivity.timestamp >= start_date,
+                    AgentActivity.timestamp <= end_date
                 )
-                total_amount += item_amount
+                
+                if cfg.activity_type:
+                    activities_query = activities_query.filter(AgentActivity.activity_type == cfg.activity_type)
+                    
+                activity_count = activities_query.scalar() or 0
+                
+                if activity_count > 0:
+                    # Calculate cost using the same logic as the calculation service
+                    activity_cost = 0.0
+                    
+                    # Add base agent fee
+                    if cfg.base_agent_fee > 0:
+                        activity_cost += cfg.base_agent_fee
+                    
+                    # Calculate unit-based cost with volume pricing
+                    if cfg.volume_pricing_enabled and cfg.tier_1_threshold and cfg.tier_1_price:
+                        # Apply tiered pricing
+                        remaining_units = activity_count
+                        unit_cost = 0.0
+                        
+                        # Tier 1
+                        tier_1_units = min(remaining_units, cfg.tier_1_threshold)
+                        unit_cost += tier_1_units * cfg.tier_1_price
+                        remaining_units -= tier_1_units
+                        
+                        # Tier 2
+                        if remaining_units > 0 and cfg.tier_2_threshold and cfg.tier_2_price:
+                            tier_2_units = min(remaining_units, cfg.tier_2_threshold - cfg.tier_1_threshold)
+                            unit_cost += tier_2_units * cfg.tier_2_price
+                            remaining_units -= tier_2_units
+                        
+                        # Tier 3
+                        if remaining_units > 0 and cfg.tier_3_price:
+                            unit_cost += remaining_units * cfg.tier_3_price
+                        
+                        activity_cost += unit_cost
+                    else:
+                        # Simple per-unit pricing
+                        activity_cost += cfg.price_per_unit * activity_count
+                    
+                    if activity_cost > 0:
+                        invoice_items.append(
+                            InvoiceLineItemCreate(
+                                description=f"Agent usage: {agent_name} - {activity_count} {cfg.activity_type or 'activities'}",
+                                quantity=activity_count,
+                                unit_price=activity_cost / activity_count,
+                                amount=activity_cost,
+                                item_type="usage",
+                                reference_id=agent_id,
+                                reference_type="Agent",
+                                item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
+                            )
+                        )
+                        total_amount += activity_cost
         
         elif model_type == "outcome":
-            # Outcome-based billing
-            percentage = billing_model.config.get("percentage", 0) / 100.0  # Convert to decimal
-            outcome_type = billing_model.config.get("outcome_type", None)
-            
-            # Query outcomes in the date range
-            outcomes_query = db.query(func.sum(AgentOutcome.value)).filter(
-                AgentOutcome.agent_id == agent_id,
-                AgentOutcome.timestamp >= start_date,
-                AgentOutcome.timestamp <= end_date
-            )
-            
-            if outcome_type:
-                outcomes_query = outcomes_query.filter(AgentOutcome.outcome_type == outcome_type)
+            # Outcome-based billing using dedicated config table
+            for cfg in billing_model.outcome_config:
+                if not cfg.is_active:
+                    continue
                 
-            outcome_value = outcomes_query.scalar() or 0.0
-            
-            if outcome_value > 0:
-                item_amount = outcome_value * percentage
-                invoice_items.append(
-                    InvoiceLineItemCreate(
-                        description=f"Agent outcomes: {agent_name} - {percentage*100}% of {outcome_value}",
-                        quantity=1,
-                        unit_price=item_amount,
-                        amount=item_amount,
-                        item_type="outcome",
-                        reference_id=agent_id,
-                        reference_type="Agent",
-                        item_metadata={"billing_model_id": billing_model_id, "billing_period": f"{year}-{month}"}
-                    )
+                # Query outcomes in the date range
+                outcomes_query = db.query(func.sum(AgentOutcome.value), func.count(AgentOutcome.id)).filter(
+                    AgentOutcome.agent_id == agent_id,
+                    AgentOutcome.timestamp >= start_date,
+                    AgentOutcome.timestamp <= end_date
                 )
-                total_amount += item_amount
+                
+                if cfg.outcome_type:
+                    outcomes_query = outcomes_query.filter(AgentOutcome.outcome_type == cfg.outcome_type)
+                    
+                result = outcomes_query.first()
+                outcome_value = (result[0] if result and result[0] is not None else 0.0)
+                outcome_count = (result[1] if result and result[1] is not None else 0)
+                
+                # Skip if no outcomes or below minimum attribution value
+                if outcome_value <= 0:
+                    continue
+                    
+                if cfg.minimum_attribution_value and outcome_value < cfg.minimum_attribution_value:
+                    continue
+                
+                # Calculate charges based on billing model configuration
+                percentage_based_fee = 0.0
+                fixed_fee = 0.0
+                description_parts = []
+                
+                # 1. Calculate percentage-based fee
+                if cfg.percentage and cfg.percentage > 0:
+                    if cfg.tiered_pricing_enabled and cfg.tier_1_threshold and cfg.tier_1_percentage:
+                        # Apply tiered percentage pricing
+                        remaining_value = outcome_value
+                        
+                        # Tier 1
+                        tier_1_value = min(remaining_value, cfg.tier_1_threshold)
+                        percentage_based_fee += tier_1_value * (cfg.tier_1_percentage / 100.0)
+                        remaining_value -= tier_1_value
+                        
+                        # Tier 2
+                        if remaining_value > 0 and cfg.tier_2_threshold and cfg.tier_2_percentage:
+                            tier_2_value = min(remaining_value, cfg.tier_2_threshold - cfg.tier_1_threshold)
+                            percentage_based_fee += tier_2_value * (cfg.tier_2_percentage / 100.0)
+                            remaining_value -= tier_2_value
+                        
+                        # Tier 3
+                        if remaining_value > 0 and cfg.tier_3_percentage:
+                            percentage_based_fee += remaining_value * (cfg.tier_3_percentage / 100.0)
+                        
+                        description_parts.append(f"Tiered percentage of ${outcome_value:.2f}")
+                    else:
+                        # Simple percentage-based pricing
+                        percentage_based_fee = outcome_value * (cfg.percentage / 100.0)
+                        description_parts.append(f"{cfg.percentage}% of ${outcome_value:.2f}")
+                
+                # 2. Calculate fixed charge fee
+                if cfg.fixed_charge_per_outcome and cfg.fixed_charge_per_outcome > 0 and outcome_count > 0:
+                    fixed_fee = cfg.fixed_charge_per_outcome * outcome_count
+                    description_parts.append(f"${cfg.fixed_charge_per_outcome:.2f} × {outcome_count} outcomes")
+                
+                outcome_fee = percentage_based_fee + fixed_fee
+                
+                # Apply risk premium if configured
+                if cfg.risk_premium_percentage and cfg.risk_premium_percentage > 0:
+                    risk_adjustment = outcome_fee * (cfg.risk_premium_percentage / 100.0)
+                    outcome_fee += risk_adjustment
+                    description_parts.append(f"{cfg.risk_premium_percentage}% risk premium")
+                
+                # Apply success bonus if threshold is met
+                if cfg.success_bonus_threshold and cfg.success_bonus_percentage and outcome_value >= cfg.success_bonus_threshold:
+                    bonus = outcome_value * (cfg.success_bonus_percentage / 100.0)
+                    outcome_fee += bonus
+                    description_parts.append(f"{cfg.success_bonus_percentage}% success bonus")
+                
+                if outcome_fee > 0:
+                    description = f"Agent outcomes: {agent_name} - {' + '.join(description_parts)}"
+                    
+                    # Determine appropriate quantity and unit price for display
+                    if fixed_fee > 0 and percentage_based_fee == 0:
+                        # Pure fixed charge model - show per outcome
+                        quantity = outcome_count
+                        unit_price = cfg.fixed_charge_per_outcome
+                    else:
+                        # Mixed or pure percentage model - show as total
+                        quantity = 1
+                        unit_price = outcome_fee
+                    
+                    invoice_items.append(
+                        InvoiceLineItemCreate(
+                            description=description,
+                            quantity=quantity,
+                            unit_price=unit_price,
+                            amount=outcome_fee,
+                            item_type="outcome",
+                            reference_id=agent_id,
+                            reference_type="Agent",
+                            item_metadata={
+                                "billing_model_id": billing_model_id, 
+                                "billing_period": f"{year}-{month}",
+                                "outcome_value": outcome_value,
+                                "outcome_count": outcome_count,
+                                "percentage_fee": percentage_based_fee,
+                                "fixed_fee": fixed_fee,
+                                "total_fee": outcome_fee,
+                                "outcome_type": cfg.outcome_type
+                            }
+                        )
+                    )
+                    total_amount += outcome_fee
     
     # Check if there are any items to invoice
     if not invoice_items:
