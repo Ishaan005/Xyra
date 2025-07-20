@@ -79,7 +79,7 @@ class AgentBasedConfig(BaseModel):
     
     # Agent tier configuration (for different agent capabilities)
     agent_tier = Column(String, nullable=False, default="professional")  # starter, professional, enterprise
-    
+
     # Relationship
     billing_model = relationship("BillingModel", back_populates="agent_config")
 
@@ -238,7 +238,7 @@ class WorkflowType(BaseModel):
     
     # Status
     is_active = Column(Boolean, default=True)
-    
+
     # Relationship
     billing_model = relationship("BillingModel", back_populates="workflow_types")
 

@@ -9,7 +9,7 @@ from app.api.v1.endpoints import (
     analytics,
     invoices,
     integration,
-    outcomes
+    outcomes,
 )
 
 api_router = APIRouter()

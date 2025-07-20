@@ -221,7 +221,6 @@ def get_invoice_with_items(db: Session, invoice_id: int) -> Optional[Invoice]:
     """
     return db.query(Invoice).filter(Invoice.id == invoice_id).first()
 
-
 def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) -> Invoice:
     """
     Generate a monthly invoice for an organization based on agent activities, costs, and outcomes
@@ -502,6 +501,6 @@ def generate_monthly_invoice(db: Session, org_id: int, month: int, year: int) ->
     
     # Create the invoice with items
     invoice = create_invoice(db, invoice_create)
-    
+
     logger.info(f"Generated monthly invoice {invoice.invoice_number} for {organization.name} for {month}/{year}")
     return invoice

@@ -189,7 +189,6 @@ class AgentBasedConfigSchema(BaseModel):
     volume_discount_percentage: Optional[float] = None
     agent_tier: str = "professional"  # starter, professional, enterprise
 
-
 class ActivityBasedConfigSchema(BaseModel):
     """Configuration schema for enhanced activity-based billing"""
     price_per_unit: float

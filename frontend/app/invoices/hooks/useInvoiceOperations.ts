@@ -139,6 +139,6 @@ export function useInvoiceOperations() {
     markAsPaid,
     bulkMarkAsPaid,
     setSelectedInvoice,
-    clearError
+    clearError,
   }
 }

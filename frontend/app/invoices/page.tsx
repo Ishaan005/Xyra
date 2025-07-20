@@ -42,7 +42,7 @@ export default function InvoicesPage() {
     downloadPDF,
     markAsPaid,
     bulkMarkAsPaid,
-    setSelectedInvoice
+    setSelectedInvoice,
   } = useInvoiceOperations()
 
   // Invoice filtering and selection hook
