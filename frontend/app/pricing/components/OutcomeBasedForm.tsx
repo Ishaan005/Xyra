@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,40 +29,9 @@ interface OutcomeBasedFormProps {
 
 export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   
   const updateField = (field: string, value: any) => {
     setModel((prev: any) => ({ ...prev, [field]: value }))
-    
-    // Clear validation error when user starts typing
-    if (validationErrors[field]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
-    }
-  }
-
-  const validateField = (field: string, value: any) => {
-    const errors: Record<string, string> = {}
-    
-    if (field === "outcome_percentage") {
-      const numValue = parseFloat(value)
-      if (value && value.toString().trim() !== "" && (isNaN(numValue) || numValue <= 0)) {
-        errors.outcome_percentage = "Revenue share percentage must be a positive number"
-      }
-    }
-    
-    if (field === "outcome_fixed_charge_per_outcome") {
-      const numValue = parseFloat(value)
-      if (value && value.toString().trim() !== "" && (isNaN(numValue) || numValue <= 0)) {
-        errors.outcome_fixed_charge_per_outcome = "Fixed charge must be a positive number"
-      }
-    }
-    
-    setValidationErrors(prev => ({ ...prev, ...errors }))
-    return Object.keys(errors).length === 0
   }
 
   const outcomeTypes = [
@@ -166,14 +135,9 @@ export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormPr
                   step="0.1"
                   value={model.outcome_percentage || ""}
                   onChange={(e) => updateField("outcome_percentage", e.target.value)}
-                  onBlur={(e) => validateField("outcome_percentage", e.target.value)}
-                  className={validationErrors.outcome_percentage ? "border-red-500" : ""}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
               </div>
-              {validationErrors.outcome_percentage && (
-                <p className="text-sm text-red-500">{validationErrors.outcome_percentage}</p>
-              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="outcome_fixed_charge">Fixed Charge</Label>
@@ -185,15 +149,11 @@ export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormPr
                   placeholder="10.00"
                   min="0"
                   step="0.01"
-                  className={`pl-7 ${validationErrors.outcome_fixed_charge_per_outcome ? "border-red-500" : ""}`}
+                  className="pl-7"
                   value={model.outcome_fixed_charge_per_outcome || ""}
                   onChange={(e) => updateField("outcome_fixed_charge_per_outcome", e.target.value)}
-                  onBlur={(e) => validateField("outcome_fixed_charge_per_outcome", e.target.value)}
                 />
               </div>
-              {validationErrors.outcome_fixed_charge_per_outcome && (
-                <p className="text-sm text-red-500">{validationErrors.outcome_fixed_charge_per_outcome}</p>
-              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="outcome_currency">Currency</Label>
@@ -234,17 +194,6 @@ export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormPr
           </div>
         </CardContent>
       </Card>
-
-      {/* Validation Alert */}
-      {(!model.outcome_percentage || model.outcome_percentage === "") && 
-       (!model.outcome_fixed_charge_per_outcome || model.outcome_fixed_charge_per_outcome === "") && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            You must provide either a revenue share percentage or a fixed charge per outcome (or both).
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Base Platform Fee */}
       <Card>

@@ -161,7 +161,7 @@ class BillingModelInDBBase(BillingModelBase):
     organization_id: int
     created_at: datetime
     updated_at: datetime
-    # Nested config from dedicated tables
+    # Nested config from dedicated tables - using the actual SQLAlchemy model names
     agent_config: Optional["AgentBasedConfigSchema"] = None
     activity_config: Optional[List["ActivityBasedConfigSchema"]] = None
     outcome_config: Optional[List["OutcomeBasedConfigSchema"]] = None
@@ -174,8 +174,148 @@ class BillingModelInDBBase(BillingModelBase):
 
 
 class BillingModel(BillingModelInDBBase):
-    """Schema for billing model responses"""
-    pass
+    """Schema for billing model responses with flattened convenience fields"""
+    
+    # Flattened convenience fields for frontend compatibility
+    # Agent config flattened fields
+    agent_base_agent_fee: Optional[float] = Field(None, description="Computed from agent_config")
+    agent_billing_frequency: Optional[str] = Field(None, description="Computed from agent_config")
+    agent_setup_fee: Optional[float] = Field(None, description="Computed from agent_config")
+    agent_volume_discount_enabled: Optional[bool] = Field(None, description="Computed from agent_config")
+    agent_volume_discount_threshold: Optional[int] = Field(None, description="Computed from agent_config")
+    agent_volume_discount_percentage: Optional[float] = Field(None, description="Computed from agent_config")
+    agent_tier: Optional[str] = Field(None, description="Computed from agent_config")
+    
+    # Activity config flattened fields (first active config)
+    activity_price_per_unit: Optional[float] = Field(None, description="Computed from activity_config[0]")
+    activity_activity_type: Optional[str] = Field(None, description="Computed from activity_config[0]")
+    activity_unit_type: Optional[str] = Field(None, description="Computed from activity_config[0]")
+    activity_base_agent_fee: Optional[float] = Field(None, description="Computed from activity_config[0]")
+    activity_volume_pricing_enabled: Optional[bool] = Field(None, description="Computed from activity_config[0]")
+    activity_volume_tier_1_threshold: Optional[int] = Field(None, description="Computed from activity_config[0]")
+    activity_volume_tier_1_price: Optional[float] = Field(None, description="Computed from activity_config[0]")
+    activity_volume_tier_2_threshold: Optional[int] = Field(None, description="Computed from activity_config[0]")
+    activity_volume_tier_2_price: Optional[float] = Field(None, description="Computed from activity_config[0]")
+    activity_volume_tier_3_threshold: Optional[int] = Field(None, description="Computed from activity_config[0]")
+    activity_volume_tier_3_price: Optional[float] = Field(None, description="Computed from activity_config[0]")
+    activity_minimum_charge: Optional[float] = Field(None, description="Computed from activity_config[0]")
+    activity_billing_frequency: Optional[str] = Field(None, description="Computed from activity_config[0]")
+    activity_is_active: Optional[bool] = Field(None, description="Computed from activity_config[0]")
+    
+    # Outcome config flattened fields (first active config)
+    outcome_outcome_name: Optional[str] = Field(None, description="Computed from outcome_config[0]")
+    outcome_outcome_type: Optional[str] = Field(None, description="Computed from outcome_config[0]")
+    outcome_description: Optional[str] = Field(None, description="Computed from outcome_config[0]")
+    outcome_base_platform_fee: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_platform_fee_frequency: Optional[str] = Field(None, description="Computed from outcome_config[0]")
+    outcome_percentage: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_fixed_charge_per_outcome: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_attribution_window_days: Optional[int] = Field(None, description="Computed from outcome_config[0]")
+    outcome_minimum_attribution_value: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_requires_verification: Optional[bool] = Field(None, description="Computed from outcome_config[0]")
+    outcome_success_rate_assumption: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_risk_premium_percentage: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_monthly_cap_amount: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_success_bonus_threshold: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_success_bonus_percentage: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_tier_1_threshold: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_tier_1_percentage: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_tier_2_threshold: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_tier_2_percentage: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_tier_3_threshold: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_tier_3_percentage: Optional[float] = Field(None, description="Computed from outcome_config[0]")
+    outcome_billing_frequency: Optional[str] = Field(None, description="Computed from outcome_config[0]")
+    outcome_currency: Optional[str] = Field(None, description="Computed from outcome_config[0]")
+    outcome_is_active: Optional[bool] = Field(None, description="Computed from outcome_config[0]")
+    outcome_auto_bill_verified_outcomes: Optional[bool] = Field(None, description="Computed from outcome_config[0]")
+    
+    # Workflow config flattened fields
+    workflow_base_platform_fee: Optional[float] = Field(None, description="Computed from workflow_config")
+    workflow_platform_fee_frequency: Optional[str] = Field(None, description="Computed from workflow_config")
+    workflow_default_billing_frequency: Optional[str] = Field(None, description="Computed from workflow_config")
+    workflow_volume_discount_enabled: Optional[bool] = Field(None, description="Computed from workflow_config")
+    workflow_volume_discount_threshold: Optional[int] = Field(None, description="Computed from workflow_config")
+    workflow_volume_discount_percentage: Optional[float] = Field(None, description="Computed from workflow_config")
+    workflow_overage_multiplier: Optional[float] = Field(None, description="Computed from workflow_config")
+    workflow_currency: Optional[str] = Field(None, description="Computed from workflow_config")
+    workflow_is_active: Optional[bool] = Field(None, description="Computed from workflow_config")
+    
+    def model_post_init(self, __context) -> None:
+        """Post-initialization hook to populate flattened fields from nested config"""
+        # Flatten agent config
+        if self.agent_config:
+            cfg = self.agent_config
+            self.agent_base_agent_fee = cfg.base_agent_fee
+            self.agent_billing_frequency = cfg.billing_frequency
+            self.agent_setup_fee = cfg.setup_fee
+            self.agent_volume_discount_enabled = cfg.volume_discount_enabled
+            self.agent_volume_discount_threshold = cfg.volume_discount_threshold
+            self.agent_volume_discount_percentage = cfg.volume_discount_percentage
+            self.agent_tier = cfg.agent_tier
+        
+        # Flatten activity config (use first active config)
+        if self.activity_config:
+            for cfg in self.activity_config:
+                if cfg.is_active:
+                    self.activity_price_per_unit = cfg.price_per_unit
+                    self.activity_activity_type = cfg.activity_type
+                    self.activity_unit_type = cfg.unit_type
+                    self.activity_base_agent_fee = cfg.base_agent_fee
+                    self.activity_volume_pricing_enabled = cfg.volume_pricing_enabled
+                    self.activity_volume_tier_1_threshold = cfg.volume_tier_1_threshold
+                    self.activity_volume_tier_1_price = cfg.volume_tier_1_price
+                    self.activity_volume_tier_2_threshold = cfg.volume_tier_2_threshold
+                    self.activity_volume_tier_2_price = cfg.volume_tier_2_price
+                    self.activity_volume_tier_3_threshold = cfg.volume_tier_3_threshold
+                    self.activity_volume_tier_3_price = cfg.volume_tier_3_price
+                    self.activity_minimum_charge = cfg.minimum_charge
+                    self.activity_billing_frequency = cfg.billing_frequency
+                    self.activity_is_active = cfg.is_active
+                    break
+        
+        # Flatten outcome config (use first active config)
+        if self.outcome_config:
+            for cfg in self.outcome_config:
+                if cfg.is_active:
+                    self.outcome_outcome_name = cfg.outcome_name
+                    self.outcome_outcome_type = cfg.outcome_type
+                    self.outcome_description = cfg.description
+                    self.outcome_base_platform_fee = cfg.base_platform_fee
+                    self.outcome_platform_fee_frequency = cfg.platform_fee_frequency
+                    self.outcome_percentage = cfg.percentage
+                    self.outcome_fixed_charge_per_outcome = cfg.fixed_charge_per_outcome
+                    self.outcome_attribution_window_days = cfg.attribution_window_days
+                    self.outcome_minimum_attribution_value = cfg.minimum_attribution_value
+                    self.outcome_requires_verification = cfg.requires_verification
+                    self.outcome_success_rate_assumption = cfg.success_rate_assumption
+                    self.outcome_risk_premium_percentage = cfg.risk_premium_percentage
+                    self.outcome_monthly_cap_amount = cfg.monthly_cap_amount
+                    self.outcome_success_bonus_threshold = cfg.success_bonus_threshold
+                    self.outcome_success_bonus_percentage = cfg.success_bonus_percentage
+                    self.outcome_tier_1_threshold = cfg.tier_1_threshold
+                    self.outcome_tier_1_percentage = cfg.tier_1_percentage
+                    self.outcome_tier_2_threshold = cfg.tier_2_threshold
+                    self.outcome_tier_2_percentage = cfg.tier_2_percentage
+                    self.outcome_tier_3_threshold = cfg.tier_3_threshold
+                    self.outcome_tier_3_percentage = cfg.tier_3_percentage
+                    self.outcome_billing_frequency = cfg.billing_frequency
+                    self.outcome_currency = cfg.currency
+                    self.outcome_is_active = cfg.is_active
+                    self.outcome_auto_bill_verified_outcomes = cfg.auto_bill_verified_outcomes
+                    break
+        
+        # Flatten workflow config
+        if self.workflow_config:
+            cfg = self.workflow_config
+            self.workflow_base_platform_fee = cfg.base_platform_fee
+            self.workflow_platform_fee_frequency = cfg.platform_fee_frequency
+            self.workflow_default_billing_frequency = cfg.default_billing_frequency
+            self.workflow_volume_discount_enabled = cfg.volume_discount_enabled
+            self.workflow_volume_discount_threshold = cfg.volume_discount_threshold
+            self.workflow_volume_discount_percentage = cfg.volume_discount_percentage
+            self.workflow_overage_multiplier = cfg.overage_multiplier
+            self.workflow_currency = cfg.currency
+            self.workflow_is_active = cfg.is_active
 
 
 # Specific configuration schemas for different billing types
@@ -188,6 +328,9 @@ class AgentBasedConfigSchema(BaseModel):
     volume_discount_threshold: Optional[int] = None
     volume_discount_percentage: Optional[float] = None
     agent_tier: str = "professional"  # starter, professional, enterprise
+    
+    class Config:
+        from_attributes = True
 
 class ActivityBasedConfigSchema(BaseModel):
     """Configuration schema for enhanced activity-based billing"""
@@ -205,6 +348,9 @@ class ActivityBasedConfigSchema(BaseModel):
     minimum_charge: float = 0.0
     billing_frequency: str = "monthly"  # monthly, daily, per_use
     is_active: bool = True
+    
+    class Config:
+        from_attributes = True
 
 
 class OutcomeBasedConfigSchema(BaseModel):
@@ -251,6 +397,9 @@ class OutcomeBasedConfigSchema(BaseModel):
     # Status and settings
     is_active: bool = True
     auto_bill_verified_outcomes: bool = False  # Auto-bill verified outcomes
+    
+    class Config:
+        from_attributes = True
 
 
 class WorkflowBasedConfigSchema(BaseModel):
@@ -264,6 +413,9 @@ class WorkflowBasedConfigSchema(BaseModel):
     overage_multiplier: float = 1.0
     currency: str = "USD"
     is_active: bool = True
+    
+    class Config:
+        from_attributes = True
 
 
 class WorkflowTypeSchema(BaseModel):
@@ -294,6 +446,9 @@ class WorkflowTypeSchema(BaseModel):
     billing_frequency: Optional[str] = None  # If null, uses default from WorkflowBasedConfig
     minimum_charge: Optional[float] = 0.0
     is_active: bool = True
+    
+    class Config:
+        from_attributes = True
 
 
 class CommitmentTierSchema(BaseModel):
@@ -321,6 +476,9 @@ class CommitmentTierSchema(BaseModel):
     # Status
     is_active: bool = True
     is_popular: bool = False
+    
+    class Config:
+        from_attributes = True
 
 
 class OutcomeMetricSchema(BaseModel):

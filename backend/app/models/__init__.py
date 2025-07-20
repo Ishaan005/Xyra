@@ -14,7 +14,6 @@ from .billing_model import (
 from .agent import Agent, AgentActivity, AgentCost, AgentOutcome
 from .invoice import Invoice, InvoiceLineItem
 from .integration import IntegrationConnector, IntegrationWebhook, IntegrationEvent, IntegrationStream
-from .value_receipt import ValueReceipt, ValueMetric, HumanEquivalentBenchmark
 
 # Export all models
 __all__ = [
@@ -40,7 +39,4 @@ __all__ = [
     "IntegrationWebhook", 
     "IntegrationEvent",
     "IntegrationStream",
-    "ValueReceipt",
-    "ValueMetric",
-    "HumanEquivalentBenchmark"
 ]
