@@ -24,6 +24,7 @@ import {
   Search,
   ArrowUpDown,
   AlertCircle,
+  Target,
 } from "lucide-react"
 import { useOrganization } from "@/contexts/OrganizationContext"
 
@@ -38,6 +39,15 @@ interface Agent {
   total_cost?: number
   total_outcomes_value?: number
   margin?: number
+  billing_model?: {
+    id: number
+    name: string
+    model_type: string
+    agent_human_equivalent_value?: number
+    activity_human_equivalent_value?: number
+    outcome_human_equivalent_value?: number
+    workflow_human_equivalent_value?: number
+  }
 }
 
 interface AgentStats {
@@ -58,6 +68,7 @@ export default function AgentsPage() {
   const { currentOrgId } = useOrganization()
   const [agents, setAgents] = useState<Agent[]>([])
   const [agentStats, setAgentStats] = useState<Record<number, AgentStats>>({})
+  const [billingModelDetails, setBillingModelDetails] = useState<Record<number, any>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("all")
@@ -88,10 +99,59 @@ export default function AgentsPage() {
         params: { org_id: currentOrgId },
       })
       setAgents(res.data)
+      
+      // Fetch billing model details for agents with billing models
+      const agentsWithBillingModels = res.data.filter(agent => agent.billing_model_id)
+      if (agentsWithBillingModels.length > 0) {
+        await fetchBillingModelDetails(agentsWithBillingModels)
+      }
     } catch (e: any) {
       setError(e.message || "Failed to load agents")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // fetch billing model details for agents
+  const fetchBillingModelDetails = async (agents: Agent[]) => {
+    try {
+      const uniqueBillingModelIds = [...new Set(agents.map(agent => agent.billing_model_id).filter(Boolean))]
+      const billingModelDetailsMap: Record<number, any> = {}
+      
+      for (const modelId of uniqueBillingModelIds) {
+        try {
+          const res = await api.get(`/billing-models/${modelId}`)
+          billingModelDetailsMap[modelId as number] = res.data
+        } catch (e) {
+          console.error(`Failed to fetch billing model ${modelId}:`, e)
+        }
+      }
+      
+      setBillingModelDetails(billingModelDetailsMap)
+    } catch (e: any) {
+      console.error("Failed to fetch billing model details:", e)
+    }
+  }
+
+  // get human equivalent value based on model type
+  const getHumanEquivalentValue = (agent: Agent): number | null => {
+    if (!agent.billing_model_id || !billingModelDetails[agent.billing_model_id]) {
+      return null
+    }
+    
+    const billingModel = billingModelDetails[agent.billing_model_id]
+    
+    switch (billingModel.model_type) {
+      case 'agent':
+        return billingModel.agent_human_equivalent_value || 0
+      case 'activity':
+        return billingModel.activity_human_equivalent_value || 0
+      case 'outcome':
+        return billingModel.outcome_human_equivalent_value || 0
+      case 'workflow':
+        return billingModel.workflow_human_equivalent_value || 0
+      default:
+        return null
     }
   }
 
@@ -376,6 +436,11 @@ export default function AgentsPage() {
                         Margin
                       </div>
                     </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <div className="flex items-center justify-end">
+                        Human Equivalent
+                      </div>
+                    </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Actions
                     </th>
@@ -444,6 +509,29 @@ export default function AgentsPage() {
                               "—"
                             )}
                           </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
+                            {(() => {
+                              const humanEquiv = getHumanEquivalentValue(agent)
+                              if (humanEquiv === null) return "—"
+                              
+                              const billingModel = agent.billing_model_id ? billingModelDetails[agent.billing_model_id] : null
+                              const modelType = billingModel?.model_type
+                              
+                              return (
+                                <div className="flex flex-col items-end">
+                                  <span className="font-medium">${humanEquiv.toLocaleString()}</span>
+                                  {modelType && (
+                                    <span className="text-xs text-muted-foreground capitalize">
+                                      {modelType === 'agent' ? '/month' :
+                                       modelType === 'activity' ? '/action' :
+                                       modelType === 'outcome' ? '/outcome' :
+                                       modelType === 'workflow' ? '/month' : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })()}
+                          </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="flex justify-center gap-2">
                               <Button
@@ -477,7 +565,7 @@ export default function AgentsPage() {
                         </tr>
                         {editAgentId === agent.id && (
                           <tr>
-                            <td colSpan={8} className="bg-muted/30 p-4">
+                            <td colSpan={9} className="bg-muted/30 p-4">
                               <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
                                 <h3 className="text-sm font-medium mb-3">Edit Agent</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

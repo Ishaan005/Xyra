@@ -235,18 +235,33 @@ export default function WorkflowBillingForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">              <div className="space-y-2">
-                <label className="text-sm font-medium">Base Platform Fee ($)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="3000.00"
-                  value={baseModel.workflow_base_platform_fee?.toString() || ""}
-                  onChange={(e) => onBaseModelChange({ ...baseModel, workflow_base_platform_fee: e.target.value || "" })}
-                />
-                <p className="text-xs text-muted-foreground">Monthly subscription fee for platform access</p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Base Platform Fee ($)</label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="3000.00"
+                value={baseModel.workflow_base_platform_fee?.toString() || ""}
+                onChange={(e) => onBaseModelChange({ ...baseModel, workflow_base_platform_fee: e.target.value || "" })}
+              />
+              <p className="text-xs text-muted-foreground">Monthly subscription fee for platform access</p>
+            </div>
             
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Human Equivalent Value ($)</label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="10000.00"
+                value={baseModel.workflow_human_equivalent_value?.toString() || ""}
+                onChange={(e) => onBaseModelChange({ ...baseModel, workflow_human_equivalent_value: e.target.value || "" })}
+              />
+              <p className="text-xs text-muted-foreground">Cost of equivalent human resources for workflow management</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Platform Fee Frequency</label>
               <select
@@ -258,6 +273,20 @@ export default function WorkflowBillingForm({
                 <option value="yearly">Yearly</option>
               </select>
             </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Currency</label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={baseModel.workflow_currency || "USD"}
+                onChange={(e) => onBaseModelChange({ ...baseModel, workflow_currency: e.target.value })}
+              >
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+          
           </div>
           
           <div className="space-y-2">

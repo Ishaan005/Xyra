@@ -122,7 +122,7 @@ export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormPr
             </AlertDescription>
           </Alert>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="outcome_percentage">Revenue Share %</Label>
               <div className="relative">
@@ -154,6 +154,28 @@ export default function OutcomeBasedForm({ model, setModel }: OutcomeBasedFormPr
                   onChange={(e) => updateField("outcome_fixed_charge_per_outcome", e.target.value)}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="outcome_human_equivalent" className="flex items-center gap-1">
+                <Target className="h-3 w-3" />
+                Human Equivalent
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <Input
+                  id="outcome_human_equivalent"
+                  type="number"
+                  placeholder="1000.00"
+                  min="0"
+                  step="0.01"
+                  className="pl-7"
+                  value={model.outcome_human_equivalent_value || ""}
+                  onChange={(e) => updateField("outcome_human_equivalent_value", e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Human cost per outcome
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="outcome_currency">Currency</Label>

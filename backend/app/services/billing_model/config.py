@@ -15,6 +15,7 @@ def create_agent_config(db, billing_model, cfg_in):
         volume_discount_threshold=cfg_in.agent_volume_discount_threshold,
         volume_discount_percentage=cfg_in.agent_volume_discount_percentage,
         agent_tier=cfg_in.agent_tier or "professional",
+        human_equivalent_value=cfg_in.agent_human_equivalent_value or 0.0,
     )
     db.add(agent_cfg)
 
@@ -35,6 +36,7 @@ def create_activity_config(db, billing_model, cfg_in):
         minimum_charge=cfg_in.activity_minimum_charge or 0.0,
         billing_frequency=cfg_in.activity_billing_frequency or "monthly",
         is_active=cfg_in.activity_is_active if cfg_in.activity_is_active is not None else True,
+        human_equivalent_value=cfg_in.activity_human_equivalent_value or 0.0,
     )
     db.add(act_cfg)
 
@@ -66,6 +68,7 @@ def create_outcome_config(db, billing_model, cfg_in):
         currency=cfg_in.outcome_currency or "USD",
         is_active=cfg_in.outcome_is_active if cfg_in.outcome_is_active is not None else True,
         auto_bill_verified_outcomes=cfg_in.outcome_auto_bill_verified_outcomes if cfg_in.outcome_auto_bill_verified_outcomes is not None else False,
+        human_equivalent_value=cfg_in.outcome_human_equivalent_value or 0.0,
     )
     db.add(out_cfg)
 
@@ -81,6 +84,7 @@ def create_workflow_config(db, billing_model, cfg_in):
         overage_multiplier=cfg_in.workflow_overage_multiplier or 1.0,
         currency=cfg_in.workflow_currency or "USD",
         is_active=cfg_in.workflow_is_active if cfg_in.workflow_is_active is not None else True,
+        human_equivalent_value=cfg_in.workflow_human_equivalent_value or 0.0,
     )
     db.add(workflow_cfg)
     if cfg_in.workflow_types:

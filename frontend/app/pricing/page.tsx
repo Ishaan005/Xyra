@@ -346,6 +346,7 @@ export default function PricingPage() {
         payload.agent_base_agent_fee = parseFloat(formData.agent_base_agent_fee) || 0
         payload.agent_billing_frequency = formData.agent_billing_frequency || "monthly"
         payload.agent_setup_fee = parseFloat(formData.agent_setup_fee) || 0
+        payload.agent_human_equivalent_value = parseFloat(formData.agent_human_equivalent_value) || 0
         payload.agent_volume_discount_enabled = formData.agent_volume_discount_enabled || false
         if (formData.agent_volume_discount_enabled) {
           payload.agent_volume_discount_threshold = parseInt(formData.agent_volume_discount_threshold) || null
@@ -358,6 +359,7 @@ export default function PricingPage() {
         payload.activity_activity_type = formData.activity_activity_type || "api_call"
         payload.activity_unit_type = formData.activity_unit_type || "action"
         payload.activity_base_agent_fee = parseFloat(formData.activity_base_agent_fee) || 0
+        payload.activity_human_equivalent_value = parseFloat(formData.activity_human_equivalent_value) || 0
         payload.activity_volume_pricing_enabled = formData.activity_volume_pricing_enabled || false
         if (formData.activity_volume_pricing_enabled) {
           payload.activity_volume_tier_1_threshold = parseInt(formData.activity_volume_tier_1_threshold) || null
@@ -378,6 +380,7 @@ export default function PricingPage() {
         payload.outcome_description = formData.outcome_description || ""
         payload.outcome_percentage = parseFloat(formData.outcome_percentage) || null
         payload.outcome_fixed_charge_per_outcome = parseFloat(formData.outcome_fixed_charge_per_outcome) || null
+        payload.outcome_human_equivalent_value = parseFloat(formData.outcome_human_equivalent_value) || 0
         payload.outcome_currency = formData.outcome_currency || "USD"
         payload.outcome_billing_frequency = formData.outcome_billing_frequency || "monthly"
         payload.outcome_base_platform_fee = parseFloat(formData.outcome_base_platform_fee) || null
@@ -410,6 +413,7 @@ export default function PricingPage() {
         payload.workflow_base_platform_fee = parseFloat(formData.workflow_base_platform_fee) || 0
         payload.workflow_platform_fee_frequency = formData.workflow_platform_fee_frequency || "monthly"
         payload.workflow_default_billing_frequency = "monthly"
+        payload.workflow_human_equivalent_value = parseFloat(formData.workflow_human_equivalent_value) || 0
         payload.workflow_volume_discount_enabled = formData.workflow_volume_discount_enabled || false
         if (formData.workflow_volume_discount_enabled) {
           payload.workflow_volume_discount_threshold = parseInt(formData.workflow_volume_discount_threshold) || null

@@ -28,6 +28,7 @@ export default function AgentBasedForm({ model, setModel }: AgentBasedFormProps)
         agent_billing_frequency: model?.agent_billing_frequency || 'monthly',
         agent_tier: model?.agent_tier || 'professional',
         agent_setup_fee: model?.agent_setup_fee || 0,
+        agent_human_equivalent_value: model?.agent_human_equivalent_value || 0,
         agent_volume_discount_enabled: model?.agent_volume_discount_enabled || false,
         agent_volume_discount_threshold: model?.agent_volume_discount_threshold || 0,
         agent_volume_discount_percentage: model?.agent_volume_discount_percentage || 0,
@@ -193,6 +194,36 @@ export default function AgentBasedForm({ model, setModel }: AgentBasedFormProps)
           />
           <p className="text-xs text-muted-foreground">
             One-time setup fee per agent (optional)
+          </p>
+        </div>
+
+        {/* Human Equivalent Value */}
+        <div className="space-y-2">
+          <Label htmlFor="agent-human-equivalent" className="text-sm font-medium flex items-center gap-2">
+            <Users className="h-3 w-3" />
+            Human Equivalent Value (USD)
+          </Label>
+          <Input
+            id="agent-human-equivalent"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="e.g., 5000.00"
+            value={model.agent_human_equivalent_value !== undefined ? model.agent_human_equivalent_value.toString() : ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "") {
+                handleInputChange("agent_human_equivalent_value", "");
+              } else {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  handleInputChange("agent_human_equivalent_value", numValue);
+                }
+              }
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Cost of equivalent human resources per agent per billing period
           </p>
         </div>
 

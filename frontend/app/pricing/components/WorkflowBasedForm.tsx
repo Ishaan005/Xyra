@@ -31,6 +31,7 @@ export default function WorkflowBasedForm({ model, setModel }: WorkflowBasedForm
         workflow_volume_discount_percentage: model?.workflow_volume_discount_percentage || 0,
         workflow_overage_multiplier: model?.workflow_overage_multiplier || 1.0,
         workflow_currency: model?.workflow_currency || 'USD',
+        workflow_human_equivalent_value: model?.workflow_human_equivalent_value || 0,
         workflow_is_active: model?.workflow_is_active !== false,
         workflow_types: model?.workflow_types || [],
         commitment_tiers: model?.commitment_tiers || [],

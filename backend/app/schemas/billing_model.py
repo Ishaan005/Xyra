@@ -24,6 +24,7 @@ class BillingModelCreate(BillingModelBase):
     agent_volume_discount_threshold: Optional[int] = None
     agent_volume_discount_percentage: Optional[float] = None
     agent_tier: Optional[str] = "professional"
+    agent_human_equivalent_value: Optional[float] = None
     
     # Activity-based config fields
     activity_price_per_unit: Optional[float] = None
@@ -40,6 +41,7 @@ class BillingModelCreate(BillingModelBase):
     activity_minimum_charge: Optional[float] = 0.0
     activity_billing_frequency: Optional[str] = "monthly"
     activity_is_active: Optional[bool] = True
+    activity_human_equivalent_value: Optional[float] = None
     
     # Outcome-based config fields
     outcome_outcome_name: Optional[str] = None
@@ -67,6 +69,7 @@ class BillingModelCreate(BillingModelBase):
     outcome_currency: Optional[str] = None
     outcome_is_active: Optional[bool] = None
     outcome_auto_bill_verified_outcomes: Optional[bool] = None
+    outcome_human_equivalent_value: Optional[float] = None
     
     # Workflow-based config fields
     workflow_base_platform_fee: Optional[float] = None
@@ -78,6 +81,7 @@ class BillingModelCreate(BillingModelBase):
     workflow_overage_multiplier: Optional[float] = 1.0
     workflow_currency: Optional[str] = "USD"
     workflow_is_active: Optional[bool] = True
+    workflow_human_equivalent_value: Optional[float] = None
     workflow_types: Optional[List[WorkflowTypeSchema]] = None
     commitment_tiers: Optional[List[CommitmentTierSchema]] = None
 
@@ -97,6 +101,7 @@ class BillingModelUpdate(BaseModel):
     agent_volume_discount_threshold: Optional[int] = None
     agent_volume_discount_percentage: Optional[float] = None
     agent_tier: Optional[str] = None
+    agent_human_equivalent_value: Optional[float] = None
     
     # Activity-based config fields
     activity_price_per_unit: Optional[float] = None
@@ -113,6 +118,7 @@ class BillingModelUpdate(BaseModel):
     activity_minimum_charge: Optional[float] = None
     activity_billing_frequency: Optional[str] = None
     activity_is_active: Optional[bool] = None
+    activity_human_equivalent_value: Optional[float] = None
     
     # Outcome-based config fields
     outcome_outcome_name: Optional[str] = None
@@ -140,6 +146,7 @@ class BillingModelUpdate(BaseModel):
     outcome_currency: Optional[str] = None
     outcome_is_active: Optional[bool] = None
     outcome_auto_bill_verified_outcomes: Optional[bool] = None
+    outcome_human_equivalent_value: Optional[float] = None
     
     # Workflow-based config fields
     workflow_base_platform_fee: Optional[float] = None
@@ -151,6 +158,7 @@ class BillingModelUpdate(BaseModel):
     workflow_overage_multiplier: Optional[float] = None
     workflow_currency: Optional[str] = None
     workflow_is_active: Optional[bool] = None
+    workflow_human_equivalent_value: Optional[float] = None
     workflow_types: Optional[List[WorkflowTypeSchema]] = None
     commitment_tiers: Optional[List[CommitmentTierSchema]] = None
 
@@ -185,6 +193,7 @@ class BillingModel(BillingModelInDBBase):
     agent_volume_discount_threshold: Optional[int] = Field(None, description="Computed from agent_config")
     agent_volume_discount_percentage: Optional[float] = Field(None, description="Computed from agent_config")
     agent_tier: Optional[str] = Field(None, description="Computed from agent_config")
+    agent_human_equivalent_value: Optional[float] = Field(None, description="Computed from agent_config")
     
     # Activity config flattened fields (first active config)
     activity_price_per_unit: Optional[float] = Field(None, description="Computed from activity_config[0]")
@@ -201,6 +210,7 @@ class BillingModel(BillingModelInDBBase):
     activity_minimum_charge: Optional[float] = Field(None, description="Computed from activity_config[0]")
     activity_billing_frequency: Optional[str] = Field(None, description="Computed from activity_config[0]")
     activity_is_active: Optional[bool] = Field(None, description="Computed from activity_config[0]")
+    activity_human_equivalent_value: Optional[float] = Field(None, description="Computed from activity_config[0]")
     
     # Outcome config flattened fields (first active config)
     outcome_outcome_name: Optional[str] = Field(None, description="Computed from outcome_config[0]")
@@ -228,6 +238,7 @@ class BillingModel(BillingModelInDBBase):
     outcome_currency: Optional[str] = Field(None, description="Computed from outcome_config[0]")
     outcome_is_active: Optional[bool] = Field(None, description="Computed from outcome_config[0]")
     outcome_auto_bill_verified_outcomes: Optional[bool] = Field(None, description="Computed from outcome_config[0]")
+    outcome_human_equivalent_value: Optional[float] = Field(None, description="Computed from outcome_config[0]")
     
     # Workflow config flattened fields
     workflow_base_platform_fee: Optional[float] = Field(None, description="Computed from workflow_config")
@@ -239,6 +250,7 @@ class BillingModel(BillingModelInDBBase):
     workflow_overage_multiplier: Optional[float] = Field(None, description="Computed from workflow_config")
     workflow_currency: Optional[str] = Field(None, description="Computed from workflow_config")
     workflow_is_active: Optional[bool] = Field(None, description="Computed from workflow_config")
+    workflow_human_equivalent_value: Optional[float] = Field(None, description="Computed from workflow_config")
     
     def model_post_init(self, __context) -> None:
         """Post-initialization hook to populate flattened fields from nested config"""
@@ -252,6 +264,7 @@ class BillingModel(BillingModelInDBBase):
             self.agent_volume_discount_threshold = cfg.volume_discount_threshold
             self.agent_volume_discount_percentage = cfg.volume_discount_percentage
             self.agent_tier = cfg.agent_tier
+            self.agent_human_equivalent_value = cfg.human_equivalent_value
         
         # Flatten activity config (use first active config)
         if self.activity_config:
@@ -271,6 +284,7 @@ class BillingModel(BillingModelInDBBase):
                     self.activity_minimum_charge = cfg.minimum_charge
                     self.activity_billing_frequency = cfg.billing_frequency
                     self.activity_is_active = cfg.is_active
+                    self.activity_human_equivalent_value = cfg.human_equivalent_value
                     break
         
         # Flatten outcome config (use first active config)
@@ -302,6 +316,7 @@ class BillingModel(BillingModelInDBBase):
                     self.outcome_currency = cfg.currency
                     self.outcome_is_active = cfg.is_active
                     self.outcome_auto_bill_verified_outcomes = cfg.auto_bill_verified_outcomes
+                    self.outcome_human_equivalent_value = cfg.human_equivalent_value
                     break
         
         # Flatten workflow config
@@ -316,6 +331,7 @@ class BillingModel(BillingModelInDBBase):
             self.workflow_overage_multiplier = cfg.overage_multiplier
             self.workflow_currency = cfg.currency
             self.workflow_is_active = cfg.is_active
+            self.workflow_human_equivalent_value = cfg.human_equivalent_value
 
 
 # Specific configuration schemas for different billing types
@@ -328,6 +344,7 @@ class AgentBasedConfigSchema(BaseModel):
     volume_discount_threshold: Optional[int] = None
     volume_discount_percentage: Optional[float] = None
     agent_tier: str = "professional"  # starter, professional, enterprise
+    human_equivalent_value: float = 0.0  # Cost of human equivalent per agent
     
     class Config:
         from_attributes = True
@@ -348,6 +365,7 @@ class ActivityBasedConfigSchema(BaseModel):
     minimum_charge: float = 0.0
     billing_frequency: str = "monthly"  # monthly, daily, per_use
     is_active: bool = True
+    human_equivalent_value: float = 0.0  # Cost of human equivalent per unit
     
     class Config:
         from_attributes = True
@@ -397,6 +415,7 @@ class OutcomeBasedConfigSchema(BaseModel):
     # Status and settings
     is_active: bool = True
     auto_bill_verified_outcomes: bool = False  # Auto-bill verified outcomes
+    human_equivalent_value: float = 0.0  # Cost of human equivalent per outcome
     
     class Config:
         from_attributes = True
@@ -413,6 +432,7 @@ class WorkflowBasedConfigSchema(BaseModel):
     overage_multiplier: float = 1.0
     currency: str = "USD"
     is_active: bool = True
+    human_equivalent_value: float = 0.0  # Cost of human equivalent for platform
     
     class Config:
         from_attributes = True
@@ -446,6 +466,7 @@ class WorkflowTypeSchema(BaseModel):
     billing_frequency: Optional[str] = None  # If null, uses default from WorkflowBasedConfig
     minimum_charge: Optional[float] = 0.0
     is_active: bool = True
+    human_equivalent_value: float = 0.0  # Cost of human equivalent per workflow
     
     class Config:
         from_attributes = True

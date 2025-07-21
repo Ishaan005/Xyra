@@ -37,6 +37,7 @@ export default function ActivityBasedForm({ model, setModel }: ActivityBasedForm
         activity_volume_tier_2_price: model?.activity_volume_tier_2_price || 0,
         activity_volume_tier_3_threshold: model?.activity_volume_tier_3_threshold || 0,
         activity_volume_tier_3_price: model?.activity_volume_tier_3_price || 0,
+        activity_human_equivalent_value: model?.activity_human_equivalent_value || 0,
       });
     }
   }, [model, setModel]);
@@ -246,6 +247,36 @@ export default function ActivityBasedForm({ model, setModel }: ActivityBasedForm
           />
           <p className="text-xs text-muted-foreground">
             Minimum charge per billing period
+          </p>
+        </div>
+
+        {/* Human Equivalent Value */}
+        <div className="space-y-2">
+          <Label htmlFor="activity-human-equivalent" className="text-sm font-medium flex items-center gap-2">
+            <Activity className="h-3 w-3" />
+            Human Equivalent Value (USD)
+          </Label>
+          <Input
+            id="activity-human-equivalent"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="e.g., 75.00"
+            value={model.activity_human_equivalent_value !== undefined ? model.activity_human_equivalent_value.toString() : ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "") {
+                handleInputChange("activity_human_equivalent_value", "");
+              } else {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  handleInputChange("activity_human_equivalent_value", numValue);
+                }
+              }
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Cost of equivalent human work per activity unit
           </p>
         </div>
 

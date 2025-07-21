@@ -12,7 +12,7 @@ load_dotenv()
 xyra_client = XyraClient(
     base_url=os.getenv("XYRA_BASE_URL", "http://localhost:8000"),
     token=os.getenv("XYRA_TOKEN") or "",  # Token from environment variable with fallback
-    agent_id=int(os.getenv("XYRA_AGENT_ID", "17")),
+    agent_id=int(os.getenv("XYRA_AGENT_ID", "18")),
 )
 
 async def main():

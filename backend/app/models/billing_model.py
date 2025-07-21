@@ -79,6 +79,9 @@ class AgentBasedConfig(BaseModel):
     
     # Agent tier configuration (for different agent capabilities)
     agent_tier = Column(String, nullable=False, default="professional")  # starter, professional, enterprise
+    
+    # Human equivalent value (what it would cost with human resources)
+    human_equivalent_value = Column(Float, nullable=True, default=0.0)  # Cost of human equivalent per agent
 
     # Relationship
     billing_model = relationship("BillingModel", back_populates="agent_config")
@@ -114,6 +117,9 @@ class ActivityBasedConfig(BaseModel):
     
     # Whether this activity config is active
     is_active = Column(Boolean, default=True)
+    
+    # Human equivalent value (what it would cost with human resources per unit)
+    human_equivalent_value = Column(Float, nullable=True, default=0.0)  # Cost of human equivalent per unit
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="activity_config")
@@ -167,6 +173,9 @@ class OutcomeBasedConfig(BaseModel):
     is_active = Column(Boolean, default=True)
     auto_bill_verified_outcomes = Column(Boolean, default=False)  # Auto-bill verified outcomes
     
+    # Human equivalent value (what it would cost with human resources per outcome)
+    human_equivalent_value = Column(Float, nullable=True, default=0.0)  # Cost of human equivalent per outcome
+    
     # Relationship
     billing_model = relationship("BillingModel", back_populates="outcome_config")
 
@@ -196,6 +205,9 @@ class WorkflowBasedConfig(BaseModel):
     
     # Whether this workflow config is active
     is_active = Column(Boolean, default=True)
+    
+    # Human equivalent value (base platform cost with human resources)
+    human_equivalent_value = Column(Float, nullable=True, default=0.0)  # Cost of human equivalent for platform
     
     # Relationship
     billing_model = relationship("BillingModel", back_populates="workflow_config")
@@ -238,6 +250,9 @@ class WorkflowType(BaseModel):
     
     # Status
     is_active = Column(Boolean, default=True)
+    
+    # Human equivalent value (what it would cost with human resources per workflow)
+    human_equivalent_value = Column(Float, nullable=True, default=0.0)  # Cost of human equivalent per workflow
 
     # Relationship
     billing_model = relationship("BillingModel", back_populates="workflow_types")
