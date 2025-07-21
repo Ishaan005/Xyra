@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xyra-client"
+version = "0.1.0"
+authors = [
+    {name = "Xyra Team", email = "ishaan.arakkal@gmail.com"},
+]
+description = "Python SDK for the Xyra API - Track agent metrics across different billing models"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+keywords = ["xyra", "api", "sdk", "billing", "metrics", "tracking", "agent", "ai", "saas"]
+dependencies = [
+    "httpx>=0.23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=22.0.0",
+    "isort>=5.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.991",
+]
+examples = [
+    "python-dotenv>=0.19.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ishaanarakkal/Xyra"
+"Bug Reports" = "https://github.com/ishaanarakkal/Xyra/issues"
+"Source" = "https://github.com/ishaanarakkal/Xyra/tree/main/xyra_client"
+"Documentation" = "https://github.com/ishaanarakkal/Xyra/blob/main/xyra_client/README.md"
+"Changelog" = "https://github.com/ishaanarakkal/Xyra/blob/main/xyra_client/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+include = ["xyra_client*"]
+
+[tool.setuptools.package-data]
+xyra_client = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true

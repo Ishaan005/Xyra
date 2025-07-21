@@ -1,19 +1,17 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: xyra-client
 Version: 0.1.0
 Summary: Python SDK for the Xyra API - Track agent metrics across different billing models
-Home-page: https://github.com/your-org/xyra
-Author: Xyra Team
-Author-email: contact@xyra.com
-License: UNKNOWN
-Project-URL: Bug Reports, https://github.com/your-org/xyra/issues
-Project-URL: Source, https://github.com/your-org/xyra
-Project-URL: Documentation, https://docs.xyra.com
-Keywords: xyra api sdk billing metrics tracking agent ai saas
-Platform: UNKNOWN
+Author-email: Xyra Team <ishaan.arakkal@gmail.com>
+License-Expression: MIT
+Project-URL: Homepage, https://github.com/ishaanarakkal/Xyra
+Project-URL: Bug Reports, https://github.com/ishaanarakkal/Xyra/issues
+Project-URL: Source, https://github.com/ishaanarakkal/Xyra/tree/main/xyra_client
+Project-URL: Documentation, https://github.com/ishaanarakkal/Xyra/blob/main/xyra_client/README.md
+Project-URL: Changelog, https://github.com/ishaanarakkal/Xyra/blob/main/xyra_client/CHANGELOG.md
+Keywords: xyra,api,sdk,billing,metrics,tracking,agent,ai,saas
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.8
@@ -24,10 +22,21 @@ Classifier: Programming Language :: Python :: 3.12
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
 Classifier: Topic :: Office/Business :: Financial
+Classifier: Typing :: Typed
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: httpx>=0.23.0
 Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: black>=22.0.0; extra == "dev"
+Requires-Dist: isort>=5.0.0; extra == "dev"
+Requires-Dist: flake8>=4.0.0; extra == "dev"
+Requires-Dist: mypy>=0.991; extra == "dev"
 Provides-Extra: examples
+Requires-Dist: python-dotenv>=0.19.0; extra == "examples"
+Dynamic: license-file
 
 # Xyra Client SDK
 
@@ -35,9 +44,20 @@ A Python SDK for interacting with the Xyra API to track agent metrics including 
 
 ## Installation
 
+### From PyPI (Recommended)
+
 ```bash
+pip install xyra-client
+```
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/ishaanarakkal/Xyra.git
+cd Xyra/xyra_client
+
 # Install from source
-cd xyra_client
 pip install -e .
 
 # Or install specific requirements
@@ -471,5 +491,3 @@ For issues, questions, or contributions:
 - Comprehensive error handling
 - Full API coverage
 - Examples and documentation
-
-

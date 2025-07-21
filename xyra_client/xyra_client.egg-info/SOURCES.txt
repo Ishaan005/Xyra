@@ -1,8 +1,14 @@
+CHANGELOG.md
+LICENSE
+MANIFEST.in
 README.md
-setup.py
+pyproject.toml
+requirements.txt
+xyra_client/__init__.py
+xyra_client/client.py
+xyra_client/py.typed
 xyra_client.egg-info/PKG-INFO
 xyra_client.egg-info/SOURCES.txt
 xyra_client.egg-info/dependency_links.txt
-xyra_client.egg-info/not-zip-safe
 xyra_client.egg-info/requires.txt
 xyra_client.egg-info/top_level.txt

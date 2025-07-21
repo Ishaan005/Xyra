@@ -4,9 +4,20 @@ A Python SDK for interacting with the Xyra API to track agent metrics including 
 
 ## Installation
 
+### From PyPI (Recommended)
+
 ```bash
+pip install xyra-client
+```
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/ishaanarakkal/Xyra.git
+cd Xyra/xyra_client
+
 # Install from source
-cd xyra_client
 pip install -e .
 
 # Or install specific requirements

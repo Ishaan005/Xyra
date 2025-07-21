@@ -3,7 +3,7 @@ import os
 # Add parent directory to Python path to find xyra_client
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from xyra_client import XyraClient
+from xyra_client.xyra_client import XyraClient
 import asyncio
 from dotenv import load_dotenv
 
