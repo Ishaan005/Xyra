@@ -330,7 +330,11 @@ The frontend tests include:
 
 ## Authentication
 
-Xyra uses JWT (JSON Web Tokens) for authentication.
+Xyra supports two authentication methods:
+
+### 1. JWT Tokens (for web sessions)
+
+JWT tokens are primarily used for web-based authentication through the frontend.
 
 1. **Create a Superuser**
 
@@ -363,6 +367,30 @@ Xyra uses JWT (JSON Web Tokens) for authentication.
    curl -X GET "http://localhost:8000/api/v1/users/me" \
      -H "Authorization: Bearer <YOUR_ACTUAL_TOKEN_HERE>"
    ```
+
+### 2. API Keys (for programmatic access)
+
+API keys are designed for programmatic access, especially with the Xyra Client SDK.
+
+**For detailed information on creating and using API keys, see [API Keys Guide](api_keys_guide.md).**
+
+Key features:
+- Long-lived tokens perfect for CI/CD and automated systems
+- Secure format: `xyra_<random-string>`
+- Manageable through the Settings page in the frontend
+- Works with all Xyra API endpoints
+- Ideal for the Xyra Client SDK
+
+Quick example:
+```bash
+# Create an API key via the frontend Settings page
+# Then use it with the Xyra Client SDK
+python -c "
+from xyra_client import XyraClient
+client = XyraClient('http://localhost:8000', 1, 'xyra_your_api_key_here')
+print(client.health_check())
+"
+```
 
 ## Using the API
 

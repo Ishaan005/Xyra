@@ -12,7 +12,7 @@ from app.services.billing_model.calculation import calculate_cost
 router = APIRouter()
 
 
-@router.get("/", response_model=List[schemas.BillingModel])
+@router.get("", response_model=List[schemas.BillingModel])
 def read_billing_models(
     org_id: Optional[int] = Query(None, description="Organization ID to filter billing models"),
     db: Session = Depends(deps.get_db),
@@ -59,7 +59,7 @@ def read_billing_models(
     return billing_models
 
 
-@router.post("/", response_model=schemas.BillingModel)
+@router.post("", response_model=schemas.BillingModel)
 def create_billing_model(
     *,
     db: Session = Depends(deps.get_db),

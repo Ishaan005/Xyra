@@ -10,7 +10,7 @@ from app.services import agent_service, organization_service
 router = APIRouter()
 
 
-@router.get("/", response_model=List[schemas.Agent])
+@router.get("", response_model=List[schemas.Agent])
 def read_agents(
     org_id: int = Query(..., description="Organization ID to filter agents"),
     active_only: Optional[bool] = Query(None, description="Filter by active status"),
@@ -47,7 +47,7 @@ def read_agents(
     return agents
 
 
-@router.post("/", response_model=schemas.Agent)
+@router.post("", response_model=schemas.Agent)
 def create_agent(
     *,
     db: Session = Depends(deps.get_db),
@@ -82,7 +82,7 @@ def create_agent(
 def read_agent(
     agent_id: int,
     db: Session = Depends(deps.get_db),
-    current_user: schemas.User = Depends(deps.get_current_active_user),
+    current_user: schemas.User = Depends(deps.get_current_user_flexible),
 ) -> Any:
     """
     Get a specific agent by ID.
@@ -214,7 +214,7 @@ def record_activity(
     db: Session = Depends(deps.get_db),
     agent_id: int,
     activity_in: schemas.AgentActivityCreate,
-    current_user: schemas.User = Depends(deps.get_current_active_user),
+    current_user: schemas.User = Depends(deps.get_current_user_flexible),
 ) -> Any:
     """
     Record activity for an agent.
@@ -261,7 +261,7 @@ def record_cost(
     db: Session = Depends(deps.get_db),
     agent_id: int,
     cost_in: schemas.AgentCostCreate,
-    current_user: schemas.User = Depends(deps.get_current_active_user),
+    current_user: schemas.User = Depends(deps.get_current_user_flexible),
 ) -> Any:
     """
     Record cost for an agent.
@@ -308,7 +308,7 @@ def record_outcome(
     db: Session = Depends(deps.get_db),
     agent_id: int,
     outcome_in: schemas.AgentOutcomeCreate,
-    current_user: schemas.User = Depends(deps.get_current_active_user),
+    current_user: schemas.User = Depends(deps.get_current_user_flexible),
 ) -> Any:
     """
     Record outcome for an agent.
@@ -397,7 +397,7 @@ def get_agent_stats(
 def get_agent_billing_config(
     agent_id: int,
     db: Session = Depends(deps.get_db),
-    current_user: schemas.User = Depends(deps.get_current_active_user),
+    current_user: schemas.User = Depends(deps.get_current_user_flexible),
 ) -> Any:
     """
     Get billing configuration for an agent.

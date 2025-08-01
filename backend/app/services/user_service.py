@@ -37,16 +37,24 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     Authenticate a user with email and password
     """
     try:
+        logger.info(f"Attempting to authenticate user: {email}")
         user = get_user_by_email(db, email=email)
         if not user:
             logger.warning(f"Authentication failed: User not found with email {email}")
+            # Log all existing users for debugging (remove this in production)
+            all_users = db.query(User).all()
+            logger.info(f"Existing users in database: {[u.email for u in all_users]}")
             return None
+        
+        logger.info(f"User found: {user.email}, checking password")
         if not verify_password(password, str(user.hashed_password)):
             logger.warning(f"Authentication failed: Invalid password for user {email}")
             return None
+        
+        logger.info(f"Authentication successful for user: {email}")
         return user
     except Exception as e:
-        logger.error(f"Authentication error: {str(e)}")
+        logger.error(f"Authentication error for {email}: {str(e)}")
         return None
 
 
@@ -59,6 +67,41 @@ def create_user(db: Session, user_in: UserCreate) -> User:
     if db_user:
         raise ValueError(f"User with email {user_in.email} already exists")
     
+    organization_id = user_in.organization_id
+    
+    # If no organization_id provided, create a personal organization for the user
+    if not organization_id:
+        from app.services.organization_service import create_organization
+        from app.schemas.organization import OrganizationCreate
+        
+        # Extract organization name from user's name or email
+        if user_in.full_name and user_in.full_name.strip():
+            org_name = f"{user_in.full_name.strip()}'s Organization"
+        else:
+            org_name = f"{user_in.email.split('@')[0]}'s Organization"
+        
+        try:
+            # Create personal organization
+            org_data = OrganizationCreate(
+                name=org_name,
+                description=f"Personal organization for {user_in.email}"
+            )
+            organization = create_organization(db, org_data)
+            organization_id = organization.id
+            logger.info(f"Created personal organization '{org_name}' for user {user_in.email}")
+        except ValueError as e:
+            # If organization name already exists, add timestamp or make it unique
+            import time
+            timestamp = int(time.time())
+            org_name = f"{user_in.email.split('@')[0]} Organization {timestamp}"
+            org_data = OrganizationCreate(
+                name=org_name,
+                description=f"Personal organization for {user_in.email}"
+            )
+            organization = create_organization(db, org_data)
+            organization_id = organization.id
+            logger.info(f"Created fallback organization '{org_name}' for user {user_in.email}")
+    
     # Create user with hashed password
     user = User(
         email=user_in.email,
@@ -66,7 +109,7 @@ def create_user(db: Session, user_in: UserCreate) -> User:
         full_name=user_in.full_name,
         is_active=user_in.is_active,
         is_superuser=user_in.is_superuser,
-        organization_id=user_in.organization_id,
+        organization_id=organization_id,
     )
     
     # Add user to database
@@ -74,7 +117,7 @@ def create_user(db: Session, user_in: UserCreate) -> User:
     db.commit()
     db.refresh(user)
     
-    logger.info(f"Created new user: {user.email}")
+    logger.info(f"Created new user: {user.email} with organization_id: {organization_id}")
     return user
 
 

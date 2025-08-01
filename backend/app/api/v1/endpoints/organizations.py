@@ -10,7 +10,7 @@ from app.services import organization_service
 router = APIRouter()
 
 
-@router.get("/", response_model=List[schemas.Organization])
+@router.get("", response_model=List[schemas.Organization])
 def read_organizations(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -32,7 +32,7 @@ def read_organizations(
     return organizations
 
 
-@router.post("/", response_model=schemas.Organization)
+@router.post("", response_model=schemas.Organization)
 def create_organization(
     *,
     db: Session = Depends(deps.get_db),

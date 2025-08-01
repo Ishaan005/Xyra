@@ -344,7 +344,7 @@ class AgentBasedConfigSchema(BaseModel):
     volume_discount_threshold: Optional[int] = None
     volume_discount_percentage: Optional[float] = None
     agent_tier: str = "professional"  # starter, professional, enterprise
-    human_equivalent_value: float = 0.0  # Cost of human equivalent per agent
+    human_equivalent_value: Optional[float] = 0.0  # Cost of human equivalent per agent
     
     class Config:
         from_attributes = True
@@ -365,7 +365,7 @@ class ActivityBasedConfigSchema(BaseModel):
     minimum_charge: float = 0.0
     billing_frequency: str = "monthly"  # monthly, daily, per_use
     is_active: bool = True
-    human_equivalent_value: float = 0.0  # Cost of human equivalent per unit
+    human_equivalent_value: Optional[float] = 0.0  # Cost of human equivalent per unit
     
     class Config:
         from_attributes = True
@@ -415,7 +415,7 @@ class OutcomeBasedConfigSchema(BaseModel):
     # Status and settings
     is_active: bool = True
     auto_bill_verified_outcomes: bool = False  # Auto-bill verified outcomes
-    human_equivalent_value: float = 0.0  # Cost of human equivalent per outcome
+    human_equivalent_value: Optional[float] = 0.0  # Cost of human equivalent per outcome
     
     class Config:
         from_attributes = True
@@ -432,7 +432,7 @@ class WorkflowBasedConfigSchema(BaseModel):
     overage_multiplier: float = 1.0
     currency: str = "USD"
     is_active: bool = True
-    human_equivalent_value: float = 0.0  # Cost of human equivalent for platform
+    human_equivalent_value: Optional[float] = 0.0  # Cost of human equivalent for platform
     
     class Config:
         from_attributes = True
@@ -466,7 +466,7 @@ class WorkflowTypeSchema(BaseModel):
     billing_frequency: Optional[str] = None  # If null, uses default from WorkflowBasedConfig
     minimum_charge: Optional[float] = 0.0
     is_active: bool = True
-    human_equivalent_value: float = 0.0  # Cost of human equivalent per workflow
+    human_equivalent_value: Optional[float] = 0.0  # Cost of human equivalent per workflow
     
     class Config:
         from_attributes = True

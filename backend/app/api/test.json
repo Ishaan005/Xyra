@@ -1,0 +1,108 @@
+{
+  "name": "MLPipelineWithLoop",
+  "properties": {
+    "activities": [
+      {
+        "name": "GetConfigFromBlob",
+        "type": "Lookup",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "7.00:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "source": {
+            "type": "JsonSource"
+          },
+          "dataset": {
+            "referenceName": "config_blob_dataset",
+            "type": "DatasetReference"
+          },
+          "firstRowOnly": false
+        }
+      },
+      {
+        "name": "ForEach_ModelConfigs",
+        "type": "ForEach",
+        "dependsOn": [
+          {
+            "activity": "GetConfigFromBlob",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "items": {
+            "value": "@activity('GetConfigFromBlob').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "name": "CopyTableToParquet",
+              "type": "Copy",
+              "dependsOn": [],
+              "typeProperties": {
+                "source": {
+                  "type": "AzureTableSource"
+                },
+                "sink": {
+                  "type": "ParquetSink"
+                },
+                "enableStaging": false
+              },
+              "inputs": [
+                {
+                  "referenceName": "azure_table_dataset",
+                  "type": "DatasetReference",
+                  "parameters": {
+                    "tableName": "@item().tableName"
+                  }
+                }
+              ],
+              "outputs": [
+                {
+                  "referenceName": "parquet_blob_dataset",
+                  "type": "DatasetReference",
+                  "parameters": {
+                    "outputPath": "@item().parquetPath"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TriggerMLPipeline",
+              "type": "WebActivity",
+              "dependsOn": [
+                {
+                  "activity": "CopyTableToParquet",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ],
+              "typeProperties": {
+                "url": "<YOUR_AZURE_ML_PIPELINE_REST_ENDPOINT>",
+                "method": "POST",
+                "headers": {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer <OPTIONAL_ACCESS_TOKEN_IF_NOT_USING MANAGED IDENTITY>"
+                },
+                "body": {
+                  "inputs": {
+                    "dataset_path": "@item().parquetPath",
+                    "model_name": "@item().modelName",
+                    "output_path": "@item().outputPath"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

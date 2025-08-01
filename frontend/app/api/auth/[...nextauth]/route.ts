@@ -1,6 +1,13 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import api, { setAuthToken } from "@/utils/api"
+import axios from "axios"
+
+// Create a server-side API instance that uses the internal backend URL
+const serverApi = axios.create({
+  baseURL: process.env.INTERNAL_BACKEND_URL 
+    ? `${process.env.INTERNAL_BACKEND_URL}/api/v1`
+    : 'http://127.0.0.1:8000/api/v1'
+});
 
 export const authOptions = {
   session: { strategy: "jwt" as const },
@@ -13,20 +20,33 @@ export const authOptions = {
       },
       authorize: async (credentials) => {
         try {
+          console.log('NextAuth authorize: Attempting login with backend URL:', serverApi.defaults.baseURL)
+          
           // request access token from backend
           const params = new URLSearchParams()
           params.append('username', credentials?.username || '')
           params.append('password', credentials?.password || '')
-          const tokenRes = await api.post('/auth/login/access-token', params, {
+          const tokenRes = await serverApi.post('/auth/login/access-token', params, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
           })
           const { access_token: accessToken } = tokenRes.data
-          // set axios auth header for subsequent calls
-          setAuthToken(accessToken)
+          
+          console.log('NextAuth authorize: Successfully obtained access token')
+          
+          // set auth header for subsequent calls
+          serverApi.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+          
           // fetch current user
-          const userRes = await api.get('/auth/me')
+          const userRes = await serverApi.get('/auth/me')
+          console.log('NextAuth authorize: Successfully fetched user data')
+          
           return { ...userRes.data, accessToken }
-        } catch {
+        } catch (error: any) {
+          console.error('NextAuth authorize error:', error.message)
+          if (error.response) {
+            console.error('Response status:', error.response.status)
+            console.error('Response data:', error.response.data)
+          }
           return null
         }
       }

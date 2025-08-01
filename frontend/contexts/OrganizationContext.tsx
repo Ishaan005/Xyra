@@ -73,7 +73,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     setError(null)
     try {
       setAuthToken(session.user.accessToken)
-      const response = await api.get<Organization[]>('/organizations/')
+      const response = await api.get<Organization[]>('/organizations')
       setOrganizations(response.data)
       
       // If no current org is set, default to first org

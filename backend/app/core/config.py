@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
     # CORS Origins (allow local dev frontend)
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: List[str] = ["*"] # VERIFY IF THIS IS CAUSING ERRORS
 
     @field_validator("CORS_ORIGINS", mode="before")
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: Optional[str] = os.getenv("POSTGRES_USER")
     POSTGRES_PASSWORD: Optional[str] = os.getenv("POSTGRES_PASSWORD")
     POSTGRES_DB: Optional[str] = os.getenv("POSTGRES_DB")
-    POSTGRES_OPTIONS: str = os.getenv("POSTGRES_OPTIONS", "")
+    POSTGRES_OPTIONS: Optional[str] = os.getenv("POSTGRES_OPTIONS")
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
         password = values.get("POSTGRES_PASSWORD")
         host = values.get("POSTGRES_SERVER")
         db = values.get("POSTGRES_DB")
-        options = values.get("POSTGRES_OPTIONS", "")
+        options = values.get("POSTGRES_OPTIONS")
         
         # Ensure all components are present
         if not all([user, password, host]):
@@ -66,7 +66,17 @@ class Settings(BaseSettings):
         password_encoded = urllib.parse.quote_plus(str(password))
         
         # Build connection string with properly encoded components
-        conn_str = f"postgresql://{user_encoded}:{password_encoded}@{host}:5432/{db}{options}"
+        base_conn_str = f"postgresql://{user_encoded}:{password_encoded}@{host}:5432/{db}"
+        
+        # Properly append SSL options if they exist
+        if options:
+            if options.startswith('?'):
+                conn_str = f"{base_conn_str}{options}"
+            else:
+                conn_str = f"{base_conn_str}?{options}"
+        else:
+            conn_str = base_conn_str
+            
         return conn_str
     
     # Stripe API key

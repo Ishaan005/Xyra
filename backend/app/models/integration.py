@@ -2,11 +2,10 @@
 Integration layer models for connectors, webhooks, and events.
 These models provide persistence for the integration layer with proper multi-tenancy.
 """
+import uuid
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
-import uuid
-import uuid
 
 from app.models.base import BaseModel
 

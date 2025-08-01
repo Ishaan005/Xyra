@@ -1,7 +1,7 @@
 from typing import Generator, Optional
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -11,11 +11,16 @@ from app.models.user import User
 from app.core.config import settings
 from app.core.security import verify_password
 from app.db.session import SessionLocal
+from app.services import api_key_service
 
 # Create OAuth2 scheme for token authentication
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/auth/login"
+    tokenUrl=f"{settings.API_V1_STR}/auth/login",
+    auto_error=False  # Don't automatically error if no token
 )
+
+# Create HTTPBearer scheme for API key authentication
+api_key_scheme = HTTPBearer(auto_error=False)
 
 
 def get_db() -> Generator:
@@ -59,6 +64,85 @@ def get_current_user(
         )
     
     return user
+
+
+def get_current_user_from_api_key(
+    db: Session = Depends(get_db),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(api_key_scheme)
+) -> User:
+    """
+    Dependency function to get the current user based on API key.
+    """
+    if not credentials or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    api_key = credentials.credentials
+    if not api_key.startswith("xyra_"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key format",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    api_key_obj = api_key_service.authenticate_api_key(db, api_key)
+    if not api_key_obj:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = db.query(User).filter(User.id == api_key_obj.user_id).first()
+    if not user or not getattr(user, 'is_active', False):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return user
+
+
+def get_current_user_flexible(
+    db: Session = Depends(get_db),
+    jwt_token: Optional[str] = Depends(oauth2_scheme),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(api_key_scheme)
+) -> User:
+    """
+    Dependency that accepts either JWT or API key authentication.
+    """
+    # Try JWT authentication first
+    if jwt_token:
+        try:
+            payload = jwt.decode(
+                jwt_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
+            token_data = schemas.TokenPayload(**payload)
+            user = db.query(User).filter(User.id == token_data.sub).first()
+            if user and getattr(user, 'is_active', False):
+                return user
+        except (JWTError, ValidationError):
+            pass  # Fall through to API key authentication
+    
+    # Try API key authentication
+    if credentials and credentials.credentials:
+        api_key = credentials.credentials
+        if api_key.startswith("xyra_"):
+            api_key_obj = api_key_service.authenticate_api_key(db, api_key)
+            if api_key_obj:
+                user = db.query(User).filter(User.id == api_key_obj.user_id).first()
+                if user and getattr(user, 'is_active', False):
+                    return user
+    
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 def get_current_active_user(

@@ -79,13 +79,13 @@ export default function OrganizationsPage() {
     setError(null)
     try {
       // First get the basic organization list
-      const orgResponse = await api.get<Organization[]>("/organizations/")
+      const orgResponse = await api.get<Organization[]>("/organizations")
       
       // Then get stats for each organization (if user has permissions)
       const orgsWithStats = await Promise.all(
         orgResponse.data.map(async (org) => {
           try {
-            const statsResponse = await api.get<OrganizationWithStats>(`/organizations/${org.id}/stats/`)
+            const statsResponse = await api.get<OrganizationWithStats>(`/organizations/${org.id}/stats`)
             return statsResponse.data
           } catch (error) {
             // If we can't get stats, return the basic org with default stats
@@ -121,7 +121,7 @@ export default function OrganizationsPage() {
     
     setIsCreating(true)
     try {
-      await api.post("/organizations/", newOrg)
+      await api.post("/organizations", newOrg)
       setNewOrg({
         name: "",
         description: "",

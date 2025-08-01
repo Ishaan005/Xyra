@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 if not settings.SQLALCHEMY_DATABASE_URI:
     raise ValueError("SQLALCHEMY_DATABASE_URI is not configured")
 
+logger.info(f"Creating database engine for: {settings.POSTGRES_SERVER}")
 engine = create_engine(
     settings.SQLALCHEMY_DATABASE_URI,
     pool_pre_ping=True,  # Verify connections before usage to avoid stale connections
@@ -23,8 +24,22 @@ engine = create_engine(
     max_overflow=20,     # Max number of connections above pool_size
     pool_timeout=30,     # Seconds to wait before timing out on getting a connection
     pool_recycle=1800,   # Recycle connections after 30 minutes to avoid stale connections
+    echo=True if logger.level == logging.DEBUG else False  # Log SQL queries in debug mode
     # Local PostgreSQL doesn't require SSL
 )
+
+# Add connection event handlers for debugging
+@event.listens_for(engine, "connect")
+def connect(dbapi_connection, connection_record):
+    logger.info("Database connection established")
+
+@event.listens_for(engine, "checkout")
+def checkout(dbapi_connection, connection_record, connection_proxy):
+    logger.debug("Database connection checked out from pool")
+
+@event.listens_for(engine, "checkin") 
+def checkin(dbapi_connection, connection_record):
+    logger.debug("Database connection checked back into pool")
 
 # Create session factory with optimized settings
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

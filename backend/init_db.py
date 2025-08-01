@@ -9,8 +9,13 @@ from app.db.session import Base, engine
 from app.models.user import User
 from app.models.organization import Organization
 from app.models.agent import Agent, AgentActivity, AgentCost, AgentOutcome
-from app.models.billing_model import BillingModel
+from app.models.billing_model import (
+    BillingModel, AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig,
+    WorkflowBasedConfig, WorkflowType, CommitmentTier,
+    OutcomeMetric, OutcomeVerificationRule
+)
 from app.models.invoice import Invoice, InvoiceLineItem
+from app.models.api_key import ApiKey
 from app.core.config import settings
 from app.services.user_service import create_user
 from app.db.session import session_scope
@@ -64,6 +69,20 @@ def init_db(max_retries=5, retry_delay=3) -> None:
                 logger.info(f"Connected to: {version}")
             
             # Create all tables
+            logger.info("Initializing database models:")
+            logger.info("- Core models: User, Organization")
+            logger.info("- Agent models: Agent, AgentActivity, AgentCost, AgentOutcome") 
+            logger.info("- Billing models: BillingModel, AgentBasedConfig, ActivityBasedConfig, OutcomeBasedConfig")
+            logger.info("- Workflow models: WorkflowBasedConfig, WorkflowType, CommitmentTier")
+            logger.info("- Outcome models: OutcomeMetric, OutcomeVerificationRule")
+            logger.info("- Invoice models: Invoice, InvoiceLineItem")
+            logger.info("- API models: ApiKey")
+            
+            # Log the number of tables that will be created
+            table_names = [table.name for table in Base.metadata.tables.values()]
+            logger.info(f"Total tables to create: {len(table_names)}")
+            logger.info(f"Table names: {', '.join(sorted(table_names))}")
+            
             Base.metadata.create_all(bind=engine)
             logger.info("Database tables created successfully!")
             

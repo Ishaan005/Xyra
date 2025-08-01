@@ -13,7 +13,7 @@ router = APIRouter()
 
 router.include_router(stripe_webhook.router, prefix="")
 
-@router.get("/", response_model=List[schemas.Invoice])
+@router.get("", response_model=List[schemas.Invoice])
 def read_invoices(
     org_id: int = Query(..., description="Organization ID to filter invoices"),
     status: Optional[str] = Query(None, description="Filter by invoice status"),
@@ -50,7 +50,7 @@ def read_invoices(
     return invoices
 
 
-@router.post("/", response_model=schemas.Invoice)
+@router.post("", response_model=schemas.Invoice)
 def create_invoice(
     *,
     db: Session = Depends(deps.get_db),

@@ -19,3 +19,5 @@ pytest
 httpx
 kafka-python
 redis
+aiohttp
+slowapi

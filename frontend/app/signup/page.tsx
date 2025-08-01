@@ -68,7 +68,7 @@ export default function SignupPage() {
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold">Business Engine</h1>
+          <h1 className="text-3xl font-bold">Xyra</h1>
           <p className="text-muted-foreground mt-2">Create your account to get started</p>
         </div>
 

@@ -20,6 +20,7 @@ class User(BaseModel):
     
     # Relationships
     organization = relationship("Organization", back_populates="users")
+    api_keys = relationship("ApiKey", back_populates="user", cascade="all, delete-orphan")
     
     def __str__(self) -> str:
         return f"User(email={self.email}, organization_id={self.organization_id})"

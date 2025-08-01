@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     invoices,
     integration,
     outcomes,
+    api_keys,
 )
 
 api_router = APIRouter()
@@ -24,3 +25,4 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["analytic
 api_router.include_router(invoices.router, prefix="/invoices", tags=["invoices"])
 api_router.include_router(integration.router, prefix="/integration", tags=["integration"])
 api_router.include_router(outcomes.router, tags=["outcomes"])
+api_router.include_router(api_keys.router, prefix="/api-keys", tags=["api-keys"])

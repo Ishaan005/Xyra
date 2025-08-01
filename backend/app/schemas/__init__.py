@@ -1,5 +1,6 @@
 from .token import Token, TokenPayload
 from .user import User, UserCreate, UserUpdate, UserInDB
+from .api_key import ApiKey, ApiKeyCreate, ApiKeyUpdate, ApiKeyWithToken, ApiKeyWithUser
 from .organization import Organization, OrganizationCreate, OrganizationUpdate, OrganizationWithStats
 from .billing_model import (
     BillingModel, BillingModelCreate, BillingModelUpdate,

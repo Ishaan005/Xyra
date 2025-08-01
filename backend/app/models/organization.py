@@ -25,6 +25,7 @@ class Organization(BaseModel):
     billing_models = relationship("BillingModel", back_populates="organization")
     agents = relationship("Agent", back_populates="organization")
     invoices = relationship("Invoice", back_populates="organization")
+    api_keys = relationship("ApiKey", back_populates="organization", cascade="all, delete-orphan")
     
     # Integration layer relationships
     integration_connectors = relationship("IntegrationConnector", back_populates="organization")
