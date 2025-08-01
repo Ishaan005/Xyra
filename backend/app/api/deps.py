@@ -2,7 +2,8 @@ from typing import Generator, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -47,7 +48,7 @@ def get_current_user(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = schemas.TokenPayload(**payload)
-    except (JWTError, ValidationError):
+    except (InvalidTokenError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -125,7 +126,7 @@ def get_current_user_flexible(
             user = db.query(User).filter(User.id == token_data.sub).first()
             if user and getattr(user, 'is_active', False):
                 return user
-        except (JWTError, ValidationError):
+        except (InvalidTokenError, ValidationError):
             pass  # Fall through to API key authentication
     
     # Try API key authentication

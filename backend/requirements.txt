@@ -4,7 +4,7 @@ sqlalchemy
 pydantic
 pydantic-settings
 pydantic[email]
-python-jose[cryptography]
+pyjwt[crypto]
 passlib[bcrypt]
 python-multipart
 psycopg2

@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
 # Load .env from the project root
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 env_path = os.path.join(project_root, '.env')
 load_dotenv(env_path)
 

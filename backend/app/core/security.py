@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Union
 import logging
 
-from jose import jwt
+import jwt
 from passlib.context import CryptContext
 import bcrypt  # Added for direct bcrypt usage if needed
 from azure.identity import DefaultAzureCredential
